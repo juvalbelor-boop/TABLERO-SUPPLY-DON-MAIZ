@@ -2002,30 +2002,32 @@
     if (!GL.ok()) { DM.fail(el, dash.data('gasto').status); return; }
     el.replaceChildren();
     const R = GL.D(), cx = R.filter((r) => r.xe);
-    const W = el.clientWidth, H = 360, top = 110;
+    // Meses en vertical abajo (bm = margen inferior); la línea de gasto por tonelada va justo encima de la barra más alta.
+    const W = el.clientWidth, H = 400, top = 130, bm = 54;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Gasto logístico por mes');
     const vmax = d3.max(R.flatMap((r) => [r.ppto, r.fcst, r.real]).filter((v) => v)) || 1;
-    const y = d3.scaleLinear([0, vmax * 1.05], [H - 28, top]).nice();
+    const y = d3.scaleLinear([0, vmax * 1.05], [H - bm, top]).nice();
     const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, '$' + DM.f0.format(v / 1e6) + ' mill.', 'dm-axis-t'))) + 10, mr = 8;
     const x0 = d3.scaleBand(R.map((r) => r.mes), [ml, W - mr]).paddingInner(0.2);
     const SER = [['ppto', 'var(--cds-chart-muted)', 'Presupuesto'], ['fcst', 'var(--dm-orange-2)', 'Forecast'], ['real', 'var(--dm-green)', 'Real']];
     const x1 = d3.scaleBand(SER.map((s) => s[0]), [0, x0.bandwidth()]).padding(0.08);
     svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - mr)).tickFormat((v) => '$' + DM.f0.format(v / 1e6) + ' mill.')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat(GL.mCorto)).call(DM.cleanAxis);
-    const sp = PP.sel(); if (sp && R.some((r) => r.mes === sp.k)) svg.insert('rect', ':first-child').attr('x', x0(sp.k) - x0.step() * x0.paddingInner() / 2).attr('width', x0.step()).attr('y', top - 6).attr('height', H - 28 - top + 6).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #F1F7F2)').style('stroke', 'var(--dm-green)').attr('stroke-width', 1.5);
+    svg.append('g').attr('transform', `translate(0,${H - bm})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(6).tickFormat(GL.mCorto)).call(DM.cleanAxis)
+      .selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.5em').attr('dy', '-0.35em').attr('transform', 'rotate(-90)');
+    const sp = PP.sel(); if (sp && R.some((r) => r.mes === sp.k)) svg.insert('rect', ':first-child').attr('x', x0(sp.k) - x0.step() * x0.paddingInner() / 2).attr('width', x0.step()).attr('y', y(vmax) - 6).attr('height', H - bm - y(vmax) + 6).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #F1F7F2)').style('stroke', 'var(--dm-green)').attr('stroke-width', 1.5);
     R.forEach((r) => {
       const g = svg.append('g').attr('transform', `translate(${x0(r.mes)},0)`);
       SER.forEach(([f, col]) => { if (r[f]) g.append('rect').attr('x', x1(f)).attr('width', x1.bandwidth()).attr('y', y(r[f])).attr('height', y(0) - y(r[f])).attr('rx', 1.5).style('fill', col); });
     });
     // Línea de gasto por tonelada efectiva en la franja superior.
-    const y2 = d3.scaleLinear(d3.extent(cx, (r) => r.xe).map((v, i) => (i ? v * 1.02 : v * 0.97)), [top - 14, 34]);
+    const barTop = y(vmax), y2 = d3.scaleLinear(d3.extent(cx, (r) => r.xe).map((v, i) => (i ? v * 1.02 : v * 0.97)), [barTop - 16, Math.max(40, barTop - 76)]);
     const cxp = (k) => x0(k) + x0.bandwidth() / 2;
     svg.append('path').datum(cx).attr('fill', 'none').style('stroke', 'var(--dm-green-dk)').attr('stroke-width', 2.5).attr('d', d3.line().x((r) => cxp(r.mes)).y((r) => y2(r.xe)));
     svg.append('g').selectAll('circle').data(cx).join('circle').attr('cx', (r) => cxp(r.mes)).attr('cy', (r) => y2(r.xe)).attr('r', 3.5).style('fill', 'var(--dm-green-dk)');
     if (x0.bandwidth() >= DM.textW(svg, '0,00', 'dm-val dm-small') + 2) svg.append('g').selectAll('text').data(cx).join('text').attr('class', 'dm-val dm-halo dm-small').attr('text-anchor', 'middle').attr('x', (r) => cxp(r.mes)).attr('y', (r) => y2(r.xe) - 8).text((r) => DM.fd ? new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(r.xe / 1e6) : (r.xe / 1e6).toFixed(2));
     svg.append('text').attr('class', 'dm-reft').attr('x', ml).attr('y', 12).text('Gasto por tonelada efectiva (millones de $ por ton)');
     const tip = DM.tipFor(el);
-    svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r.mes)).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - 28).attr('fill', 'transparent')
+    svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r.mes)).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - bm).attr('fill', 'transparent')
       .on('mousemove', (ev, r) => DM.showTip(tip, el, cxp(r.mes), 60, [GL.mTxt(r.mes), 'Presupuesto: ' + GL.pesos(r.ppto), 'Forecast: ' + GL.pesos(r.fcst), 'Real: ' + (r.real ? GL.pesos(r.real) : 'sin dato'), 'Gasto por ton efectiva: ' + (r.xe ? GL.pesos(r.xe) : '—')]))
       .on('mouseleave', () => { tip.hidden = true; });
   });
