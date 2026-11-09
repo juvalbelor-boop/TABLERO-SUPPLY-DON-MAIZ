@@ -369,7 +369,7 @@
           </div>
         </div></section>
       <section class="dm-card dm-card-o" id="pp-card-nsag"><h2 class="dm-h2">Nivel de servicio y agotados por mes</h2>
-        <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Nivel de servicio</span><span><span class="dm-sw dm-sw-o"></span>% agotado sobre venta</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 95 %</span></div>
+        <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Nivel de servicio</span><span><span class="dm-sw dm-sw-o"></span>% agotado (100 % − nivel de servicio)</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 95 %</span></div>
         <div class="dm-chart" data-draw="pp-nsag" data-source="ns ns_estado agotados venta_mensual ventas"></div></section>
     </div>
     <div class="pp-stack">
@@ -1965,7 +1965,7 @@
     const bo = new Map(); if (AG.ok()) AG.D().forEach((r) => { if (r.mes.slice(0, 4) === y0) bo.set(r.mes, (bo.get(r.mes) || 0) + r.v); });
     // Venta del mes: archivo de venta efectiva (igual a la tabla del gerente en los meses que tienen las dos); si falta, la tabla del gerente.
     const V = AG.V(); const vd = dash.data('ventas'); if (vd.status === 'ok') { const m = new Map(); vd.data.forEach((r) => m.set(String(r.mes), (m.get(String(r.mes)) || 0) + +r.venta)); m.forEach((v, k) => V.set(k, v)); }
-    const pts = ks.map((k) => ({ k, ns: NS.ns(R.filter((r) => r.k === k)), ag: bo.has(k) && V.get(k) ? bo.get(k) / V.get(k) : null }));
+    const pts = ks.map((k) => { const ns = NS.ns(R.filter((r) => r.k === k)); return { k, ns, ag: ns != null ? Math.max(0, 1 - ns) : null, bv: bo.has(k) && V.get(k) ? bo.get(k) / V.get(k) : null }; });
     const W = el.clientWidth, H = 320;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Nivel de servicio y agotados por mes');
     const y = d3.scaleLinear([0, 1.08], [H - 30, 14]);
@@ -1982,7 +1982,7 @@
     g.selectAll('text.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('text').attr('class', 'ag-var dm-halo' + (fitIn ? '' : ' dm-small')).attr('text-anchor', 'middle').attr('x', (p) => x(p.k) + x.bandwidth() / 2).attr('y', (p) => y(Math.min(1, p.ns + p.ag)) - 6).text((p) => DM.f1.format(p.ag * 100) + ' %');
     const tip = DM.tipFor(el);
     svg.append('g').selectAll('rect').data(pts).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
-      .on('mousemove', (ev, p) => DM.showTip(tip, el, x(p.k) + x.bandwidth() / 2, 40, [NS.kTxt(p.k) + (NS.parcial(p.k) ? ' (parcial)' : ''), 'Nivel de servicio: ' + NS.pct(p.ns), '% agotado sobre venta: ' + (p.ag != null ? DM.f1.format(p.ag * 100) + ' %' : bo.has(p.k) ? 'sin venta del mes' : 'falta el archivo de agotados del mes')]))
+      .on('mousemove', (ev, p) => DM.showTip(tip, el, x(p.k) + x.bandwidth() / 2, 40, [NS.kTxt(p.k) + (NS.parcial(p.k) ? ' (parcial)' : ''), 'Nivel de servicio: ' + NS.pct(p.ns), '% agotado (100 % − nivel de servicio): ' + (p.ag != null ? DM.f1.format(p.ag * 100) + ' %' : '—'), 'Backorder ÷ venta del mes: ' + (p.bv != null ? DM.f1.format(p.bv * 100) + ' %' : bo.has(p.k) ? 'sin venta del mes' : 'falta el archivo de agotados del mes')]))
       .on('mouseleave', () => { tip.hidden = true; });
   });
 
