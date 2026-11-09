@@ -370,8 +370,8 @@
           </div>
         </div></section>
       <section class="dm-card dm-card-o" id="pp-card-nsag"><h2 class="dm-h2">Nivel de servicio y agotados por mes</h2>
-        <p class="dm-note">Año elegido; el mes elegido va resaltado. Verde: nivel de servicio del mes (todos los canales). Encima, en naranja: % agotado sobre venta del mes. Línea roja punteada: meta 97 %. * = mes en curso (parcial).</p>
-        <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Nivel de servicio</span><span><span class="dm-sw dm-sw-o"></span>% agotado sobre venta</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 97 %</span></div>
+        <p class="dm-note">Año elegido; el mes elegido va resaltado. Verde: nivel de servicio del mes (todos los canales). Encima, en naranja: % agotado sobre venta del mes. Línea roja punteada: meta 95 %. * = mes en curso (parcial).</p>
+        <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Nivel de servicio</span><span><span class="dm-sw dm-sw-o"></span>% agotado sobre venta</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 95 %</span></div>
         <div class="dm-chart" data-draw="pp-nsag" data-source="ns ns_estado agotados venta_mensual ventas"></div></section>
     </div>
     <div class="pp-stack">
@@ -1881,7 +1881,8 @@
       const c = cs[cs.length - 1]; if (!c) return { corte: null, rows: [] };
       return { corte: c, rows: d.data.filter((r) => r.corte === c && r.cat === 'Nacional') };
     };
-    return { one, hoy, mill, MC, MESL, meses, sel, mTxt, inv };
+    const META_NS = 0.95; // meta de nivel de servicio del Tablero principal (pedida por el usuario el 9-nov)
+    return { one, hoy, mill, MC, MESL, meses, sel, mTxt, inv, META_NS };
   })();
 
   dash.draw('pp-sel-anio', (el) => {
@@ -1934,7 +1935,7 @@
   const ppNs = () => { if (!NS.ok()) return null; const s = PP.sel(); if (!s) return null; const u = s.k; const R = NS.D(); return { u, v: NS.ns(R.filter((r) => r.k === u)) }; };
   dash.draw('pp-ns-l', (el) => { const k = ppNs(); el.textContent = k ? 'Nivel de servicio ' + NS.kTxt(k.u) + (NS.parcial(k.u) ? ' (parcial)' : '') : 'Nivel de servicio'; });
   dash.draw('pp-ns', (el) => { const k = ppNs(); el.textContent = k ? NS.pct(k.v) : '—'; });
-  dash.draw('pp-ns-d', (el) => { const k = ppNs(); el.textContent = ''; el.className = 'dm-tile-d'; if (!k || k.v == null) return; const d = (k.v - NS.META) * 100; el.classList.add(d >= 0 ? 'dm-up' : 'dm-down'); el.textContent = (d >= 0 ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(d)) + ' pp frente a la meta de 97 %'; });
+  dash.draw('pp-ns-d', (el) => { const k = ppNs(); el.textContent = ''; el.className = 'dm-tile-d'; if (!k || k.v == null) return; const d = (k.v - PP.META_NS) * 100; el.classList.add(d >= 0 ? 'dm-up' : 'dm-down'); el.textContent = (d >= 0 ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(d)) + ' pp frente a la meta de ' + DM.f0.format(PP.META_NS * 100) + ' %'; });
   dash.draw('pp-dias-l', (el) => { const t = PP.inv(), s = PP.sel(); el.textContent = t && t.corte ? 'Días de inventario de la red (corte ' + DM.fDate(t.corte) + ')' : 'Días de inventario de la red' + (s ? ': sin cortes en ' + PP.mTxt(s.k) + ' (el histórico empieza el 27-oct-2026)' : ''); });
   dash.draw('pp-dias', (el) => { const t = PP.inv(); const k = t && t.corte && DM.kpis(t.rows); el.textContent = k && k.dias != null ? DM.f0.format(k.dias) + ' días' : '—'; });
   dash.draw('pp-dias-d', (el) => { const t = PP.inv(); const k = t && t.corte && DM.kpis(t.rows); el.textContent = k ? DM.f0.format(k.crit) + ' puntos críticos (' + DM.f0.format(k.crita) + ' tipo A)' : ''; el.className = 'dm-tile-d'; });
@@ -1959,7 +1960,7 @@
     if (s) { const ks0 = ks.find((k) => k === s.k); if (ks0) svg.insert('rect', ':first-child').attr('x', x(ks0) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 4).attr('height', H - 34).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #F1F7F2)').style('stroke', 'var(--dm-green)').attr('stroke-width', 1.5); }
     g.selectAll('rect.ns').data(pts.filter((p) => p.ns != null)).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', (p) => y(p.ns)).attr('height', (p) => y(0) - y(p.ns)).style('fill', 'var(--dm-green)');
     g.selectAll('rect.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', (p) => y(p.ns + p.ag)).attr('height', (p) => y(p.ns) - y(p.ns + p.ag)).style('fill', 'var(--dm-orange-2)');
-    svg.append('line').attr('x1', ml).attr('x2', W - 8).attr('y1', y(NS.META)).attr('y2', y(NS.META)).style('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5);
+    svg.append('line').attr('x1', ml).attr('x2', W - 8).attr('y1', y(PP.META_NS)).attr('y2', y(PP.META_NS)).style('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5);
     const fitIn = x.bandwidth() >= DM.textW(svg, '100,0', 'dm-val-in') + 2;
     g.selectAll('text.ns').data(pts.filter((p) => p.ns != null)).join('text').attr('class', 'dm-val-in' + (fitIn ? '' : ' dm-small')).attr('text-anchor', 'middle').attr('x', (p) => x(p.k) + x.bandwidth() / 2).attr('y', (p) => y(p.ns) + 34).text((p) => (fitIn ? DM.f1.format(p.ns * 100) : DM.f0.format(p.ns * 100)) + ' %');
     g.selectAll('text.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('text').attr('class', 'ag-var dm-halo' + (fitIn ? '' : ' dm-small')).attr('text-anchor', 'middle').attr('x', (p) => x(p.k) + x.bandwidth() / 2).attr('y', (p) => y(p.ns + p.ag) - 6).text((p) => DM.f1.format(p.ag * 100) + ' %');
