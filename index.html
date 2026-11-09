@@ -166,6 +166,7 @@ window.dash = (() => {
   .pp-kpis { display: grid; gap: var(--cds-gap-md); }
   @media (max-width: 640px) { .pp-venta-wrap { grid-template-columns: 1fr; } }
   .pp-select { min-width: 9rem; }
+  .pp-stack { display: grid; grid-template-columns: 1fr; gap: var(--cds-gap-xl); }
   .pp-big { display: flex; flex-direction: column; align-items: center; margin: var(--cds-gap-sm) 0; }
   .pp-big-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
   .pp-big-v { font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 2rem; color: var(--color-fg); }
@@ -447,7 +448,7 @@ window.dash = (() => {
         <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Nivel de servicio</span><span><span class="dm-sw dm-sw-o"></span>% agotado sobre venta</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 97 %</span></div>
         <div class="dm-chart" data-draw="pp-nsag" data-source="ns ns_estado agotados venta_mensual ventas"></div></section>
     </div>
-    <div class="dm-grid2-sep">
+    <div class="pp-stack">
       <section class="dm-card" id="pp-card-dias"><h2 class="dm-h2">Días de inventario por categoría y ciudad</h2>
         <p class="dm-note">Último corte del mes elegido, categoría Nacional. Cada barra son los días de inventario (físico + tránsito ÷ demanda diaria) de la categoría en esa ciudad; la barra oscura es el total de la categoría.</p>
         <div class="pp-big"><span class="pp-big-l" data-draw="pp-tot-l" data-source="puntos ventas">—</span><span class="pp-big-v" data-draw="pp-tot" data-source="puntos ventas">—</span></div>
@@ -2111,6 +2112,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 09/11/2026 03:56 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 09/11/2026 04:01 PM.</p>
 </body>
 </html>
