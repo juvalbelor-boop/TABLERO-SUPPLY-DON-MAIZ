@@ -9,7 +9,7 @@ que replica el del tablero (datos, cálculos, filtros y dibujos), así se ve igu
 import sys, os, re, json, shutil, datetime as dt
 page_path, data_dir, out = sys.argv[1:4]
 OPCIONALES = ['ventas']
-DATASETS = ['inventario', 'produccion', 'mps', 'mps_estado', 'agotados', 'agotados_estado', 'venta_mensual', 'ns', 'ns_estado', 'gasto', 'gasto_estado', 'presupuesto', 'presupuesto_estado']
+DATASETS = ['inventario', 'produccion', 'mps', 'mps_estado', 'agotados', 'agotados_estado', 'venta_mensual', 'ns', 'ns_estado', 'gasto', 'gasto_estado', 'presupuesto', 'presupuesto_estado', 'ventas', 'ventas_estado']
 PARAMS0 = {'bods': [], 'cat': 'Nacional', 'ciudades': [], 'corte': None, 'segs': []}
 page = open(page_path, encoding='utf-8').read()
 page = page.replace('<meta name="dash-one-writer">', '')

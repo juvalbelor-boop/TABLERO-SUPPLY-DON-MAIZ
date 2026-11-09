@@ -27,7 +27,7 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); fon
 <script>
 // Motor mínimo que replica el del tablero en Claude: datos (data/*.json), cálculos, filtros y dibujos marcados con data-draw.
 window.dash = (() => {
-  const DS = ["inventario", "produccion", "mps", "mps_estado", "agotados", "agotados_estado", "venta_mensual", "ns", "ns_estado", "gasto", "gasto_estado", "presupuesto", "presupuesto_estado"], data = {}, calcs = {}, draws = {}, onDatas = [], cache = {};
+  const DS = ["inventario", "produccion", "mps", "mps_estado", "agotados", "agotados_estado", "venta_mensual", "ns", "ns_estado", "gasto", "gasto_estado", "presupuesto", "presupuesto_estado", "ventas", "ventas_estado"], data = {}, calcs = {}, draws = {}, onDatas = [], cache = {};
   let params = {"bods": [], "cat": "Nacional", "ciudades": [], "corte": null, "segs": []}, loaded = false, queued = false;
   const ok = (rows) => ({ status: 'ok', data: rows, columns: rows && rows[0] ? Object.keys(rows[0]) : [], meta: [], refreshing: false });
   const api = {
@@ -426,9 +426,9 @@ window.dash = (() => {
   <section class="dm-main" id="supply" role="tabpanel" hidden>
     <div class="dm-grid2-sep">
       <section class="dm-card" id="pp-card-venta"><h2 class="dm-h2">Presupuesto y venta efectiva del mes</h2>
-        <p class="dm-note">Presupuesto mensual de ventas (archivo de cuota de ventas, <b data-draw="pp-ppto-mes" data-source="presupuesto_estado">—</b>) y la cuota acumulada hasta hoy. El % de cumplimiento es venta efectiva ÷ presupuesto.</p>
+        <p class="dm-note">Presupuesto de ventas del mes (<b data-draw="pp-ppto-mes" data-source="presupuesto_estado">—</b>, archivo de cuota) y venta efectiva acumulada del mes (TCV: <b data-draw="pp-venta-corte" data-source="ventas_estado">—</b>). Ambos con exportación. Cumplimiento = venta efectiva ÷ presupuesto del mes.</p>
         <div class="pp-venta-wrap">
-          <div class="dm-chart pp-venta-chart" data-draw="pp-venta" data-source="presupuesto presupuesto_estado"></div>
+          <div class="dm-chart pp-venta-chart" data-draw="pp-venta" data-source="ventas presupuesto_estado"></div>
           <div class="pp-kpis">
             <div class="dm-tile"><span class="dm-tile-l" data-draw="pp-ns-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="pp-ns" data-source="ns ns_estado">—</span><span class="dm-tile-d" data-draw="pp-ns-d" data-source="ns ns_estado"></span></div>
             <div class="dm-tile"><span class="dm-tile-l" data-draw="pp-dias-l" data-source="puntos">—</span><span class="dm-tile-v" data-draw="pp-dias" data-source="puntos">—</span><span class="dm-tile-d" data-draw="pp-dias-d" data-source="puntos"></span></div>
@@ -1944,43 +1944,31 @@ window.dash = (() => {
 
   dash.draw('pp-ppto-mes', (el) => { const e = PP.one('presupuesto_estado'); el.textContent = e ? PP.MC[+e.mes.slice(4) - 1] + ' ' + e.mes.slice(0, 4) : '—'; });
 
-  // Gráfico 1: presupuesto del mes, cuota a la fecha y venta efectiva (pendiente hasta tener el archivo de ventas).
+  // Gráfico 1: presupuesto del mes vs venta efectiva acumulada del mes (con exportación, igual que el presupuesto) y % de cumplimiento.
   dash.draw('pp-venta', (el) => {
-    const d = dash.data('presupuesto'), e = PP.one('presupuesto_estado');
-    if (d.status !== 'ok' || !e) { DM.fail(el, d.status); return; }
+    const e = PP.one('presupuesto_estado'), vd = dash.data('ventas');
+    if (!e || vd.status !== 'ok') { DM.fail(el, vd.status === 'ok' ? dash.data('presupuesto_estado').status : vd.status); return; }
     el.replaceChildren();
-    const h = PP.hoy(), mesActual = h.slice(0, 7).replace('-', '') === e.mes;
-    const cuotaF = d3.sum(d.data.filter((r) => !mesActual || r.fecha <= h), (r) => +r.cuota);
-    const ventaD = dash.data('ventas'), venta = ventaD.status === 'ok' && ventaD.data.length ? d3.sum(ventaD.data, (r) => +r.venta) : null;
-    const bars = [
-      { k: 'Presupuesto', v: +e.presupuesto_mes, fill: 'var(--dm-green-dk)' },
-      { k: mesActual ? 'Cuota a hoy' : 'Cuota del mes', v: cuotaF, fill: 'var(--cds-chart-muted)' },
-      { k: 'Venta efectiva', v: venta, fill: 'var(--dm-green)' },
-    ];
+    const ppto = +e.presupuesto_mes, venta = d3.sum(vd.data.filter((r) => String(r.mes) === e.mes), (r) => +r.venta);
+    const bars = [{ k: 'Presupuesto ' + PP.MC[+e.mes.slice(4) - 1], v: ppto, fill: 'var(--dm-green-dk)' }, { k: 'Venta efectiva', v: venta, fill: 'var(--dm-green)' }];
     const W = el.clientWidth, H = 300;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Presupuesto y venta efectiva del mes');
-    const y = d3.scaleLinear([0, +e.presupuesto_mes * 1.18], [H - 34, 10]);
-    const x = d3.scaleBand(bars.map((b) => b.k), [8, W - 8]).padding(0.28);
+    const y = d3.scaleLinear([0, Math.max(ppto, venta) * 1.2], [H - 34, 10]);
+    const x = d3.scaleBand(bars.map((b) => b.k), [8, W - 8]).padding(0.32);
     svg.append('g').attr('transform', `translate(0,${H - 34})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8)).call(DM.cleanAxis);
     bars.forEach((b) => {
       const cx = x(b.k) + x.bandwidth() / 2;
-      if (b.v == null) {
-        svg.append('rect').attr('x', x(b.k)).attr('width', x.bandwidth()).attr('y', y(cuotaF)).attr('height', y(0) - y(cuotaF)).attr('rx', 4).style('fill', 'none').style('stroke', 'var(--dm-green)').attr('stroke-dasharray', '6 4').attr('stroke-width', 2);
-        ['Pendiente', 'archivo', 'de ventas'].forEach((t, i) => svg.append('text').attr('class', 'dm-reft').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(cuotaF / 2) - 10 + i * 15).text(t));
-        return;
-      }
       svg.append('rect').attr('x', x(b.k)).attr('width', x.bandwidth()).attr('y', y(b.v)).attr('height', y(0) - y(b.v)).attr('rx', 4).style('fill', b.fill);
       svg.append('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(b.v) - 8).text(PP.mill(b.v));
     });
-    const cumpl = venta != null ? venta / +e.presupuesto_mes : null, cumplF = venta != null && cuotaF > 0 ? venta / cuotaF : null;
-    if (cumpl != null) {
-      const cx = x('Venta efectiva') + x.bandwidth() / 2;
-      svg.append('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(venta) - 26).text(DM.f1.format(cumpl * 100) + ' % del mes · ' + DM.f1.format(cumplF * 100) + ' % de la cuota a hoy');
-    } else {
-      const cx = x(bars[1].k) + x.bandwidth() / 2;
-      svg.append('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(cuotaF) - 26).text(DM.f1.format(cuotaF / +e.presupuesto_mes * 100) + ' % del mes');
-    }
+    const cx = x('Venta efectiva') + x.bandwidth() / 2;
+    svg.append('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(venta) - 26).text('Cumplimiento ' + DM.f1.format(venta / ppto * 100) + ' %');
+    const tip = DM.tipFor(el);
+    svg.append('g').selectAll('rect.hit').data(bars).join('rect').attr('x', (b) => x(b.k)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 34).attr('fill', 'transparent')
+      .on('mousemove', (ev, b) => DM.showTip(tip, el, x(b.k) + x.bandwidth() / 2, y(b.v), [b.k, GL.pesos(b.v), 'Cumplimiento: ' + DM.f1.format(venta / ppto * 100) + ' %']))
+      .on('mouseleave', () => { tip.hidden = true; });
   });
+  dash.draw('pp-venta-corte', (el) => { const e = PP.one('ventas_estado'); el.textContent = e ? e.archivo + ', guardado el ' + e.guardado.slice(8, 10) + '/' + e.guardado.slice(5, 7) : '—'; });
 
   // Indicadores: nivel de servicio del último mes cerrado y días de inventario de la red.
   const ppNs = () => { if (!NS.ok()) return null; const u = NS.ultCerrado(); if (!u) return null; const R = NS.D(); const ka = String(+u.slice(0, 4) - 1) + u.slice(4); return { u, v: NS.ns(R.filter((r) => r.k === u)), a: NS.ns(R.filter((r) => r.k === ka)), ka }; };
@@ -2086,6 +2074,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 09/11/2026 03:17 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 09/11/2026 03:48 PM.</p>
 </body>
 </html>
