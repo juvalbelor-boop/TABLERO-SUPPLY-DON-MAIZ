@@ -1922,7 +1922,7 @@
     el.replaceChildren();
     // Presupuesto: hoy solo está cargado el del mes del archivo de cuota.
     const ppto = e && e.mes === s.k ? +e.presupuesto_mes : null, venta = d3.sum(vd.data.filter((r) => String(r.mes) === s.k), (r) => +r.venta);
-    const bars = [{ k: 'Presupuesto ' + PP.MC[s.mes - 1], v: ppto, fill: 'var(--dm-green-dk)' }, { k: 'Venta efectiva ' + PP.MC[s.mes - 1], v: venta, fill: 'var(--dm-green)' }];
+    const bars = [{ k: 'Presupuesto ' + PP.MC[s.mes - 1], v: ppto, fill: 'var(--dm-orange-2)' }, { k: 'Venta efectiva ' + PP.MC[s.mes - 1], v: venta, fill: 'var(--dm-green)' }];
     const W = el.clientWidth, H = 300;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Presupuesto y venta efectiva del mes');
     const y = d3.scaleLinear([0, Math.max(ppto || 0, venta) * 1.2], [H - 34, 10]);
@@ -1938,7 +1938,8 @@
       svg.append('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(b.v) - 8).text(PP.mill(b.v));
     });
     const kv = bars[1].k, cx = x(kv) + x.bandwidth() / 2;
-    if (ppto) svg.append('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(venta) - 26).text('Cumplimiento ' + DM.f1.format(venta / ppto * 100) + ' %');
+    // Cumplimiento en dos líneas pequeñas, para que no se monte sobre la barra del presupuesto.
+    if (ppto) ['Cumplimiento', DM.f1.format(venta / ppto * 100) + ' %'].forEach((t, i) => svg.append('text').attr('class', 'ag-var').style('font-size', '11px').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(venta) - 40 + i * 13).text(t));
     const tip = DM.tipFor(el);
     svg.append('g').selectAll('rect.hit').data(bars).join('rect').attr('x', (b) => x(b.k)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 34).attr('fill', 'transparent')
       .on('mousemove', (ev, b) => DM.showTip(tip, el, x(b.k) + x.bandwidth() / 2, b.v == null ? H / 2 : y(b.v), [b.k, b.v == null ? 'Sin presupuesto cargado' : GL.pesos(b.v), ppto ? 'Cumplimiento: ' + DM.f1.format(venta / ppto * 100) + ' %' : 'Cumplimiento: falta el presupuesto del mes']))
@@ -1974,11 +1975,11 @@
     const g = svg.append('g');
     if (s) { const ks0 = ks.find((k) => k === s.k); if (ks0) svg.insert('rect', ':first-child').attr('x', x(ks0) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 4).attr('height', H - 34).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #F1F7F2)').style('stroke', 'var(--dm-green)').attr('stroke-width', 1.5); }
     g.selectAll('rect.ns').data(pts.filter((p) => p.ns != null)).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', (p) => y(p.ns)).attr('height', (p) => y(0) - y(p.ns)).style('fill', 'var(--dm-green)');
-    g.selectAll('rect.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', (p) => y(p.ns + p.ag)).attr('height', (p) => y(p.ns) - y(p.ns + p.ag)).style('fill', 'var(--dm-orange-2)');
+    g.selectAll('rect.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', (p) => y(Math.min(1, p.ns + p.ag))).attr('height', (p) => y(p.ns) - y(Math.min(1, p.ns + p.ag))).style('fill', 'var(--dm-orange-2)');
     svg.append('line').attr('x1', ml).attr('x2', W - 8).attr('y1', y(PP.META_NS)).attr('y2', y(PP.META_NS)).style('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5);
     const fitIn = x.bandwidth() >= DM.textW(svg, '100,0', 'dm-val-in') + 2;
     g.selectAll('text.ns').data(pts.filter((p) => p.ns != null)).join('text').attr('class', 'dm-val-in' + (fitIn ? '' : ' dm-small')).attr('text-anchor', 'middle').attr('x', (p) => x(p.k) + x.bandwidth() / 2).attr('y', (p) => y(p.ns) + 34).text((p) => (fitIn ? DM.f1.format(p.ns * 100) : DM.f0.format(p.ns * 100)) + ' %');
-    g.selectAll('text.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('text').attr('class', 'ag-var dm-halo' + (fitIn ? '' : ' dm-small')).attr('text-anchor', 'middle').attr('x', (p) => x(p.k) + x.bandwidth() / 2).attr('y', (p) => y(p.ns + p.ag) - 6).text((p) => DM.f1.format(p.ag * 100) + ' %');
+    g.selectAll('text.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('text').attr('class', 'ag-var dm-halo' + (fitIn ? '' : ' dm-small')).attr('text-anchor', 'middle').attr('x', (p) => x(p.k) + x.bandwidth() / 2).attr('y', (p) => y(Math.min(1, p.ns + p.ag)) - 6).text((p) => DM.f1.format(p.ag * 100) + ' %');
     const tip = DM.tipFor(el);
     svg.append('g').selectAll('rect').data(pts).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
       .on('mousemove', (ev, p) => DM.showTip(tip, el, x(p.k) + x.bandwidth() / 2, 40, [NS.kTxt(p.k) + (NS.parcial(p.k) ? ' (parcial)' : ''), 'Nivel de servicio: ' + NS.pct(p.ns), '% agotado sobre venta: ' + (p.ag != null ? DM.f1.format(p.ag * 100) + ' %' : bo.has(p.k) ? 'sin venta del mes' : 'falta el archivo de agotados del mes')]))
