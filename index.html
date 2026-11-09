@@ -166,6 +166,12 @@ window.dash = (() => {
   .pp-kpis { display: grid; gap: var(--cds-gap-md); }
   @media (max-width: 640px) { .pp-venta-wrap { grid-template-columns: 1fr; } }
   .pp-select { min-width: 9rem; }
+  .g-top { display: grid; gap: var(--cds-gap-md); grid-template-columns: minmax(0, 2.2fr) minmax(10rem, 1fr) minmax(10rem, 1fr); align-items: stretch; }
+  .g-top > .dm-tile { justify-content: center; }
+  .g-acum-card { padding-bottom: var(--cds-gap-sm); }
+  .g-acum-card .dm-chart { min-height: 0; }
+  .g-acum-rango { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-weight: 400; }
+  @media (max-width: 900px) { .g-top { grid-template-columns: 1fr 1fr; } .g-acum-card { grid-column: 1 / -1; } }
   .pp-row1 { display: grid; gap: var(--cds-gap-xl); grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
   @media (max-width: 1100px) { .pp-row1 { grid-template-columns: 1fr; } }
   .pp-stack { display: grid; grid-template-columns: 1fr; gap: var(--cds-gap-xl); }
@@ -664,11 +670,9 @@ window.dash = (() => {
       <p class="dm-note">Gasto logístico 2026 del archivo del gerente <b data-draw="g-archivo" data-source="gasto_estado">—</b>. Real cargado hasta <b data-draw="g-hasta" data-source="gasto_estado">—</b>. Las comparaciones contra presupuesto y forecast usan solo los meses que ya tienen real.</p>
     </div>
 
-    <div class="dm-tiles" id="gasto-indicadores">
-      <div class="dm-tile"><span class="dm-tile-l" data-draw="gk-ult-l" data-source="gasto">—</span><span class="dm-tile-v" data-draw="gk-ult" data-source="gasto">—</span><span class="dm-tile-d" data-draw="gk-ult-d" data-source="gasto"></span></div>
-      <div class="dm-tile"><span class="dm-tile-l" data-draw="gk-dif-l" data-source="gasto">—</span><span class="dm-tile-v" data-draw="gk-dif" data-source="gasto">—</span><span class="dm-tile-d" data-draw="gk-dif-d" data-source="gasto"></span></div>
-      <div class="dm-tile"><span class="dm-tile-l" data-draw="gk-acum-l" data-source="gasto">—</span><span class="dm-tile-v" data-draw="gk-acum" data-source="gasto">—</span></div>
-      <div class="dm-tile"><span class="dm-tile-l">Presupuesto de los mismos meses</span><span class="dm-tile-v" data-draw="gk-ppto" data-source="gasto">—</span></div>
+    <div class="g-top" id="gasto-indicadores">
+      <section class="dm-card g-acum-card"><h2 class="dm-h2">Real vs presupuesto acumulado <span class="g-acum-rango" data-draw="gk-acum-l" data-source="gasto">—</span></h2>
+        <div class="dm-chart" data-draw="g-acum" data-source="gasto"></div></section>
       <div class="dm-tile"><span class="dm-tile-l">Promedio mensual real</span><span class="dm-tile-v" data-draw="gk-prom" data-source="gasto">—</span></div>
       <div class="dm-tile"><span class="dm-tile-l" data-draw="gk-xton-l" data-source="gasto">—</span><span class="dm-tile-v" data-draw="gk-xton" data-source="gasto">—</span></div>
     </div>
@@ -1863,6 +1867,25 @@ window.dash = (() => {
   dash.draw('gk-acum', (el) => { const c = GL.conReal(); el.textContent = c.length ? GL.pesos(d3.sum(c, (r) => r.real)) : '—'; });
   dash.draw('gk-ppto', (el) => { const c = GL.conReal(); el.textContent = c.length ? GL.pesos(d3.sum(c, (r) => r.ppto)) : '—'; });
   dash.draw('gk-dif-l', (el) => { el.textContent = GL.ok() ? 'Real vs presupuesto acumulado (' + GL.rango() + ')' : 'Real vs presupuesto acumulado'; });
+  dash.draw('gk-acum-l', (el) => { el.textContent = GL.ok() ? '(' + GL.rango() + ', meses con real)' : ''; });
+  // Barras horizontales compactas: presupuesto y real acumulados de los meses con real, con la diferencia.
+  dash.draw('g-acum', (el) => {
+    const v = glAcum(); if (!v) { DM.fail(el, dash.data('gasto').status); return; }
+    el.replaceChildren();
+    const d = v.real - v.ppto, rows = [{ k: 'Presupuesto', val: v.ppto, fill: 'var(--cds-chart-muted)' }, { k: 'Real', val: v.real, fill: 'var(--dm-green)' }];
+    const W = el.clientWidth, H = 112;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Real vs presupuesto acumulado');
+    const ml = DM.textW(svg, 'Presupuesto', 'dm-axis-t') + 12, vw = DM.textW(svg, '$0.000.000.000', 'dm-val') + 10;
+    const x = d3.scaleLinear([0, Math.max(v.real, v.ppto)], [ml, W - vw]);
+    const y = d3.scaleBand(rows.map((r) => r.k), [4, 70]).padding(0.22);
+    rows.forEach((r) => {
+      svg.append('text').attr('class', 'dm-axis-t').attr('x', ml - 8).attr('y', y(r.k) + y.bandwidth() / 2 + 4).attr('text-anchor', 'end').text(r.k);
+      svg.append('rect').attr('x', ml).attr('y', y(r.k)).attr('height', y.bandwidth()).attr('width', x(r.val) - ml).attr('rx', 3).style('fill', r.fill);
+      svg.append('text').attr('class', 'dm-val').attr('x', x(r.val) + 6).attr('y', y(r.k) + y.bandwidth() / 2 + 4).text(GL.pesos(r.val));
+    });
+    svg.append('text').attr('x', ml).attr('y', 96).style('font-weight', 700).style('font-size', 'var(--cds-font-size-caption)').style('fill', d > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-green)')
+      .text((d > 0 ? '▲ ' : '▼ ') + (d >= 0 ? '+' : '−') + GL.pesos(Math.abs(d)) + ' (' + DM.f1.format(Math.abs(d / v.ppto) * 100) + ' % ' + (d > 0 ? 'por encima' : 'por debajo') + ' del presupuesto)');
+  });
   dash.draw('gk-dif', (el) => { const v = glAcum(); if (!v) { el.textContent = '—'; return; } glVal(v, el); });
   dash.draw('gk-dif-d', (el) => { const v = glAcum(); if (!v) { el.textContent = ''; return; } glDel(v, el); });
   dash.draw('gk-prom', (el) => { const c = GL.conReal(); el.textContent = c.length ? GL.pesos(d3.mean(c, (r) => r.real)) : '—'; });
@@ -2125,6 +2148,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 09/11/2026 04:37 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 09/11/2026 04:58 PM.</p>
 </body>
 </html>
