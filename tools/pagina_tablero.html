@@ -100,6 +100,7 @@
   .pp-stack { display: grid; grid-template-columns: 1fr; gap: var(--cds-gap-xl); }
   .pp-badge-t { fill: #FFFFFF; font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 13px; }
   .pp-big { display: flex; flex-direction: column; align-items: center; margin: var(--cds-gap-sm) 0; }
+  .pp-bar-v { font-weight: 700; pointer-events: none; }
   .pp-big-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
   .pp-big-v { font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 2rem; color: var(--color-fg); }
   .dm-tile-d { font-size: var(--cds-font-size-caption); font-weight: 600; color: var(--color-fg-muted); }
@@ -211,18 +212,16 @@
   <nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Inventarios">
     <button class="dm-tab" type="button" role="tab" data-tab="general" aria-selected="true">Resumen general</button>
     <button class="dm-tab" type="button" role="tab" data-tab="resumen" aria-selected="false">Resumen</button>
-    <button class="dm-tab" type="button" role="tab" data-tab="venta" aria-selected="false">Venta y presupuesto</button>
   </nav>
 
   <!-- Pestaña 1 -->
   <section class="dm-page" id="general" role="tabpanel">
     <div class="dm-grid2">
       <section class="dm-card" id="forecast-ventas">
-        <h2 class="dm-h2">Forecast, ventas y días de inventario por ciudad</h2>
+        <h2 class="dm-h2">Forecast y días de inventario por ciudad</h2>
         <div class="dm-legend">
           <span><span class="dm-sw dm-sw-g"></span>Forecast del mes (und)</span>
           <span><span class="dm-sw dm-sw-line dm-sw-r"></span>Días de inventario</span>
-          <span class="dm-pending">Venta facturada y % cumplimiento: pendiente del archivo de Siesa</span>
         </div>
         <div class="dm-chart" data-draw="c1" data-source="puntos"></div>
       </section>
@@ -348,12 +347,7 @@
     </div>
   </section>
 
-  <section class="dm-page" id="venta" role="tabpanel" hidden>
-    <div class="dm-wip"><span class="dm-wip-badge">En construcción</span><h2 class="dm-h2">Venta y presupuesto</h2>
-      <p class="dm-note">Venta facturada frente al presupuesto del mes, prorrateado por días hábiles. Se construye con los bocetos del gerente.</p></div>
-  </section>
 
-  <p class="dm-note">Días = (inventario + tránsito) ÷ demanda diaria (forecast del mes ÷ <span data-draw="k-mes">—</span>). Sopó usa la demanda de toda la red porque abastece a las demás bodegas. Crítico: menos de <span data-draw="k-lcrit">—</span> días · Sobrestock: más de <span data-draw="k-lsob">—</span> días. El inventario de referencias sin forecast no suma días.</p>
   </section>
 
   <!-- Pestañas principales en construcción -->
@@ -367,7 +361,6 @@
     </div>
     <div class="pp-row1">
       <section class="dm-card" id="pp-card-venta"><h2 class="dm-h2">Presupuesto y venta efectiva del mes</h2>
-        <p class="dm-note">Presupuesto de ventas del mes (archivo de cuota) y venta efectiva del mes elegido (TCV: <b data-draw="pp-venta-corte" data-source="ventas_estado">—</b>). Ambos con exportación. Cumplimiento = venta efectiva ÷ presupuesto del mes.</p>
         <div class="pp-venta-wrap">
           <div class="dm-chart pp-venta-chart" data-draw="pp-venta" data-source="ventas presupuesto_estado"></div>
           <div class="pp-kpis">
@@ -376,14 +369,12 @@
           </div>
         </div></section>
       <section class="dm-card dm-card-o" id="pp-card-nsag"><h2 class="dm-h2">Nivel de servicio y agotados por mes</h2>
-        <p class="dm-note">Año elegido; el mes elegido va resaltado. Verde: nivel de servicio del mes (todos los canales). Encima, en naranja: % agotado sobre venta del mes. Línea roja punteada: meta 95 %. * = mes en curso (parcial).</p>
         <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Nivel de servicio</span><span><span class="dm-sw dm-sw-o"></span>% agotado sobre venta</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 95 %</span></div>
         <div class="dm-chart" data-draw="pp-nsag" data-source="ns ns_estado agotados venta_mensual ventas"></div></section>
     </div>
     <div class="pp-stack">
       <section class="dm-card" id="pp-card-dias"><h2 class="dm-h2">Días de inventario por categoría y ciudad</h2>
-        <p class="dm-note">Último corte del mes elegido, categoría Nacional. Cada barra son los días de inventario (físico + tránsito ÷ demanda diaria) de la categoría en esa ciudad; la etiqueta naranja es el total de la categoría.</p>
-        <div class="pp-big"><span class="pp-big-l" data-draw="pp-tot-l" data-source="puntos ventas">—</span><span class="pp-big-v" data-draw="pp-tot" data-source="puntos ventas">—</span></div>
+        <div class="pp-big"><span class="pp-big-v" data-draw="pp-tot" data-source="puntos ventas">—</span></div>
         <div class="dm-chart" data-draw="pp-dias-fam" data-source="puntos ventas"></div></section>
       <section class="dm-card dm-card-o" id="pp-card-gasto"><h2 class="dm-h2">Gasto logístico: presupuesto, forecast y real</h2>
         <div class="dm-legend"><span><span class="dm-sw" style="background: var(--cds-chart-muted)"></span>Presupuesto</span><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real</span><span><span class="dm-sw dm-sw-line" style="background: var(--dm-green-dk)"></span>Gasto por tonelada efectiva (franja de arriba)</span></div>
@@ -717,7 +708,7 @@
 
 <script>
   // Pestañas principales y subpestañas de Inventarios; filtros y frase del encabezado solo en Inventarios.
-  const SUBS = ['general', 'resumen', 'venta'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'gasto'];
+  const SUBS = ['general', 'resumen'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'gasto'];
   const h0 = location.hash.slice(1);
   window.DMmain = SUBS.includes(h0) ? 'inventarios' : MAINS.includes(h0) ? h0 : 'supply';
   window.DMtab = SUBS.includes(h0) ? h0 : 'general';
@@ -1936,7 +1927,7 @@
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Presupuesto y venta efectiva del mes');
     const y = d3.scaleLinear([0, Math.max(ppto || 0, venta) * 1.2], [H - 34, 10]);
     const x = d3.scaleBand(bars.map((b) => b.k), [8, W - 8]).padding(0.32);
-    svg.append('g').attr('transform', `translate(0,${H - 34})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8)).call(DM.cleanAxis);
+    svg.append('g').attr('transform', `translate(0,${H - 34})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickFormat((k) => k.split(' ').slice(0, -1).join(' '))).call(DM.cleanAxis);
     bars.forEach((b) => {
       const cx = x(b.k) + x.bandwidth() / 2;
       if (b.v == null) {
@@ -2055,6 +2046,10 @@
     R.forEach((r) => {
       const g = svg.append('g').attr('transform', `translate(${x0(r.mes)},0)`);
       SER.forEach(([f, col]) => { if (r[f]) g.append('rect').attr('x', x1(f)).attr('width', x1.bandwidth()).attr('y', y(r[f])).attr('height', y(0) - y(r[f])).attr('rx', 1.5).style('fill', col); });
+      // Valor de cada barra en vertical, dentro de la barra (millones de $).
+      if (x1.bandwidth() >= 11) SER.forEach(([f]) => { if (r[f]) g.append('text').attr('class', 'pp-bar-v').attr('text-anchor', 'end').attr('dominant-baseline', 'central')
+        .attr('transform', `translate(${x1(f) + x1.bandwidth() / 2},${y(r[f]) + 6}) rotate(-90)`).style('fill', f === 'real' ? '#FFFFFF' : 'var(--color-fg)')
+        .style('font-size', x1.bandwidth() < 18 ? '9px' : '11px').text('$' + DM.f1.format(r[f] / 1e6) + ' mill.'); });
     });
     // Línea de gasto por tonelada efectiva en la franja superior.
     const barTop = y(vmax), y2 = d3.scaleLinear(d3.extent(cx, (r) => r.xe).map((v, i) => (i ? v * 1.02 : v * 0.97)), [barTop - 16, Math.max(40, barTop - 76)]);
