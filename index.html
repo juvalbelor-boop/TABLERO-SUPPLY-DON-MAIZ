@@ -646,18 +646,17 @@ window.dash = (() => {
       <div class="dm-tile dm-tile-bad"><span class="dm-tile-l" data-draw="nk-nof-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="nk-nof" data-source="ns ns_estado">—</span></div>
     </div>
 
+    <section class="dm-card dm-card-o" id="ns-anio"><h2 class="dm-h2">Comparativo por año</h2>
+        <p class="dm-note">Nivel de servicio de cada mes, una línea por año (total de los canales elegidos). Los valores escritos son los del año más reciente; * = mes en curso (parcial).</p>
+        <div class="dm-chart" data-draw="ns-anio" data-source="ns ns_estado"></div></section>
+
     <section class="dm-card" id="ns-canal"><h2 class="dm-h2">Nivel de servicio por canal y año</h2>
       <p class="dm-note">Cada barra es el nivel de servicio de un canal en un año: unidades facturadas ÷ unidades pedidas de los meses elegidos (sin filtro de mes, todos los meses con datos). "Total" suma todos los canales elegidos. El número encima de cada barra es el % del año. Pasa el mouse para ver las unidades.</p>
       <div class="dm-chart" data-draw="ns-canal" data-source="ns ns_estado"></div></section>
 
-    <div class="dm-grid2-sep">
-      <section class="dm-card dm-card-o" id="ns-anio"><h2 class="dm-h2">Comparativo por año</h2>
-        <p class="dm-note">Nivel de servicio de cada mes, una línea por año (total de los canales elegidos). Los valores escritos son los del año más reciente; * = mes en curso (parcial).</p>
-        <div class="dm-chart" data-draw="ns-anio" data-source="ns ns_estado"></div></section>
-      <section class="dm-card" id="ns-nofact"><h2 class="dm-h2">Unidades pedidas no facturadas por canal</h2>
+    <section class="dm-card" id="ns-nofact"><h2 class="dm-h2">Unidades pedidas no facturadas por canal</h2>
         <p class="dm-note">Pedido − facturado en los años elegidos (sin filtro: todos). En naranja, el nivel de servicio del canal en ese periodo.</p>
         <div class="dm-chart" data-draw="ns-nofact" data-source="ns"></div></section>
-    </div>
   </section>
 
   <section class="dm-main" id="gasto" role="tabpanel" hidden>
@@ -674,14 +673,14 @@ window.dash = (() => {
       <div class="dm-tile"><span class="dm-tile-l" data-draw="gk-xton-l" data-source="gasto">—</span><span class="dm-tile-v" data-draw="gk-xton" data-source="gasto">—</span></div>
     </div>
 
+    <section class="dm-card dm-card-o" id="gasto-total"><h2 class="dm-h2">Presupuesto, forecast y real por mes</h2>
+      <div class="dm-legend"><span><span class="dm-sw" style="background: var(--cds-chart-muted)"></span>Presupuesto</span><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real</span><span style="font-weight: 700">Encima del real: diferencia real − presupuesto en millones (rojo: por encima · verde: por debajo)</span></div>
+      <div class="dm-chart" data-draw="g-tot" data-source="gasto"></div></section>
+
     <section class="dm-card" id="gasto-ton"><h2 class="dm-h2">Gasto total y gasto por tonelada efectiva</h2>
       <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Gasto total del mes</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--dm-green-dk) 0 5px, transparent 5px 8px)"></span>Promedio mensual del gasto total</span><span><span class="dm-sw dm-sw-line dm-sw-o"></span>Gasto por tonelada efectiva (franja de arriba)</span></div>
       <p class="dm-note"><span data-draw="g-prom" data-source="gasto">—</span>. <span data-draw="g-ton-nota" data-source="gasto">—</span></p>
       <div class="dm-chart" data-draw="g-ton" data-source="gasto"></div></section>
-
-    <section class="dm-card dm-card-o" id="gasto-total"><h2 class="dm-h2">Presupuesto, forecast y real por mes</h2>
-      <div class="dm-legend"><span><span class="dm-sw dm-sw-line" style="background: var(--cds-chart-muted)"></span>Presupuesto</span><span><span class="dm-sw dm-sw-line dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-line dm-sw-g"></span>Real</span><span style="color: var(--dm-orange); font-weight: 800">Diferencia real vs presupuesto (rojo: por encima · verde: por debajo)</span></div>
-      <div class="dm-chart" data-draw="g-tot" data-source="gasto"></div></section>
   </section>
 </div>
 
@@ -1907,34 +1906,36 @@ window.dash = (() => {
   });
   dash.draw('g-prom', (el) => { const c = GL.conReal(), cx = GL.D().filter((r) => r.xe); el.textContent = c.length ? 'Promedio gasto total ' + GL.mill(d3.mean(c, (r) => r.real)) + ' (' + c.length + ' meses) · promedio por ton efectiva ' + GL.pesos(d3.mean(cx, (r) => r.xe)) + ' (' + cx.length + ' meses)' : '—'; });
 
-  // Gráfico 2: presupuesto, forecast y real por mes (hoja Total).
+  // Gráfico 2: presupuesto, forecast y real por mes (hoja TOTALES), tres barras por mes; encima del real, la diferencia real − presupuesto.
   dash.draw('g-tot', (el) => {
     if (!GL.ok()) { DM.fail(el, dash.data('gasto').status); return; }
     el.replaceChildren();
     const R = GL.D(); if (!R.length) return;
-    const W = el.clientWidth, H = 320;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Presupuesto, forecast y real del gasto logístico');
-    const vals = R.flatMap((r) => [r.ppto, r.fcst, r.real]).filter((v) => v != null && v > 0);
-    const y = d3.scaleLinear([d3.min(vals) * 0.9, d3.max(vals) * 1.08], [H - 30, 34]).nice();
-    const ml = Math.max(...y.ticks(5).map((v) => DM.textW(svg, GL.mill(v), 'dm-axis-t'))) + 10;
-    const x = d3.scalePoint(R.map((r) => r.mes), [ml + 14, W - 20]);
-    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - 8)).tickFormat((v) => '$' + DM.f0.format(v / 1e6) + ' mill.')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    svg.append('g').attr('transform', `translate(0,${H - 30})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickFormat(GL.mCorto)).call(DM.cleanAxis);
-    const ser = [['ppto', 'var(--cds-chart-muted)', 2], ['fcst', 'var(--dm-orange-2)', 2], ['real', 'var(--dm-green)', 3.2]];
-    ser.forEach(([f, color, w]) => {
-      const pts = R.filter((r) => r[f] != null && r[f] > 0);
-      svg.append('path').datum(pts).attr('fill', 'none').style('stroke', color).attr('stroke-width', w).attr('d', d3.line().x((r) => x(r.mes)).y((r) => y(r[f])));
-      svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (r) => x(r.mes)).attr('cy', (r) => y(r[f])).attr('r', f === 'real' ? 3.8 : 2.6).style('fill', color);
+    const W = el.clientWidth, H = 380, bm = 54;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Presupuesto, forecast y real del gasto logístico por mes');
+    const vmax = d3.max(R.flatMap((r) => [r.ppto, r.fcst, r.real]).filter((v) => v)) || 1;
+    const y = d3.scaleLinear([0, vmax * 1.12], [H - bm, 16]).nice();
+    const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, '$' + DM.f0.format(v / 1e6) + ' mill.', 'dm-axis-t'))) + 10, mr = 8;
+    const x0 = d3.scaleBand(R.map((r) => r.mes), [ml, W - mr]).paddingInner(0.2);
+    const SER = [['ppto', 'var(--cds-chart-muted)'], ['fcst', 'var(--dm-orange-2)'], ['real', 'var(--dm-green)']];
+    const x1 = d3.scaleBand(SER.map((s) => s[0]), [0, x0.bandwidth()]).padding(0.08);
+    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - mr)).tickFormat((v) => '$' + DM.f0.format(v / 1e6) + ' mill.')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
+    svg.append('g').attr('transform', `translate(0,${H - bm})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(6).tickFormat(GL.mCorto)).call(DM.cleanAxis)
+      .selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.5em').attr('dy', '-0.35em').attr('transform', 'rotate(-90)');
+    R.forEach((r) => {
+      const g = svg.append('g').attr('transform', `translate(${x0(r.mes)},0)`);
+      SER.forEach(([f, col]) => { if (r[f]) g.append('rect').attr('x', x1(f)).attr('width', x1.bandwidth()).attr('y', y(r[f])).attr('height', y(0) - y(r[f])).attr('rx', 1.5).style('fill', col); });
+      if (r.real && r.ppto) {
+        const d = r.real - r.ppto, top = Math.min(y(r.real), y(r.ppto), r.fcst ? y(r.fcst) : Infinity);
+        g.append('text').attr('class', 'dm-val dm-halo' + (x0.bandwidth() < 44 ? ' dm-small' : '')).attr('text-anchor', 'middle').attr('x', x0.bandwidth() / 2).attr('y', top - 6)
+          .style('fill', d > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-green)').text((d >= 0 ? '+' : '−') + DM.f1.format(Math.abs(d) / 1e6));
+      }
     });
-    if (x.step() > 46) svg.append('g').selectAll('text').data(R.filter((r) => r.real)).join('text').attr('text-anchor', 'middle').attr('x', (r) => x(r.mes)).attr('y', (r) => Math.min(y(r.real), y(r.ppto)) - 9)
-      .style('fill', (r) => (r.real > r.ppto ? 'var(--cds-chart-status-critical)' : 'var(--dm-green)')).attr('class', 'dm-halo').style('font-weight', 700).style('font-size', 'var(--cds-font-size-caption)')
-      .text((r) => { const d = r.real - r.ppto; return (d >= 0 ? '+' : '−') + DM.f1.format(Math.abs(d) / 1e6); });
     const tip = DM.tipFor(el);
-    svg.append('g').selectAll('rect').data(R).join('rect').attr('x', (r) => x(r.mes) - x.step() / 2).attr('width', x.step()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
-      .on('mousemove', (e, r) => DM.showTip(tip, el, x(r.mes), 40, [GL.mTxt(r.mes), 'Presupuesto: ' + GL.pesos(r.ppto), 'Forecast: ' + GL.pesos(r.fcst), 'Real: ' + (r.real ? GL.pesos(r.real) : 'sin dato'),
+    svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r.mes)).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - bm).attr('fill', 'transparent')
+      .on('mousemove', (ev, r) => DM.showTip(tip, el, x0(r.mes) + x0.bandwidth() / 2, 40, [GL.mTxt(r.mes), 'Presupuesto: ' + GL.pesos(r.ppto), 'Forecast: ' + GL.pesos(r.fcst), 'Real: ' + (r.real ? GL.pesos(r.real) : 'sin dato'),
         ...(r.real ? ['Real vs presupuesto: ' + (r.real >= r.ppto ? '+' : '−') + GL.pesos(Math.abs(r.real - r.ppto)), 'Real vs forecast: ' + (r.real >= r.fcst ? '+' : '−') + GL.pesos(Math.abs(r.real - r.fcst))] : [])]))
       .on('mouseleave', () => { tip.hidden = true; });
-    svg.append('text').attr('class', 'dm-reft').attr('x', ml + 4).attr('y', 14).text('Etiquetas: diferencia real − presupuesto en millones de pesos');
   });
 </script>
 
@@ -2124,6 +2125,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 09/11/2026 04:16 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 09/11/2026 04:37 PM.</p>
 </body>
 </html>
