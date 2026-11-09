@@ -8,7 +8,8 @@ Genera CARPETA_SALIDA/index.html + data/*.json + fonts/*.woff. La página usa d3
 que replica el del tablero (datos, cálculos, filtros y dibujos), así se ve igual que en Claude."""
 import sys, os, re, json, shutil, datetime as dt
 page_path, data_dir, out = sys.argv[1:4]
-DATASETS = ['inventario', 'produccion', 'mps', 'mps_estado', 'agotados', 'agotados_estado', 'venta_mensual', 'ns', 'ns_estado', 'gasto', 'gasto_estado']
+OPCIONALES = ['ventas']
+DATASETS = ['inventario', 'produccion', 'mps', 'mps_estado', 'agotados', 'agotados_estado', 'venta_mensual', 'ns', 'ns_estado', 'gasto', 'gasto_estado', 'presupuesto', 'presupuesto_estado']
 PARAMS0 = {'bods': [], 'cat': 'Nacional', 'ciudades': [], 'corte': None, 'segs': []}
 page = open(page_path, encoding='utf-8').read()
 page = page.replace('<meta name="dash-one-writer">', '')

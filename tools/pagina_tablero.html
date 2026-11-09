@@ -85,6 +85,12 @@
   .dm-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-left: 4px solid var(--dm-green); border-radius: var(--cds-radius);
              padding: var(--cds-pad-sm) var(--cds-pad-md); display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
   .dm-tile-bad { border-left-color: var(--dm-crit); }
+  .pp-venta-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(12rem, 15rem); gap: var(--cds-gap-lg); align-items: center; }
+  .pp-kpis { display: grid; gap: var(--cds-gap-md); }
+  @media (max-width: 640px) { .pp-venta-wrap { grid-template-columns: 1fr; } }
+  .pp-big { display: flex; flex-direction: column; align-items: center; margin: var(--cds-gap-sm) 0; }
+  .pp-big-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .pp-big-v { font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 2rem; color: var(--color-fg); }
   .dm-tile-d { font-size: var(--cds-font-size-caption); font-weight: 600; color: var(--color-fg-muted); }
   .dm-tile-d:empty { display: none; }
   .dm-tile-d.dm-up { color: var(--dm-green); } .dm-tile-d.dm-down { color: var(--cds-chart-status-critical); }
@@ -144,8 +150,8 @@
 
 <div class="dm">
   <nav class="dm-maintabs" role="tablist" aria-label="Pestañas principales">
-    <button class="dm-main-tab" type="button" role="tab" data-main="supply" aria-selected="false" hidden>Resumen Supply</button>
-    <button class="dm-main-tab" type="button" role="tab" data-main="inventarios" aria-selected="true">Inventarios</button>
+    <button class="dm-main-tab" type="button" role="tab" data-main="supply" aria-selected="true">Tablero principal Supply</button>
+    <button class="dm-main-tab" type="button" role="tab" data-main="inventarios" aria-selected="false">Inventarios</button>
     <button class="dm-main-tab" type="button" role="tab" data-main="agotados" aria-selected="false">Agotados</button>
     <button class="dm-main-tab" type="button" role="tab" data-main="mps" aria-selected="false">MPS</button>
     <button class="dm-main-tab" type="button" role="tab" data-main="otif" aria-selected="false">OTIF</button>
@@ -341,8 +347,30 @@
 
   <!-- Pestañas principales en construcción -->
   <section class="dm-main" id="supply" role="tabpanel" hidden>
-    <div class="dm-wip"><span class="dm-wip-badge">En construcción</span><h2 class="dm-h2">Resumen Supply</h2>
-      <p class="dm-note">Vista general del área con los indicadores clave de inventarios, agotados, MPS y OTIF. Se arma al final, cuando existan los demás módulos.</p></div>
+    <div class="dm-grid2-sep">
+      <section class="dm-card" id="pp-card-venta"><h2 class="dm-h2">Presupuesto y venta efectiva del mes</h2>
+        <p class="dm-note">Presupuesto mensual de ventas (archivo de cuota de ventas, <b data-draw="pp-ppto-mes" data-source="presupuesto_estado">—</b>) y la cuota acumulada hasta hoy. El % de cumplimiento es venta efectiva ÷ presupuesto.</p>
+        <div class="pp-venta-wrap">
+          <div class="dm-chart pp-venta-chart" data-draw="pp-venta" data-source="presupuesto presupuesto_estado"></div>
+          <div class="pp-kpis">
+            <div class="dm-tile"><span class="dm-tile-l" data-draw="pp-ns-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="pp-ns" data-source="ns ns_estado">—</span><span class="dm-tile-d" data-draw="pp-ns-d" data-source="ns ns_estado"></span></div>
+            <div class="dm-tile"><span class="dm-tile-l" data-draw="pp-dias-l" data-source="puntos">—</span><span class="dm-tile-v" data-draw="pp-dias" data-source="puntos">—</span><span class="dm-tile-d" data-draw="pp-dias-d" data-source="puntos"></span></div>
+          </div>
+        </div></section>
+      <section class="dm-card dm-card-o" id="pp-card-nsag"><h2 class="dm-h2">Nivel de servicio y agotados por mes</h2>
+        <p class="dm-note">Verde: nivel de servicio del mes (todos los canales). Encima, en naranja: % agotado sobre venta del mes. Línea roja punteada: meta 97 %. * = mes en curso (parcial).</p>
+        <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Nivel de servicio</span><span><span class="dm-sw dm-sw-o"></span>% agotado sobre venta</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 97 %</span></div>
+        <div class="dm-chart" data-draw="pp-nsag" data-source="ns ns_estado agotados venta_mensual"></div></section>
+    </div>
+    <div class="dm-grid2-sep">
+      <section class="dm-card" id="pp-card-dias"><h2 class="dm-h2">Días de inventario por categoría y ciudad</h2>
+        <p class="dm-note">Último corte, categoría Nacional. Cada barra son los días de inventario (físico + tránsito ÷ demanda diaria) de la categoría en esa ciudad; la barra oscura es el total de la categoría.</p>
+        <div class="pp-big"><span class="pp-big-l" data-draw="pp-tot-l" data-source="puntos">—</span><span class="pp-big-v" data-draw="pp-tot" data-source="puntos">—</span></div>
+        <div class="dm-chart" data-draw="pp-dias-fam" data-source="puntos"></div></section>
+      <section class="dm-card dm-card-o" id="pp-card-gasto"><h2 class="dm-h2">Gasto logístico: presupuesto, forecast y real</h2>
+        <div class="dm-legend"><span><span class="dm-sw" style="background: var(--cds-chart-muted)"></span>Presupuesto</span><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real</span><span><span class="dm-sw dm-sw-line" style="background: var(--dm-green-dk)"></span>Gasto por tonelada efectiva (franja de arriba)</span></div>
+        <div class="dm-chart" data-draw="pp-gasto" data-source="gasto"></div></section>
+    </div>
   </section>
   <section class="dm-main" id="agotados" role="tabpanel" hidden>
     <div class="dm-strip mo-bar">
@@ -676,7 +704,7 @@
   // Pestañas principales y subpestañas de Inventarios; filtros y frase del encabezado solo en Inventarios.
   const SUBS = ['general', 'resumen', 'venta'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'gasto'];
   const h0 = location.hash.slice(1);
-  window.DMmain = SUBS.includes(h0) ? 'inventarios' : MAINS.includes(h0) ? h0 : 'inventarios';
+  window.DMmain = SUBS.includes(h0) ? 'inventarios' : MAINS.includes(h0) ? h0 : 'supply';
   window.DMtab = SUBS.includes(h0) ? h0 : 'general';
   const applyTab = () => {
     const inv = window.DMmain === 'inventarios';
@@ -1818,5 +1846,164 @@
         ...(r.real ? ['Real vs presupuesto: ' + (r.real >= r.ppto ? '+' : '−') + GL.pesos(Math.abs(r.real - r.ppto)), 'Real vs forecast: ' + (r.real >= r.fcst ? '+' : '−') + GL.pesos(Math.abs(r.real - r.fcst))] : [])]))
       .on('mouseleave', () => { tip.hidden = true; });
     svg.append('text').attr('class', 'dm-reft').attr('x', ml + 4).attr('y', 14).text('Etiquetas: diferencia real − presupuesto en millones de pesos');
+  });
+</script>
+
+<script>
+  // ===== Tablero principal Supply =====
+  window.PP = (() => {
+    const one = (id) => { const d = dash.data(id); if (d.status !== 'ok' || !d.data) return null; return Array.isArray(d.data) ? d.data[0] || null : d.data; };
+    const hoy = () => { const d = new Date(Date.now() - 5 * 3600e3); return d.toISOString().slice(0, 10); };
+    const mill = (v) => '$' + DM.f1.format(v / 1e6) + ' mill.';
+    const MC = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    // Último corte, categoría Nacional, sin los filtros de la pestaña Inventarios.
+    const inv = () => {
+      const d = dash.data('puntos'); if (d.status !== 'ok') return null;
+      const cs = DM.cortes(); const c = cs[cs.length - 1];
+      return { corte: c, rows: d.data.filter((r) => r.corte === c && r.cat === 'Nacional') };
+    };
+    return { one, hoy, mill, MC, inv };
+  })();
+
+  dash.draw('pp-ppto-mes', (el) => { const e = PP.one('presupuesto_estado'); el.textContent = e ? PP.MC[+e.mes.slice(4) - 1] + ' ' + e.mes.slice(0, 4) : '—'; });
+
+  // Gráfico 1: presupuesto del mes, cuota a la fecha y venta efectiva (pendiente hasta tener el archivo de ventas).
+  dash.draw('pp-venta', (el) => {
+    const d = dash.data('presupuesto'), e = PP.one('presupuesto_estado');
+    if (d.status !== 'ok' || !e) { DM.fail(el, d.status); return; }
+    el.replaceChildren();
+    const h = PP.hoy(), mesActual = h.slice(0, 7).replace('-', '') === e.mes;
+    const cuotaF = d3.sum(d.data.filter((r) => !mesActual || r.fecha <= h), (r) => +r.cuota);
+    const ventaD = dash.data('ventas'), venta = ventaD.status === 'ok' && ventaD.data.length ? d3.sum(ventaD.data, (r) => +r.venta) : null;
+    const bars = [
+      { k: 'Presupuesto', v: +e.presupuesto_mes, fill: 'var(--dm-green-dk)' },
+      { k: mesActual ? 'Cuota a hoy' : 'Cuota del mes', v: cuotaF, fill: 'var(--cds-chart-muted)' },
+      { k: 'Venta efectiva', v: venta, fill: 'var(--dm-green)' },
+    ];
+    const W = el.clientWidth, H = 300;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Presupuesto y venta efectiva del mes');
+    const y = d3.scaleLinear([0, +e.presupuesto_mes * 1.18], [H - 34, 10]);
+    const x = d3.scaleBand(bars.map((b) => b.k), [8, W - 8]).padding(0.28);
+    svg.append('g').attr('transform', `translate(0,${H - 34})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8)).call(DM.cleanAxis);
+    bars.forEach((b) => {
+      const cx = x(b.k) + x.bandwidth() / 2;
+      if (b.v == null) {
+        svg.append('rect').attr('x', x(b.k)).attr('width', x.bandwidth()).attr('y', y(cuotaF)).attr('height', y(0) - y(cuotaF)).attr('rx', 4).style('fill', 'none').style('stroke', 'var(--dm-green)').attr('stroke-dasharray', '6 4').attr('stroke-width', 2);
+        ['Pendiente', 'archivo', 'de ventas'].forEach((t, i) => svg.append('text').attr('class', 'dm-reft').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(cuotaF / 2) - 10 + i * 15).text(t));
+        return;
+      }
+      svg.append('rect').attr('x', x(b.k)).attr('width', x.bandwidth()).attr('y', y(b.v)).attr('height', y(0) - y(b.v)).attr('rx', 4).style('fill', b.fill);
+      svg.append('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(b.v) - 8).text(PP.mill(b.v));
+    });
+    const cumpl = venta != null ? venta / +e.presupuesto_mes : null, cumplF = venta != null && cuotaF > 0 ? venta / cuotaF : null;
+    if (cumpl != null) {
+      const cx = x('Venta efectiva') + x.bandwidth() / 2;
+      svg.append('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(venta) - 26).text(DM.f1.format(cumpl * 100) + ' % del mes · ' + DM.f1.format(cumplF * 100) + ' % de la cuota a hoy');
+    } else {
+      const cx = x(bars[1].k) + x.bandwidth() / 2;
+      svg.append('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(cuotaF) - 26).text(DM.f1.format(cuotaF / +e.presupuesto_mes * 100) + ' % del mes');
+    }
+  });
+
+  // Indicadores: nivel de servicio del último mes cerrado y días de inventario de la red.
+  const ppNs = () => { if (!NS.ok()) return null; const u = NS.ultCerrado(); if (!u) return null; const R = NS.D(); const ka = String(+u.slice(0, 4) - 1) + u.slice(4); return { u, v: NS.ns(R.filter((r) => r.k === u)), a: NS.ns(R.filter((r) => r.k === ka)), ka }; };
+  dash.draw('pp-ns-l', (el) => { const k = ppNs(); el.textContent = k ? 'Nivel de servicio ' + NS.kTxt(k.u) : 'Nivel de servicio'; });
+  dash.draw('pp-ns', (el) => { const k = ppNs(); el.textContent = k ? NS.pct(k.v) : '—'; });
+  dash.draw('pp-ns-d', (el) => { const k = ppNs(); el.textContent = ''; el.className = 'dm-tile-d'; if (!k || k.v == null) return; const d = (k.v - NS.META) * 100; el.classList.add(d >= 0 ? 'dm-up' : 'dm-down'); el.textContent = (d >= 0 ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(d)) + ' pp frente a la meta de 97 %'; });
+  dash.draw('pp-dias-l', (el) => { const t = PP.inv(); el.textContent = t ? 'Días de inventario de la red (corte ' + DM.fDate(t.corte) + ')' : 'Días de inventario de la red'; });
+  dash.draw('pp-dias', (el) => { const t = PP.inv(); const k = t && DM.kpis(t.rows); el.textContent = k && k.dias != null ? DM.f0.format(k.dias) + ' días' : '—'; });
+  dash.draw('pp-dias-d', (el) => { const t = PP.inv(); const k = t && DM.kpis(t.rows); el.textContent = k ? DM.f0.format(k.crit) + ' puntos críticos (' + DM.f0.format(k.crita) + ' tipo A)' : ''; el.className = 'dm-tile-d'; });
+
+  // Gráfico 2: nivel de servicio por mes del año actual, con el % agotado sobre venta apilado encima.
+  dash.draw('pp-nsag', (el) => {
+    if (!NS.ok()) { DM.fail(el, dash.data('ns').status); return; }
+    el.replaceChildren();
+    const R = NS.D(), y0 = NS.anios().slice(-1)[0];
+    const ks = [...new Set(R.filter((r) => r.anio === y0).map((r) => r.k))].sort();
+    const bo = new Map(); if (AG.ok()) AG.D().forEach((r) => { if (r.mes.slice(0, 4) === y0) bo.set(r.mes, (bo.get(r.mes) || 0) + r.v); });
+    const V = AG.V();
+    const pts = ks.map((k) => ({ k, ns: NS.ns(R.filter((r) => r.k === k)), ag: bo.has(k) && V.get(k) ? bo.get(k) / V.get(k) : null }));
+    const W = el.clientWidth, H = 320;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Nivel de servicio y agotados por mes');
+    const y = d3.scaleLinear([0, 1.08], [H - 30, 14]);
+    const ml = 44, x = d3.scaleBand(ks, [ml, W - 8]).padding(0.22);
+    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).tickValues([0, 0.2, 0.4, 0.6, 0.8, 1]).tickSize(-(W - ml - 8)).tickFormat((v) => DM.f0.format(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
+    svg.append('g').attr('transform', `translate(0,${H - 30})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickFormat((k) => PP.MC[+k.slice(4) - 1] + (NS.parcial(k) ? '*' : ''))).call(DM.cleanAxis);
+    const g = svg.append('g');
+    g.selectAll('rect.ns').data(pts.filter((p) => p.ns != null)).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', (p) => y(p.ns)).attr('height', (p) => y(0) - y(p.ns)).style('fill', 'var(--dm-green)');
+    g.selectAll('rect.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', (p) => y(p.ns + p.ag)).attr('height', (p) => y(p.ns) - y(p.ns + p.ag)).style('fill', 'var(--dm-orange-2)');
+    svg.append('line').attr('x1', ml).attr('x2', W - 8).attr('y1', y(NS.META)).attr('y2', y(NS.META)).style('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5);
+    const fitIn = x.bandwidth() >= DM.textW(svg, '100,0', 'dm-val-in') + 2;
+    g.selectAll('text.ns').data(pts.filter((p) => p.ns != null)).join('text').attr('class', 'dm-val-in' + (fitIn ? '' : ' dm-small')).attr('text-anchor', 'middle').attr('x', (p) => x(p.k) + x.bandwidth() / 2).attr('y', (p) => y(p.ns) + 34).text((p) => (fitIn ? DM.f1.format(p.ns * 100) : DM.f0.format(p.ns * 100)) + ' %');
+    g.selectAll('text.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('text').attr('class', 'ag-var dm-halo' + (fitIn ? '' : ' dm-small')).attr('text-anchor', 'middle').attr('x', (p) => x(p.k) + x.bandwidth() / 2).attr('y', (p) => y(p.ns + p.ag) - 6).text((p) => DM.f1.format(p.ag * 100) + ' %');
+    const tip = DM.tipFor(el);
+    svg.append('g').selectAll('rect').data(pts).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
+      .on('mousemove', (ev, p) => DM.showTip(tip, el, x(p.k) + x.bandwidth() / 2, 40, [NS.kTxt(p.k) + (NS.parcial(p.k) ? ' (parcial)' : ''), 'Nivel de servicio: ' + NS.pct(p.ns), '% agotado sobre venta: ' + (p.ag == null ? 'sin venta del mes' : DM.f1.format(p.ag * 100) + ' %')]))
+      .on('mouseleave', () => { tip.hidden = true; });
+  });
+
+  // Gráfico 3: días de inventario por categoría (arepas, salsas, empanadas) y ciudad, con el total de cada categoría.
+  const ppFam = (rows, fam) => { const v = rows.filter((r) => r.fam === fam && r.dem > 0); const dem = d3.sum(v, (r) => r.dem); return dem > 0 ? d3.sum(v, (r) => r.inv) / dem : null; };
+  dash.draw('pp-tot-l', (el) => { const t = PP.inv(); el.textContent = t ? 'Total días de inventario de la red · corte ' + DM.fDate(t.corte) : 'Total días de inventario de la red'; });
+  dash.draw('pp-tot', (el) => { const t = PP.inv(); const k = t && DM.kpis(t.rows); el.textContent = k && k.dias != null ? DM.f0.format(k.dias) + ' días' : '—'; });
+  dash.draw('pp-dias-fam', (el) => {
+    const t = PP.inv(); if (!t) { DM.fail(el, dash.data('puntos').status); return; }
+    el.replaceChildren();
+    const FAMS = ['AREPAS', 'SALSAS', 'EMPANADAS'];
+    const groups = FAMS.map((f) => ({ f, cities: DM.famCity(t.rows, f).filter((c) => c.dias != null), tot: ppFam(t.rows, f) }));
+    const W = el.clientWidth, H = 350;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Días de inventario por categoría y ciudad');
+    const vmax = d3.max(groups.flatMap((g) => [g.tot, ...g.cities.map((c) => c.dias)]).filter((v) => v != null)) || 1;
+    const y = d3.scaleLinear([0, vmax * 1.15], [H - 74, 30]).nice();
+    const ml = 30, x0 = d3.scaleBand(FAMS, [ml, W - 8]).paddingInner(0.12);
+    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - 8))).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
+    [DM.LIM_CRIT, DM.LIM_SOB].forEach((l) => { if (l <= y.domain()[1]) svg.append('line').attr('x1', ml).attr('x2', W - 8).attr('y1', y(l)).attr('y2', y(l)).style('stroke', l === DM.LIM_CRIT ? 'var(--cds-chart-status-critical)' : 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 4'); });
+    const tip = DM.tipFor(el);
+    groups.forEach((g) => {
+      const items = [...g.cities.map((c) => ({ k: c.ciudad, v: c.dias, lab: DM.NAME[c.ciudad] || c.ciudad })), { k: 'TOTAL', v: g.tot, lab: 'Total', tot: true }];
+      const x1 = d3.scaleBand(items.map((i) => i.k), [x0(g.f), x0(g.f) + x0.bandwidth()]).padding(0.14);
+      const gg = svg.append('g');
+      gg.selectAll('rect').data(items.filter((i) => i.v != null)).join('rect').attr('x', (i) => x1(i.k)).attr('width', x1.bandwidth()).attr('y', (i) => y(i.v)).attr('height', (i) => y(0) - y(i.v)).attr('rx', 2)
+        .style('fill', (i) => (i.tot ? 'var(--dm-green-dk)' : 'var(--dm-green)'));
+      gg.selectAll('text.v').data(items.filter((i) => i.v != null)).join('text').attr('class', 'dm-val dm-halo' + (x1.bandwidth() < 16 ? ' dm-small' : '')).attr('text-anchor', 'middle').attr('x', (i) => x1(i.k) + x1.bandwidth() / 2).attr('y', (i) => y(i.v) - 5).text((i) => DM.f0.format(i.v));
+      gg.selectAll('text.c').data(items).join('text').attr('class', 'dm-axis-t').attr('text-anchor', 'end').style('font-weight', (i) => (i.tot ? 700 : null))
+        .attr('transform', (i) => `translate(${x1(i.k) + x1.bandwidth() / 2 + 3},${H - 68}) rotate(-45)`).text((i) => i.lab);
+      svg.append('text').attr('class', 'dm-h3-svg').attr('text-anchor', 'middle').attr('x', x0(g.f) + x0.bandwidth() / 2).attr('y', 14).style('font-weight', 700).style('fill', 'var(--color-fg)').text(g.f.charAt(0) + g.f.slice(1).toLowerCase());
+      gg.selectAll('rect.hit').data(items).join('rect').attr('x', (i) => x1(i.k)).attr('width', x1.bandwidth()).attr('y', 0).attr('height', H - 74).attr('fill', 'transparent')
+        .on('mousemove', (ev, i) => DM.showTip(tip, el, x1(i.k) + x1.bandwidth() / 2, y(i.v || 0), [g.f.charAt(0) + g.f.slice(1).toLowerCase() + ' · ' + i.lab, 'Días de inventario: ' + (i.v == null ? '—' : DM.f1.format(i.v))]))
+        .on('mouseleave', () => { tip.hidden = true; });
+    });
+  });
+
+  // Gráfico 4: gasto logístico por mes (presupuesto, forecast y real) y, en la franja de arriba, el gasto por tonelada efectiva.
+  dash.draw('pp-gasto', (el) => {
+    if (!GL.ok()) { DM.fail(el, dash.data('gasto').status); return; }
+    el.replaceChildren();
+    const R = GL.D(), cx = R.filter((r) => r.xe);
+    const W = el.clientWidth, H = 360, top = 110;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Gasto logístico por mes');
+    const vmax = d3.max(R.flatMap((r) => [r.ppto, r.fcst, r.real]).filter((v) => v)) || 1;
+    const y = d3.scaleLinear([0, vmax * 1.05], [H - 28, top]).nice();
+    const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, '$' + DM.f0.format(v / 1e6) + ' mill.', 'dm-axis-t'))) + 10, mr = 8;
+    const x0 = d3.scaleBand(R.map((r) => r.mes), [ml, W - mr]).paddingInner(0.2);
+    const SER = [['ppto', 'var(--cds-chart-muted)', 'Presupuesto'], ['fcst', 'var(--dm-orange-2)', 'Forecast'], ['real', 'var(--dm-green)', 'Real']];
+    const x1 = d3.scaleBand(SER.map((s) => s[0]), [0, x0.bandwidth()]).padding(0.08);
+    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - mr)).tickFormat((v) => '$' + DM.f0.format(v / 1e6) + ' mill.')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
+    svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat(GL.mCorto)).call(DM.cleanAxis);
+    R.forEach((r) => {
+      const g = svg.append('g').attr('transform', `translate(${x0(r.mes)},0)`);
+      SER.forEach(([f, col]) => { if (r[f]) g.append('rect').attr('x', x1(f)).attr('width', x1.bandwidth()).attr('y', y(r[f])).attr('height', y(0) - y(r[f])).attr('rx', 1.5).style('fill', col); });
+    });
+    // Línea de gasto por tonelada efectiva en la franja superior.
+    const y2 = d3.scaleLinear(d3.extent(cx, (r) => r.xe).map((v, i) => (i ? v * 1.02 : v * 0.97)), [top - 14, 34]);
+    const cxp = (k) => x0(k) + x0.bandwidth() / 2;
+    svg.append('path').datum(cx).attr('fill', 'none').style('stroke', 'var(--dm-green-dk)').attr('stroke-width', 2.5).attr('d', d3.line().x((r) => cxp(r.mes)).y((r) => y2(r.xe)));
+    svg.append('g').selectAll('circle').data(cx).join('circle').attr('cx', (r) => cxp(r.mes)).attr('cy', (r) => y2(r.xe)).attr('r', 3.5).style('fill', 'var(--dm-green-dk)');
+    if (x0.bandwidth() >= DM.textW(svg, '0,00', 'dm-val dm-small') + 2) svg.append('g').selectAll('text').data(cx).join('text').attr('class', 'dm-val dm-halo dm-small').attr('text-anchor', 'middle').attr('x', (r) => cxp(r.mes)).attr('y', (r) => y2(r.xe) - 8).text((r) => DM.fd ? new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(r.xe / 1e6) : (r.xe / 1e6).toFixed(2));
+    svg.append('text').attr('class', 'dm-reft').attr('x', ml).attr('y', 12).text('Gasto por tonelada efectiva (millones de $ por ton)');
+    const tip = DM.tipFor(el);
+    svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r.mes)).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - 28).attr('fill', 'transparent')
+      .on('mousemove', (ev, r) => DM.showTip(tip, el, cxp(r.mes), 60, [GL.mTxt(r.mes), 'Presupuesto: ' + GL.pesos(r.ppto), 'Forecast: ' + GL.pesos(r.fcst), 'Real: ' + (r.real ? GL.pesos(r.real) : 'sin dato'), 'Gasto por ton efectiva: ' + (r.xe ? GL.pesos(r.xe) : '—')]))
+      .on('mouseleave', () => { tip.hidden = true; });
   });
 </script>
