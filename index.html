@@ -172,12 +172,21 @@ window.dash = (() => {
   .g-acum-card .dm-chart { min-height: 0; }
   .g-acum-rango { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-weight: 400; }
   @media (max-width: 900px) { .g-top { grid-template-columns: 1fr 1fr; } .g-acum-card { grid-column: 1 / -1; } }
-  .pp-row1 { display: grid; gap: var(--cds-gap-xl); grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+  .pp-row1 { display: grid; gap: var(--cds-gap-xl); grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); }
   @media (max-width: 1100px) { .pp-row1 { grid-template-columns: 1fr; } }
   .pp-stack { display: grid; grid-template-columns: 1fr; gap: var(--cds-gap-xl); }
   .pp-badge-t { fill: #FFFFFF; font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 13px; }
   .pp-big { display: flex; flex-direction: column; align-items: center; margin: var(--cds-gap-sm) 0; }
   .pp-bar-v { font-weight: 700; pointer-events: none; }
+  .pp-tot-card { align-self: flex-start; min-width: 12rem; display: inline-flex; flex-direction: column; gap: 2px; margin: var(--cds-gap-sm) 0 var(--cds-gap-lg); padding: var(--cds-pad-md) var(--cds-pad-xl); border: 1px solid var(--cds-border); border-left: 4px solid var(--dm-green); border-radius: var(--cds-radius); background: var(--color-panel); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .pp-tot-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+  .pp-tot-v { font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 1.9rem; line-height: 1.15; color: var(--color-fg); }
+  .pp-fam-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--cds-gap-lg); }
+  @media (max-width: 900px) { .pp-fam-grid { grid-template-columns: 1fr; } }
+  .pp-fam-box { border: 1px solid var(--cds-border); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-md) var(--cds-pad-sm); background: var(--color-panel); position: relative; }
+  .pp-fam-head { display: flex; align-items: center; justify-content: space-between; gap: var(--cds-gap-sm); margin-bottom: var(--cds-gap-xs); }
+  .pp-fam-name { font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 1.15rem; color: var(--color-fg); }
+  .pp-fam-badge { background: var(--dm-orange); color: #FFFFFF; font-weight: 700; font-size: var(--cds-font-size-body); border-radius: 999px; padding: 3px 12px; white-space: nowrap; }
   .pp-big-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
   .pp-big-v { font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 2rem; color: var(--color-fg); }
   .dm-tile-d { font-size: var(--cds-font-size-caption); font-weight: 600; color: var(--color-fg-muted); }
@@ -451,7 +460,7 @@ window.dash = (() => {
     </div>
     <div class="pp-stack">
       <section class="dm-card" id="pp-card-dias"><h2 class="dm-h2">Días de inventario por categoría y ciudad</h2>
-        <div class="pp-big"><span class="pp-big-v" data-draw="pp-tot" data-source="puntos ventas">—</span></div>
+        <div class="pp-tot-card"><span class="pp-tot-l">Total de la red</span><span class="pp-tot-v" data-draw="pp-tot" data-source="puntos ventas">—</span></div>
         <div class="dm-chart" data-draw="pp-dias-fam" data-source="puntos ventas"></div></section>
       <section class="dm-card dm-card-o" id="pp-card-gasto"><h2 class="dm-h2">Gasto logístico: presupuesto, forecast y real</h2>
         <div class="dm-legend"><span><span class="dm-sw" style="background: var(--cds-chart-muted)"></span>Presupuesto</span><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real</span><span><span class="dm-sw dm-sw-line" style="background: var(--dm-green-dk)"></span>Gasto por tonelada efectiva (franja de arriba)</span></div>
@@ -2072,33 +2081,32 @@ window.dash = (() => {
     el.replaceChildren(); if (!t.corte) return;
     const FAMS = ['AREPAS', 'SALSAS', 'EMPANADAS'];
     const groups = FAMS.map((f) => ({ f, cities: DM.famCity(t.rows, f).filter((c) => c.dias != null), tot: ppFam(t.rows, f) }));
-    const W = el.clientWidth, H = 350;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Días de inventario por categoría y ciudad');
+    // Misma escala en los tres cajones para que se puedan comparar.
     const vmax = d3.max(groups.flatMap((g) => g.cities.map((c) => c.dias)).filter((v) => v != null)) || 1;
-    const y = d3.scaleLinear([0, vmax * 1.12], [H - 74, 62]).nice();
-    const ml = 30, x0 = d3.scaleBand(FAMS, [ml, W - 8]).paddingInner(0.12);
-    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - 8))).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    [DM.LIM_CRIT, DM.LIM_SOB].forEach((l) => { if (l <= y.domain()[1]) svg.append('line').attr('x1', ml).attr('x2', W - 8).attr('y1', y(l)).attr('y2', y(l)).style('stroke', l === DM.LIM_CRIT ? 'var(--cds-chart-status-critical)' : 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 4'); });
-    const tip = DM.tipFor(el);
+    const grid = d3.select(el).append('div').attr('class', 'pp-fam-grid');
     groups.forEach((g) => {
+      const name = g.f.charAt(0) + g.f.slice(1).toLowerCase();
+      const box = grid.append('div').attr('class', 'pp-fam-box');
+      const head = box.append('div').attr('class', 'pp-fam-head');
+      head.append('span').attr('class', 'pp-fam-name').text(name);
+      if (g.tot != null) head.append('span').attr('class', 'pp-fam-badge').text('Total ' + DM.f0.format(g.tot) + ' días');
+      const host = box.append('div').style('position', 'relative').node();
+      const W = Math.max(host.clientWidth, 200), H = 270;
+      const svg = d3.select(host).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Días de inventario de ' + name + ' por ciudad');
+      const y = d3.scaleLinear([0, vmax * 1.12], [H - 66, 16]).nice();
+      const ml = 26, mr = 4;
+      svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - mr))).call(DM.cleanAxis).call((gg) => gg.select('.domain').remove());
+      [DM.LIM_CRIT, DM.LIM_SOB].forEach((l) => { if (l <= y.domain()[1]) svg.append('line').attr('x1', ml).attr('x2', W - mr).attr('y1', y(l)).attr('y2', y(l)).style('stroke', l === DM.LIM_CRIT ? 'var(--cds-chart-status-critical)' : 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 4'); });
       const items = g.cities.map((c) => ({ k: c.ciudad, v: c.dias, lab: DM.NAME[c.ciudad] || c.ciudad }));
-      const x1 = d3.scaleBand(items.map((i) => i.k), [x0(g.f), x0(g.f) + x0.bandwidth()]).padding(0.14);
+      const x1 = d3.scaleBand(items.map((i) => i.k), [ml + 4, W - mr]).padding(0.18);
       const gg = svg.append('g');
-      gg.selectAll('rect').data(items.filter((i) => i.v != null)).join('rect').attr('x', (i) => x1(i.k)).attr('width', x1.bandwidth()).attr('y', (i) => y(i.v)).attr('height', (i) => y(0) - y(i.v)).attr('rx', 2)
-        .style('fill', (i) => (i.tot ? 'var(--dm-green-dk)' : 'var(--dm-green)'));
+      gg.selectAll('rect').data(items.filter((i) => i.v != null)).join('rect').attr('x', (i) => x1(i.k)).attr('width', x1.bandwidth()).attr('y', (i) => y(i.v)).attr('height', (i) => y(0) - y(i.v)).attr('rx', 2).style('fill', 'var(--dm-green)');
       gg.selectAll('text.v').data(items.filter((i) => i.v != null)).join('text').attr('class', 'dm-val dm-halo' + (x1.bandwidth() < 16 ? ' dm-small' : '')).attr('text-anchor', 'middle').attr('x', (i) => x1(i.k) + x1.bandwidth() / 2).attr('y', (i) => y(i.v) - 5).text((i) => DM.f0.format(i.v));
-      gg.selectAll('text.c').data(items).join('text').attr('class', 'dm-axis-t').attr('text-anchor', 'end').style('font-weight', (i) => (i.tot ? 700 : null))
-        .attr('transform', (i) => `translate(${x1(i.k) + x1.bandwidth() / 2 + 3},${H - 68}) rotate(-45)`).text((i) => i.lab);
-      // Encabezado de la categoría: nombre y, debajo, una etiqueta naranja con el total de días de la categoría.
-      const gx = x0(g.f) + x0.bandwidth() / 2;
-      svg.append('text').attr('class', 'dm-h3-svg').attr('text-anchor', 'middle').attr('x', gx).attr('y', 14).style('font-weight', 700).style('fill', 'var(--color-fg)').text(g.f.charAt(0) + g.f.slice(1).toLowerCase());
-      if (g.tot != null) {
-        const txt = 'Total ' + DM.f0.format(g.tot) + ' días', bw = DM.textW(svg, txt, 'pp-badge-t') + 24;
-        svg.append('rect').attr('x', gx - bw / 2).attr('y', 22).attr('width', bw).attr('height', 26).attr('rx', 13).style('fill', 'var(--dm-orange)');
-        svg.append('text').attr('class', 'pp-badge-t').attr('text-anchor', 'middle').attr('x', gx).attr('y', 39.5).text(txt);
-      }
-      gg.selectAll('rect.hit').data(items).join('rect').attr('x', (i) => x1(i.k)).attr('width', x1.bandwidth()).attr('y', 0).attr('height', H - 74).attr('fill', 'transparent')
-        .on('mousemove', (ev, i) => DM.showTip(tip, el, x1(i.k) + x1.bandwidth() / 2, y(i.v || 0), [g.f.charAt(0) + g.f.slice(1).toLowerCase() + ' · ' + i.lab, 'Días de inventario: ' + (i.v == null ? '—' : DM.f1.format(i.v))]))
+      gg.selectAll('text.c').data(items).join('text').attr('class', 'dm-axis-t').attr('text-anchor', 'end')
+        .attr('transform', (i) => `translate(${x1(i.k) + x1.bandwidth() / 2 + 3},${H - 60}) rotate(-40)`).text((i) => i.lab);
+      const tip = DM.tipFor(host);
+      gg.selectAll('rect.hit').data(items).join('rect').attr('x', (i) => x1(i.k)).attr('width', x1.bandwidth()).attr('y', 0).attr('height', H - 66).attr('fill', 'transparent')
+        .on('mousemove', (ev, i) => DM.showTip(tip, host, x1(i.k) + x1.bandwidth() / 2, y(i.v || 0), [name + ' · ' + i.lab, 'Días de inventario: ' + (i.v == null ? '—' : DM.f1.format(i.v))]))
         .on('mouseleave', () => { tip.hidden = true; });
     });
   });
@@ -2144,6 +2152,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 09/11/2026 05:37 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 09:31 AM.</p>
 </body>
 </html>
