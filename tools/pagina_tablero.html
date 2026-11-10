@@ -236,8 +236,8 @@
   <!-- Pestaña principal: Inventarios -->
   <section class="dm-main" id="inventarios" role="tabpanel">
   <nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Inventarios">
-    <button class="dm-tab" type="button" role="tab" data-tab="general" aria-selected="true">Resumen general</button>
-    <button class="dm-tab" type="button" role="tab" data-tab="resumen" aria-selected="false">Resumen</button>
+    <button class="dm-tab" type="button" role="tab" data-tab="general" aria-selected="true">Resumen inventario</button>
+    <button class="dm-tab" type="button" role="tab" data-tab="resumen" aria-selected="false">Data</button>
   </nav>
 
   <!-- Pestaña 1 -->
@@ -337,7 +337,6 @@
       </section>
     </div>
 
-    <div class="dm-grid2">
       <section class="dm-card" id="lista-criticos">
         <h2 class="dm-h2">Referencias críticas</h2>
         <p class="dm-note">Tipo A primero, luego las de mayor demanda.</p>
@@ -348,18 +347,6 @@
           </table>
         </div>
       </section>
-
-      <section class="dm-card dm-card-o" id="matriz-abc">
-        <h2 class="dm-h2">Matriz ABC × estado</h2>
-        <p class="dm-note">Número de puntos bodega-referencia. La celda A · Crítico es la que más importa.</p>
-        <div class="dm-tablebox" data-source="puntos">
-          <table class="dm-table dm-matrix">
-            <thead><tr><th>ABC</th><th>Crítico</th><th>Estable</th><th>Sobrestock</th><th>Sin demanda</th><th>Total</th></tr></thead>
-            <tbody data-draw="r-matriz"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
   </section>
 
 
