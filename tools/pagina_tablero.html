@@ -157,6 +157,16 @@
   .dm-fail-dot { width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
 
   .dm-tablebox { overflow: auto; max-height: 26rem; }
+  .iv-fam-grid { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  @media (max-width: 1000px) { .iv-fam-grid { grid-template-columns: 1fr; } }
+  .iv-top { max-height: none; }
+  .iv-top-t { margin-top: var(--cds-gap-md); }
+  .iv-top-s { font-size: var(--cds-font-size-caption); font-weight: 400; color: var(--color-fg-muted); margin-left: 6px; }
+  .iv-exp { border: 1px solid var(--cds-border); background: var(--color-panel); color: var(--dm-green); border-radius: 5px; width: 22px; height: 22px; line-height: 18px; font-weight: 800; cursor: pointer; padding: 0; font-family: inherit; }
+  .iv-exp:hover { background: var(--dm-bg-soft, #EEF0FA); }
+  .iv-child td { background: var(--dm-bg-soft, #EEF0FA); font-size: var(--cds-font-size-caption); }
+  .iv-child td.iv-city { padding-left: 1.6rem; font-weight: 600; }
+  .iv-sep td { border-top: 2px solid var(--cds-border); }
   .dm-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
   .dm-table th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: 700; color: var(--color-fg-muted);
                  padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); white-space: nowrap; }
@@ -231,26 +241,15 @@
 
   <!-- Pestaña 1 -->
   <section class="dm-page" id="general" role="tabpanel">
-    <div class="dm-grid2">
-      <section class="dm-card" id="forecast-ventas">
-        <h2 class="dm-h2">Forecast y días de inventario por ciudad</h2>
-        <div class="dm-legend">
-          <span><span class="dm-sw dm-sw-g"></span>Forecast del mes (und)</span>
-          <span><span class="dm-sw dm-sw-line dm-sw-r"></span>Días de inventario</span>
-        </div>
-        <div class="dm-chart" data-draw="c1" data-source="puntos"></div>
-      </section>
-
-      <section class="dm-card dm-card-o" id="dias-ciudad">
-        <h2 class="dm-h2">Días de inventario por ciudad</h2>
-        <div class="dm-legend">
-          <span><span class="dm-sw dm-sw-g"></span>Inventario físico</span>
-          <span><span class="dm-sw dm-sw-o"></span>Tránsito</span>
-          <span>Encima: total inventario + tránsito</span>
-        </div>
-        <div class="dm-chart" data-draw="c2" data-source="puntos"></div>
-      </section>
-    </div>
+    <section class="dm-card dm-card-o" id="dias-ciudad">
+      <h2 class="dm-h2">Días de inventario por ciudad</h2>
+      <div class="dm-legend">
+        <span><span class="dm-sw dm-sw-g"></span>Inventario físico</span>
+        <span><span class="dm-sw dm-sw-o"></span>Tránsito</span>
+        <span>Encima de cada barra: días de físico, de tránsito y el total. Última barra: total de la red.</span>
+      </div>
+      <div class="dm-chart" data-draw="c2" data-source="puntos"></div>
+    </section>
 
     <h2 class="dm-section" id="familias">Días de inventario por familia y ciudad</h2>
     <div class="dm-legend">
@@ -259,43 +258,44 @@
       <span>Líneas punteadas: límite de crítico y de sobrestock</span>
     </div>
 
-    <div class="dm-grid3">
-      <section class="dm-card" id="fam-arepas">
-        <h2 class="dm-h2">Arepas</h2>
+    <div class="iv-fam-grid">
+      <section class="dm-card iv-fam" id="fam-arepas">
+        <div class="pp-fam-head"><span class="pp-fam-name">Arepas</span><span class="pp-fam-badge" data-draw="b-AREPAS" data-source="puntos">—</span></div>
         <div class="dm-chart dm-chart-s" data-draw="l-AREPAS" data-source="puntos"></div>
-        <h3 class="dm-h2">Top 10 casos críticos</h3>
-        <div class="dm-tablebox">
-          <table class="dm-table" data-source="puntos" data-row-key="id">
-            <thead><tr><th data-field="ciudad">Ciudad</th><th data-field="ref">Ref</th><th data-field="desc">Producto</th><th data-field="abc">ABC</th><th data-field="dias" class="dm-num">Días</th><th data-field="inv" class="dm-num">Inv+tr</th><th data-field="dem" class="dm-num">Dem/día</th></tr></thead>
+        <h3 class="dm-h2 iv-top-t">Top 11 referencias críticas <span class="iv-top-s">5 tipo A · 3 tipo B · 3 tipo C · menos días primero</span></h3>
+        <div class="dm-tablebox iv-top">
+          <table class="dm-table" data-source="puntos">
+            <thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num">Ciudades críticas</th><th class="dm-num">Días (mín.)</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
             <tbody data-draw="t-AREPAS"></tbody>
           </table>
         </div>
         <p class="dm-note" data-empty="AREPAS" hidden>Sin casos críticos en este corte.</p>
       </section>
-
-      <section class="dm-card" id="fam-salsas">
-        <h2 class="dm-h2">Salsas</h2>
+      <section class="dm-card iv-fam" id="fam-salsas">
+        <div class="pp-fam-head"><span class="pp-fam-name">Salsas</span><span class="pp-fam-badge" data-draw="b-SALSAS" data-source="puntos">—</span></div>
         <div class="dm-chart dm-chart-s" data-draw="l-SALSAS" data-source="puntos"></div>
-        <h3 class="dm-h2">Top 10 casos críticos</h3>
-        <div class="dm-tablebox">
-          <table class="dm-table" data-source="puntos" data-row-key="id">
-            <thead><tr><th data-field="ciudad">Ciudad</th><th data-field="ref">Ref</th><th data-field="desc">Producto</th><th data-field="abc">ABC</th><th data-field="dias" class="dm-num">Días</th><th data-field="inv" class="dm-num">Inv+tr</th><th data-field="dem" class="dm-num">Dem/día</th></tr></thead>
+        <h3 class="dm-h2 iv-top-t">Top 11 referencias críticas <span class="iv-top-s">5 tipo A · 3 tipo B · 3 tipo C · menos días primero</span></h3>
+        <div class="dm-tablebox iv-top">
+          <table class="dm-table" data-source="puntos">
+            <thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num">Ciudades críticas</th><th class="dm-num">Días (mín.)</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
             <tbody data-draw="t-SALSAS"></tbody>
           </table>
         </div>
         <p class="dm-note" data-empty="SALSAS" hidden>Sin casos críticos en este corte.</p>
       </section>
-
-      <section class="dm-card" id="fam-empanadas">
-        <h2 class="dm-h2">Empanadas</h2>
+      <section class="dm-card iv-fam" id="fam-empanadas">
+        <div class="pp-fam-head"><span class="pp-fam-name">Empanadas</span><span class="pp-fam-badge" data-draw="b-EMPANADAS" data-source="puntos">—</span></div>
         <div class="dm-chart dm-chart-s" data-draw="l-EMPANADAS" data-source="puntos"></div>
-        <h3 class="dm-h2">Top 10 casos críticos</h3>
-        <div class="dm-tablebox">
-          <table class="dm-table" data-source="puntos" data-row-key="id">
-            <thead><tr><th data-field="ciudad">Ciudad</th><th data-field="ref">Ref</th><th data-field="desc">Producto</th><th data-field="abc">ABC</th><th data-field="dias" class="dm-num">Días</th><th data-field="inv" class="dm-num">Inv+tr</th><th data-field="dem" class="dm-num">Dem/día</th></tr></thead>
+        <h3 class="dm-h2 iv-top-t">Top 11 referencias críticas <span class="iv-top-s">5 tipo A · 3 tipo B · 3 tipo C · menos días primero</span></h3>
+        <div class="dm-tablebox iv-top">
+          <table class="dm-table" data-source="puntos">
+            <thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num">Ciudades críticas</th><th class="dm-num">Días (mín.)</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
             <tbody data-draw="t-EMPANADAS"></tbody>
           </table>
         </div>
+        <p class="dm-note" data-empty="EMPANADAS" hidden>Sin casos críticos en este corte.</p>
+      </section>
+    </div>
         <p class="dm-note" data-empty="EMPANADAS" hidden>Sin casos críticos en este corte.</p>
       </section>
     </div>
@@ -862,31 +862,47 @@
     const d = dash.data('puntos');
     if (d.status !== 'ok') { DM.fail(el, d.status); return; }
     el.replaceChildren();
-    const rows = DM.byCiudad(DM.rowsCorte() || []).filter((r) => r.dias != null);
+    const t = DM.rowsCorte() || [];
+    const rows = DM.byCiudad(t).filter((r) => r.dias != null);
     if (!rows.length) return;
-    const W = el.clientWidth, H = 290;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Días de inventario físico y en tránsito por ciudad');
-    const y = d3.scaleLinear([0, Math.max(DM.LIM_SOB + 2, d3.max(rows, (r) => r.dias)) * 1.15], [1, 0]).nice();
+    // Total de la red: mismo cálculo que la tarjeta de días de la red (DM.kpis), separado en físico y tránsito.
+    const k = DM.kpis(t), conDem = t.filter((r) => r.dem > 0), soloSopo = t.length > 0 && t.every((r) => r.bod === 'DEPT8');
+    const den = soloSopo ? d3.sum(conDem, (r) => r.dem) : d3.sum(t, (r) => r.fcd);
+    if (k.dias != null && den > 0) rows.push({ ciudad: 'TOTAL', total: true, dias_fisico: d3.sum(conDem, (r) => r.ex) / den, dias_transito: d3.sum(conDem, (r) => r.tr) / den, dias: k.dias });
+    const nombre = (r) => (r.total ? 'Total red' : DM.NAME[r.ciudad] || r.ciudad);
+    const W = el.clientWidth, H = 340;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Días de inventario físico y en tránsito por ciudad y total de la red');
+    const y = d3.scaleLinear([0, Math.max(DM.LIM_SOB + 2, d3.max(rows, (r) => r.dias)) * 1.3], [1, 0]).nice();
     const ml = Math.max(...y.ticks(5).map((v) => DM.textW(svg, DM.f0.format(v), 'dm-axis-t'))) + 10;
     const mr = DM.textW(svg, DM.LIM_SOB + ' días', 'dm-reft') + 8;
-    const x = d3.scaleBand(rows.map((r) => r.ciudad), [ml, W - mr]).padding(0.3);
-    const ax = DM.cityAxis(svg, rows.map((r) => r.ciudad), x.step());
-    const y0 = H - ax.mb;
-    y.range([y0, 20]);
+    const x = d3.scaleBand(rows.map((r) => r.ciudad), [ml, W - mr]).padding(0.28);
+    const y0 = H - 30;
+    y.range([y0, 10]);
     svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - mr)).tickFormat((v) => DM.f0.format(v))).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    DM.drawCityAxis(svg, x, y0, ax);
+    svg.append('g').selectAll('text').data(rows).join('text').attr('class', 'dm-axis-t').attr('text-anchor', 'middle').style('font-weight', (r) => (r.total ? 800 : 600)).style('fill', 'var(--color-fg)')
+      .attr('x', (r) => x(r.ciudad) + x.bandwidth() / 2).attr('y', y0 + 20).text(nombre);
+    // Fondo suave para la barra de total
+    const tot = rows.find((r) => r.total);
+    if (tot) svg.append('rect').attr('x', x(tot.ciudad) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 4).attr('height', y0 - 4).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #EEF0FA)');
     [[DM.LIM_CRIT, 'dm-ref dm-ref-bad'], [DM.LIM_SOB, 'dm-ref']].forEach(([v, cls]) => {
       svg.append('line').attr('class', cls).attr('x1', ml).attr('x2', W - mr).attr('y1', y(v)).attr('y2', y(v));
       svg.append('text').attr('class', 'dm-reft').attr('x', W - mr + 4).attr('y', y(v) + 4).text(v + ' días');
     });
-    const bw = Math.min(32, x.bandwidth());
-    const bx = (r) => x(r.ciudad) + (x.bandwidth() - bw) / 2;
-    svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', bx).attr('width', bw).attr('y', (r) => y(r.dias_fisico)).attr('height', (r) => y(0) - y(r.dias_fisico)).style('fill', 'var(--dm-green)');
-    svg.append('g').selectAll('rect').data(rows.filter((r) => r.dias_transito > 0)).join('rect').attr('x', bx).attr('width', bw).attr('y', (r) => y(r.dias)).attr('height', (r) => y(r.dias_fisico) - y(r.dias)).attr('rx', 3).style('fill', 'var(--dm-orange-2)');
-    svg.append('g').selectAll('text').data(rows).join('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', (r) => x(r.ciudad) + x.bandwidth() / 2).attr('y', (r) => y(r.dias) - 6).text((r) => DM.fd(r.dias));
+    const bw = Math.min(90, x.bandwidth());
+    const bx = (r) => x(r.ciudad) + (x.bandwidth() - bw) / 2, cx = (r) => x(r.ciudad) + x.bandwidth() / 2;
+    svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', bx).attr('width', bw).attr('y', (r) => y(r.dias_fisico)).attr('height', (r) => y(0) - y(r.dias_fisico)).attr('rx', 2).style('fill', 'var(--dm-green)');
+    svg.append('g').selectAll('rect').data(rows.filter((r) => r.dias_transito > 0)).join('rect').attr('x', bx).attr('width', bw).attr('y', (r) => y(r.dias)).attr('height', (r) => y(r.dias_fisico) - y(r.dias)).attr('rx', 2).style('fill', 'var(--dm-orange-2)');
+    // Encima de cada barra: físico, tránsito y total (días con un decimal para que la suma cuadre a la vista).
+    const lab = svg.append('g');
+    rows.forEach((r) => {
+      const top = y(r.dias);
+      lab.append('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', cx(r)).attr('y', top - 8).style('font-size', '15px').text('Total ' + DM.f1.format(r.dias));
+      lab.append('text').attr('text-anchor', 'middle').attr('x', cx(r)).attr('y', top - 26).style('font-size', '11.5px').style('font-weight', 700).style('fill', 'var(--dm-orange)').text('Tránsito ' + DM.f1.format(r.dias_transito));
+      lab.append('text').attr('text-anchor', 'middle').attr('x', cx(r)).attr('y', top - 41).style('font-size', '11.5px').style('font-weight', 700).style('fill', 'var(--dm-green)').text('Físico ' + DM.f1.format(r.dias_fisico));
+    });
     const tip = DM.tipFor(el);
     svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (r) => x(r.ciudad) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 0).attr('height', y0).attr('fill', 'transparent')
-      .on('mousemove', (e, r) => DM.showTip(tip, el, x(r.ciudad) + x.bandwidth() / 2, y(r.dias), [DM.NAME[r.ciudad] || r.ciudad, 'Inventario físico: ' + DM.fd(r.dias_fisico) + ' días', 'Tránsito: ' + DM.fd(r.dias_transito) + ' días', 'Total: ' + DM.fd(r.dias) + ' días']))
+      .on('mousemove', (e, r) => DM.showTip(tip, el, cx(r), y(r.dias), [nombre(r), 'Inventario físico: ' + DM.f1.format(r.dias_fisico) + ' días', 'Tránsito: ' + DM.f1.format(r.dias_transito) + ' días', 'Total: ' + DM.f1.format(r.dias) + ' días']))
       .on('mouseleave', () => { tip.hidden = true; });
   });
 </script>
@@ -926,23 +942,45 @@
         .on('mouseleave', () => { tip.hidden = true; });
     });
 
-    dash.draw('t-' + fam, (tb) => {
+    // Insignia "Total X días" de la familia (mismo cálculo que el tablero principal).
+    dash.draw('b-' + fam, (el) => { const t = DM.rowsCorte(); const v = t && t.filter((r) => r.fam === fam && r.dem > 0); const dem = v ? d3.sum(v, (r) => r.dem) : 0;
+      el.textContent = dem > 0 ? 'Total ' + DM.fd(d3.sum(v, (r) => r.inv) / dem) + ' días' : '—'; });
+
+    // Top 11 críticas por referencia: 5 tipo A, 3 tipo B, 3 tipo C; menos días primero (empate: más demanda). Con + se ven sus ciudades críticas.
+    window.IVopen = window.IVopen || new Set();
+    const drawTop = (tb) => {
       tb.replaceChildren();
       const t = DM.rowsCorte(); if (!t) return;
-      const rows = DM.top10(t, fam);
-      rows.forEach((r) => {
-        const tr = document.createElement('tr'); tr.dataset.key = r.id;
+      const crit = t.filter((r) => r.fam === fam && r.estado === 'CRITICO');
+      const refs = d3.rollups(crit, (v) => ({ ref: v[0].ref, desc: v[0].desc, abc: v[0].abc, n: v.length, dias: d3.min(v, (r) => r.dias), inv: d3.sum(v, (r) => r.inv), dem: d3.sum(v, (r) => r.dem),
+        ciudades: v.slice().sort((a, b) => a.dias - b.dias || b.dem - a.dem) }), (r) => r.ref).map(([, o]) => o);
+      const CUPO = { A: 5, B: 3, C: 3 };
+      const sel = ['A', 'B', 'C'].flatMap((c) => refs.filter((r) => r.abc === c).sort((a, b) => a.dias - b.dias || b.dem - a.dem).slice(0, CUPO[c]));
+      let prev = null;
+      sel.forEach((r) => {
+        const key = fam + '|' + r.ref, open = window.IVopen.has(key);
+        const tr = document.createElement('tr'); if (prev && prev !== r.abc) tr.className = 'iv-sep'; prev = r.abc;
         const cell = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.append(td); return td; };
-        cell(DM.NAME[r.ciudad] || r.ciudad);
+        const b = cell(''); const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'iv-exp'; btn.textContent = open ? '−' : '+';
+        btn.setAttribute('aria-label', (open ? 'Ocultar' : 'Ver') + ' ciudades críticas de ' + r.ref); btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.addEventListener('click', () => { if (window.IVopen.has(key)) window.IVopen.delete(key); else window.IVopen.add(key); drawTop(tb); }); b.append(btn);
         cell(r.ref);
         cell(r.desc, 'dm-desc');
         const a = cell(''); const pill = document.createElement('span'); pill.className = 'dm-abc dm-abc-' + r.abc; pill.textContent = r.abc; a.append(pill);
+        cell(DM.f0.format(r.n), 'dm-num');
         cell(DM.fd(r.dias), 'dm-num dm-days');
         cell(DM.f0.format(r.inv), 'dm-num');
         cell(DM.f1.format(r.dem), 'dm-num');
         tb.append(tr);
+        if (open) r.ciudades.forEach((c) => {
+          const ch = document.createElement('tr'); ch.className = 'iv-child';
+          const cc = (txt, cls, span) => { const td = document.createElement('td'); if (cls) td.className = cls; if (span) td.colSpan = span; td.textContent = txt; ch.append(td); };
+          cc(''); cc(DM.NAME[c.ciudad] || c.ciudad, 'iv-city', 3); cc('', 'dm-num'); cc(DM.fd(c.dias), 'dm-num dm-days'); cc(DM.f0.format(c.inv), 'dm-num'); cc(DM.f1.format(c.dem), 'dm-num');
+          tb.append(ch);
+        });
       });
-    });
+    };
+    dash.draw('t-' + fam, drawTop);
   });
 </script>
 
