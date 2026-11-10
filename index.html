@@ -136,8 +136,9 @@ window.dash = (() => {
   .mo-bar .dm-select, .mo-bar .dm-ms-btn { border-color: var(--dm-green); }
   .dm-grid2-sep { display: grid; gap: var(--cds-gap-xl); grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr)); }
   .ag-var { font-size: var(--cds-font-size-caption); font-weight: 800; font-family: 'Poppins', var(--font-anthropic-sans); fill: var(--dm-orange); }
-  .ag-bv-wrap { position: relative; }
-  .ag-var { position: absolute; top: 4px; left: 96px; z-index: 1; }
+  .ag-bv-wrap { position: static; }
+  #agotados-vs-venta { position: relative; }
+  .ag-var { position: absolute; top: 14px; right: 16px; z-index: 1; }
   .ag-var table { border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; background: var(--color-panel); border: 1px solid var(--cds-border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
   .ag-var th { background: var(--dm-green); color: #FFFFFF; font-weight: 700; padding: 5px 10px; font-size: 11px; text-align: right; }
   .ag-var th:first-child { text-align: left; }
@@ -483,7 +484,7 @@ window.dash = (() => {
         </div></section>
       <section class="dm-card dm-card-o" id="pp-card-nsag"><h2 class="dm-h2">Nivel de servicio y agotados por mes</h2>
         <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Nivel de servicio</span><span><span class="dm-sw dm-sw-o"></span>% agotado (100 % − nivel de servicio)</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 95 %</span></div>
-        <div class="dm-chart" data-draw="pp-nsag" data-source="ns ns_estado agotados venta_mensual ventas"></div></section>
+        <div class="dm-chart" data-draw="pp-nsag" data-source="ns ns_estado agotados ventas"></div></section>
     </div>
     <div class="pp-stack">
       <section class="dm-card" id="pp-card-dias"><h2 class="dm-h2">Días de inventario por categoría y ciudad</h2>
@@ -512,7 +513,7 @@ window.dash = (() => {
           <button class="dm-ms-btn" type="button" aria-expanded="false" aria-label="Elegir segmentos"><span data-draw="msl-ag_segs" data-source="agotados">—</span></button>
           <div class="dm-ms-pop" hidden><button class="dm-ms-all" type="button">Todos los segmentos</button><div class="dm-ms-list" data-draw="ms-ag_segs" data-source="agotados"></div></div></div>
       </div>
-      <p class="dm-note">Backorder en pesos del archivo <b data-draw="ag-archivo" data-source="agotados_estado">—</b>. Venta mensual: tabla del gerente. Los segmentos salen del maestro de Segmentos (cruce por referencia). Meses mostrados: <b data-draw="ag-periodo" data-source="agotados_estado">—</b>.</p>
+      <p class="dm-note">Backorder en pesos del archivo <b data-draw="ag-archivo" data-source="agotados_estado">—</b>. Venta mensual: venta efectiva (archivo del TCV). Los segmentos salen del maestro de Segmentos (cruce por referencia). Meses mostrados: <b data-draw="ag-periodo" data-source="agotados_estado">—</b>.</p>
     </div>
 
 
@@ -520,14 +521,14 @@ window.dash = (() => {
       <h2 class="dm-h2">Agotados vs venta por año</h2>
       <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Venta ($)</span><span><span class="dm-sw" style="background: var(--dm-orange)"></span>Agotado ($)</span><span><span class="dm-sw" style="background: var(--dm-orange); border-radius: 999px"></span>% agotado sobre venta</span></div>
       <div class="ag-bv-wrap">
-        <div class="dm-chart" data-draw="ag-bv" data-source="agotados venta_mensual agotados_estado"></div>
-        <div class="ag-var" data-draw="ag-var-tab" data-source="agotados venta_mensual agotados_estado"></div>
+        <div class="dm-chart" data-draw="ag-bv" data-source="agotados ventas agotados_estado"></div>
+        <div class="ag-var" data-draw="ag-var-tab" data-source="agotados ventas agotados_estado"></div>
       </div>
     </section>
 
     <section class="dm-card" id="agotados-comparativo-pct"><h2 class="dm-h2">Comparativo por mes: % agotado sobre venta</h2>
-      <p class="dm-note">Backorder del mes ÷ venta del mes (tabla de ventas del gerente, que empieza en enero de 2025; por eso 2024 no aparece). Solo para el total de la compañía: con filtro de ciudad, canal o segmento este % no se calcula.</p>
-      <div class="dm-chart" data-draw="ag-comp-pct" data-source="agotados venta_mensual agotados_estado"></div></section>
+      <p class="dm-note">Backorder del mes ÷ venta efectiva del mes. Solo para el total de la compañía: con filtro de ciudad, canal o segmento este % no se calcula.</p>
+      <div class="dm-chart" data-draw="ag-comp-pct" data-source="agotados ventas agotados_estado"></div></section>
 
     <section class="dm-card" id="agotados-comparativo"><h2 class="dm-h2">Comparativo por mes: valor agotado ($)</h2>
       <div class="dm-chart" data-draw="ag-comp" data-source="agotados agotados_estado"></div></section>
@@ -1469,10 +1470,11 @@ window.dash = (() => {
   window.AG = (() => {
     const MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const MESL = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    const ok = () => ['agotados', 'agotados_estado', 'venta_mensual'].every((id) => dash.data(id).status === 'ok');
+    const ok = () => ['agotados', 'agotados_estado', 'ventas'].every((id) => dash.data(id).status === 'ok');
     const D = () => (dash.data('agotados').status === 'ok' ? dash.data('agotados').data : []);
     const est = () => { const d = dash.data('agotados_estado'); return d.status === 'ok' ? d.data[0] : null; };
-    const V = () => { const m = new Map(); if (dash.data('venta_mensual').status === 'ok') dash.data('venta_mensual').data.forEach((r) => m.set(String(r.mes), +r.venta)); return m; };
+    // Venta del mes: venta efectiva (archivo del TCV, se actualiza a diario; reemplaza la tabla del gerente desde el 10-nov-2026).
+    const V = () => { const m = new Map(); if (dash.data('ventas').status === 'ok') dash.data('ventas').data.forEach((r) => m.set(String(r.mes), (m.get(String(r.mes)) || 0) + +r.venta)); return m; };
     const list = (v) => (Array.isArray(v) ? v : []);
     const sel = () => { const p = dash.params(); return { anios: list(p.ag_anios), meses: list(p.ag_meses), ciudades: list(p.ag_ciudades), canales: list(p.ag_canales), segs: list(p.ag_segs) }; };
     const dimFiltro = (s) => s.ciudades.length || s.canales.length || s.segs.length;
@@ -1562,7 +1564,7 @@ window.dash = (() => {
 
   // Agotados vs venta por año (mismos meses de cada año): barra de agotado, barra de venta y % de agotado sobre venta.
   dash.draw('ag-periodo2', (el) => { el.textContent = AG.ok() ? AG.etiquetaPeriodo(AG.sel()) : '—'; });
-  // Datos por año (mismos meses de cada año): agotado, venta (tabla del gerente) y % agotado sobre venta con los meses que tienen venta.
+  // Datos por año (mismos meses de cada año): agotado, venta efectiva y % agotado sobre venta con los meses que tienen venta.
   const agBV = () => {
     const s = AG.sel(), per = AG.periodo(s), venta = AG.V(), ys = s.anios.length ? [...s.anios].sort() : AG.anios();
     const pm = AG.porMes(AG.rowsDim(s));
@@ -1627,7 +1629,7 @@ window.dash = (() => {
     if (sinDim) fila('Venta', pv(U.venta, A.venta, false));
     fila('Agotado', pv(U.ag, A.ag, true));
     if (sinDim) { const d = U.pct != null && A.pct != null ? (U.pct - A.pct) * 100 : null; fila('% agotado', d == null ? ['—', 'ag-neu'] : [(d > 0 ? '▲ +' : d < 0 ? '▼ −' : '') + DM.f1.format(Math.abs(d)) + ' pp', d > 0 ? 'ag-up' : d < 0 ? 'ag-dn' : 'ag-neu']); }
-    tb.title = 'Mismos meses en los dos años (venta hasta el último mes de la tabla del gerente)';
+    tb.title = 'Mismos meses en los dos años (venta efectiva hasta el último mes cargado)';
     el.append(tb);
   });
 
@@ -2306,6 +2308,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 04:07 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 04:28 PM.</p>
 </body>
 </html>
