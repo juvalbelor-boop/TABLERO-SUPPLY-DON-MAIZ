@@ -528,6 +528,7 @@
       <p class="dm-note">Semana del <b data-draw="ot-rango" data-source="produccion mps mps_estado">—</b> (<b data-draw="ot-estsem" data-source="mps_estado">—</b>). Datos de tu Excel guardado el <b data-draw="ot-hoy" data-source="mps_estado">—</b>, con Siesa cargado hasta el <b data-draw="ot-siesa" data-source="mps_estado">—</b>.</p>
     </div>
 
+    <p class="dm-note" data-draw="ot-excep" data-source="mps_estado" style="display:none"></p>
     <div class="dm-tiles" id="otif-indicadores">
       <div class="dm-tile"><span class="dm-tile-l">SKU-día que cumplen</span><span class="dm-tile-v" data-draw="ok-cumplen" data-source="produccion">—</span></div>
       <div class="dm-tile"><span class="dm-tile-l">SKU-día programados</span><span class="dm-tile-v" data-draw="ok-n" data-source="produccion">—</span></div>
@@ -1214,6 +1215,9 @@
     dash.draw(key + '-rango', (el) => { const s = MO.sel(pre); el.textContent = s.w ? DM.fDay(MO.addDays(s.w, -1)) + ' al ' + DM.fDay(MO.addDays(s.w, 5)) : '—'; });
     dash.draw(key + '-estsem', (el) => { const s = MO.sel(pre); el.textContent = s.w ? (MO.cerrada(s.w) ? 'cerrada' : 'abierta') : '—'; });
     dash.draw(key + '-hoy', (el) => { const e = MO.est(); el.textContent = e ? DM.fDate(e.hoy) : '—'; });
+    // Excepciones aprobadas (p. ej. domingo 8-nov-2026 sin programa: lo producido se toma como programa).
+    dash.draw(key + '-excep', (el) => { const x = (MO.est() || {}).excepciones; el.style.display = x && x.length ? '' : 'none'; if (!(x && x.length)) return;
+      el.textContent = x.map((v) => { const [, m, dd] = v.fecha.split('-'); return 'Excepción del ' + (+dd) + '-' + PP.MC[+m - 1] + ': no hubo programa; lo producido (' + DM.f0.format(v.paquetes) + ' paquetes, ' + v.referencias + ' referencias) se toma como programa, con cumplimiento de 100 %.'; }).join(' '); });
     dash.draw(key + '-siesa', (el) => { const e = MO.est(); el.textContent = e ? DM.fDate(e.siesa_hasta) : '—'; });
   });
 
