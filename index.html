@@ -607,8 +607,12 @@ window.dash = (() => {
 
     <p class="dm-note" data-draw="ot-excep" data-source="mps_estado" style="display:none"></p>
     <div class="dm-tiles" id="otif-indicadores">
-      <div class="dm-tile"><span class="dm-tile-l">SKU-día que cumplen</span><span class="dm-tile-v" data-draw="ok-cumplen" data-source="produccion">—</span></div>
-      <div class="dm-tile"><span class="dm-tile-l">SKU-día programados</span><span class="dm-tile-v" data-draw="ok-n" data-source="produccion">—</span></div>
+      <div class="dm-tile"><span class="dm-tile-l">Programado (paquetes)</span><span class="dm-tile-v" data-draw="ok-prog" data-source="produccion">—</span></div>
+      <div class="dm-tile"><span class="dm-tile-l">Real (de lo programado)</span><span class="dm-tile-v" data-draw="ok-real" data-source="produccion">—</span></div>
+      <div class="dm-tile"><span class="dm-tile-l">Faltante</span><span class="dm-tile-v" data-draw="ok-falt" data-source="produccion">—</span></div>
+      <div class="dm-tile"><span class="dm-tile-l">% Cumplimiento</span><span class="dm-tile-v" data-draw="ok-cump" data-source="produccion">—</span></div>
+      <div class="dm-tile"><span class="dm-tile-l">Referencias que cumplen</span><span class="dm-tile-v" data-draw="ok-cumplen" data-source="produccion">—</span></div>
+      <div class="dm-tile"><span class="dm-tile-l">Se hizo sin programar</span><span class="dm-tile-v" data-draw="ok-np" data-source="produccion">—</span></div>
     </div>
 
     <section class="dm-card" id="otif-velocimetros">
@@ -1157,7 +1161,7 @@ window.dash = (() => {
     const tot = (rs) => {
       const pl = rs.filter((r) => r.tipo === 'plan'); const prog = sum(pl, (r) => r.prog);
       return {
-        prog, real: sum(rs, (r) => r.real), np: sum(rs.filter((r) => r.tipo === 'np'), (r) => r.real), falt: sum(pl, (r) => r.falt),
+        prog, real: sum(rs, (r) => r.real), realPlan: sum(pl, (r) => r.real), nCumplen: pl.filter((r) => r.ont === 1).length, np: sum(rs.filter((r) => r.tipo === 'np'), (r) => r.real), falt: sum(pl, (r) => r.falt),
         otif: prog ? sum(pl, (r) => r.otif * r.prog) / prog : null, inf: prog ? sum(pl, (r) => r.inf * r.prog) / prog : null,
         ont: prog ? sum(pl, (r) => r.ont * r.prog) / prog : null,
         otifProm: pl.length ? sum(pl, (r) => r.otif) / pl.length : null, cumplen: pl.length ? pl.filter((r) => r.ont === 1).length / pl.length : null, n: pl.length,
@@ -1294,7 +1298,7 @@ window.dash = (() => {
     dash.draw(key + '-hoy', (el) => { const e = MO.est(); el.textContent = e ? DM.fDate(e.hoy) : '—'; });
     // Excepciones aprobadas (p. ej. domingo 8-nov-2026 sin programa: lo producido se toma como programa).
     dash.draw(key + '-excep', (el) => { const x = (MO.est() || {}).excepciones; el.style.display = x && x.length ? '' : 'none'; if (!(x && x.length)) return;
-      el.textContent = x.map((v) => { const [, m, dd] = v.fecha.split('-'); return 'Excepción del ' + (+dd) + '-' + PP.MC[+m - 1] + ': no hubo programa; lo producido (' + DM.f0.format(v.paquetes) + ' paquetes, ' + v.referencias + ' referencias) se toma como programa, con cumplimiento de 100 %.'; }).join(' '); });
+      el.textContent = x.map((v) => { const [, m, dd] = v.fecha.split('-'); return 'Excepción del ' + (+dd) + '-' + PP.MC[+m - 1] + ': no hubo programa en la hoja DIAS; el programado es lo de las ' + v.ordenes + ' órdenes de Siesa de ese día (' + DM.f0.format(v.programado) + ' paquetes) contra lo real (' + DM.f0.format(v.real) + ' paquetes).'; }).join(' '); });
     dash.draw(key + '-siesa', (el) => { const e = MO.est(); el.textContent = e ? DM.fDate(e.siesa_hasta) : '—'; });
   });
 
@@ -1352,8 +1356,13 @@ window.dash = (() => {
 
   // ---- Pestaña OTIF
   const otT = () => (MO.ok() ? MO.tot(MO.rows(MO.sel('ot_'))) : null);
-  kpi('ok-cumplen', () => MOG.pct(otT().cumplen));
-  kpi('ok-n', () => DM.f0.format(otT().n));
+  // Mismos indicadores del Reporte diario del Excel OTIF.
+  kpi('ok-prog', () => DM.f0.format(otT().prog));
+  kpi('ok-real', () => DM.f0.format(otT().realPlan));
+  kpi('ok-falt', () => DM.f0.format(otT().falt));
+  kpi('ok-cump', () => { const t = otT(); return t.prog ? MOG.pct(t.realPlan / t.prog) : '—'; });
+  kpi('ok-cumplen', () => { const t = otT(); return t.n ? t.nCumplen + ' de ' + t.n : '—'; });
+  kpi('ok-np', () => DM.f0.format(otT().np));
   [['g-otif', 'otif', 'OTIF ponderado'], ['g-inf', 'inf', 'In Full ponderado'], ['g-ont', 'ont', 'On Time ponderado']].forEach(([n, k, lab]) => dash.draw(n, (el) => {
     if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
     const t = otT(); MOG.gauge(el, t[k], { tag: k === 'otif' ? 'promedio simple ' + MOG.pct(t.otifProm) : '', label: lab });
@@ -2184,6 +2193,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 10:36 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 10:42 AM.</p>
 </body>
 </html>
