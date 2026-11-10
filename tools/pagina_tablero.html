@@ -1097,11 +1097,14 @@
       const real = new Map(); P().filter((r) => r.s === s.w).forEach((r) => real.set(r.ref, (real.get(r.ref) || 0) + (s.kg ? r.realk : r.real)));
       return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat)), (r) => Math.max(0, (s.kg ? r.mpsk : r.mps) - (real.get(r.ref) || 0)));
     };
-    const porDia = (s) => DIAS.map((dia, i) => {
-      const f = addDays(s.w, i - 1); const t = tot(rows({ ...s, dia: '' }, false).filter((r) => r.f === f));
+    // Normalmente el domingo es el día anterior al lunes de la semana; si la semana trae un domingo posterior (excepción del
+    // domingo 8-nov-2026, que cuenta en la semana del 2-nov), ese domingo va al final de la semana.
+    const domTarde = (w) => { const d = addDays(w, 6); return P().some((r) => r.s === w && r.f === d) ? d : null; };
+    const porDia = (s) => { const dt = domTarde(s.w); const out = DIAS.map((dia, i) => {
+      const f = i === 0 && dt ? dt : addDays(s.w, i - 1); const t = tot(rows({ ...s, dia: '' }, false).filter((r) => r.f === f));
       const e = est(); const estado = e && f >= e.hoy ? 'Sin reporte aún' : !t.prog && !t.real ? 'Sin producción' : t.real >= t.prog ? 'Cumplió' : 'No cumplió';
       return { dia, f, ...t, cumpl: t.prog ? t.real / t.prog : null, estado };
-    });
+    }); return dt ? [...out.slice(1), out[0]] : out; };
     const agrupa = (rs, key, orden) => {
       const m = new Map(); rs.forEach((r) => { const k = r[key]; if (!m.has(k)) m.set(k, []); m.get(k).push(r); });
       const out = [...m].map(([k, v]) => ({ k, ...tot(v) })).map((o) => ({ ...o, cumpl: o.prog ? o.real / o.prog : null }));
@@ -1120,7 +1123,7 @@
       const t = tot(P().filter((r) => r.s === w)); const m = sum(M().filter((r) => r.s === w), (r) => r.mps);
       return { w, mps: m, ...t, cumplMps: m ? t.real / m : null, cumplProg: t.prog ? t.real / t.prog : null, cerrada: cerrada(w) };
     });
-    return { DIAS, SEGS, META, ok, est, weeks, sel, cerrada, addDays, rows, tot, mpsTot, faltaMps, porDia, porHorno, porSeg, topMps, topOtif, tendencia };
+    return { DIAS, SEGS, META, ok, est, weeks, sel, cerrada, addDays, domTarde, rows, tot, mpsTot, faltaMps, porDia, porHorno, porSeg, topMps, topOtif, tendencia };
   })();
 </script>
 
@@ -1216,12 +1219,12 @@
       el.replaceChildren(...MO.weeks().map((w) => new Option('Semana del ' + DM.fDay(w) + (MO.cerrada(w) ? '' : ' (abierta)'), w)));
       el.value = MO.sel(pre).w || ''; el.onchange = () => dash.setParams({ [pre + 'sem']: el.value || null });
     });
-    dash.draw(key + '-rango', (el) => { const s = MO.sel(pre); el.textContent = s.w ? DM.fDay(MO.addDays(s.w, -1)) + ' al ' + DM.fDay(MO.addDays(s.w, 5)) : '—'; });
+    dash.draw(key + '-rango', (el) => { const s = MO.sel(pre); const dt = s.w && MO.domTarde(s.w); el.textContent = s.w ? (dt ? DM.fDay(s.w) + ' al ' + DM.fDay(dt) : DM.fDay(MO.addDays(s.w, -1)) + ' al ' + DM.fDay(MO.addDays(s.w, 5))) : '—'; });
     dash.draw(key + '-estsem', (el) => { const s = MO.sel(pre); el.textContent = s.w ? (MO.cerrada(s.w) ? 'cerrada' : 'abierta') : '—'; });
     dash.draw(key + '-hoy', (el) => { const e = MO.est(); el.textContent = e ? DM.fDate(e.hoy) : '—'; });
     // Excepciones aprobadas (p. ej. domingo 8-nov-2026 sin programa: lo producido se toma como programa).
     dash.draw(key + '-excep', (el) => { const x = (MO.est() || {}).excepciones; el.style.display = x && x.length ? '' : 'none'; if (!(x && x.length)) return;
-      el.textContent = x.map((v) => { const [, m, dd] = v.fecha.split('-'); return 'Excepción del ' + (+dd) + '-' + PP.MC[+m - 1] + ': no hubo programa en la hoja DIAS; el programado es lo de las ' + v.ordenes + ' órdenes de Siesa de ese día (' + DM.f0.format(v.programado) + ' paquetes) contra lo real (' + DM.f0.format(v.real) + ' paquetes).'; }).join(' '); });
+      el.textContent = x.map((v) => { const [, m, dd] = v.fecha.split('-'); return 'Excepción del ' + (+dd) + '-' + PP.MC[+m - 1] + ': no hubo programa en la hoja DIAS; el programado es lo de las ' + v.ordenes + ' órdenes de Siesa de ese día (' + DM.f0.format(v.programado) + ' paquetes) contra lo real (' + DM.f0.format(v.real) + ' paquetes). Ese domingo cuenta como último día de la semana del 2 de nov.'; }).join(' '); });
     dash.draw(key + '-siesa', (el) => { const e = MO.est(); el.textContent = e ? DM.fDate(e.siesa_hasta) : '—'; });
   });
 
@@ -1257,7 +1260,7 @@
   });
   const DIA_C = { Domingo: 'Dom', Lunes: 'Lun', Martes: 'Mar', 'Miércoles': 'Mié', Jueves: 'Jue', Viernes: 'Vie', 'Sábado': 'Sáb' };
   const diaItems = (pre, campo) => MO.porDia(MO.sel(pre)).map((d) => ({
-    k: d.dia, label: DIA_C[d.dia], sub: DM.fDay(d.f), v: campo === 'cumpl' ? d.cumpl : d.otif, empty: d.estado === 'Sin reporte aún' ? 'Sin reporte' : d.estado === 'Sin producción' ? 'Sin prod.' : '—',
+    k: d.dia, label: DIA_C[d.dia], sub: +d.f.slice(8, 10) + '-' + PP.MC[+d.f.slice(5, 7) - 1], v: campo === 'cumpl' ? d.cumpl : d.otif, empty: d.estado === 'Sin reporte aún' ? 'Sin reporte' : d.estado === 'Sin producción' ? 'Sin prod.' : '—',
     tip: [d.dia + ' ' + DM.fDay(d.f), 'Programado: ' + DM.f0.format(d.prog), 'Real: ' + DM.f0.format(d.real), campo === 'cumpl' ? 'Cumplimiento: ' + MOG.pct(d.cumpl) : 'OTIF: ' + MOG.pct(d.otif), 'Faltante: ' + DM.f0.format(d.falt), d.estado],
   }));
   dash.draw('mps-dia', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, diaItems('mps_', 'cumpl'), { sub: true, selected: MO.sel('mps_').dia || null, label: 'Cumplimiento por día' }); });
