@@ -235,6 +235,27 @@ window.dash = (() => {
 
   .dm-tablebox { overflow: auto; max-height: 26rem; }
   .dm { --iv-arepas: #0A0F9A; --iv-salsas: #F7941D; --iv-empanadas: #5E8C9A; }
+  .lc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--cds-gap-lg); flex-wrap: wrap; }
+  .lc-chips { display: flex; gap: var(--cds-gap-sm); flex-wrap: wrap; }
+  .lc-chip { display: flex; flex-direction: column; align-items: center; min-width: 5.2rem; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--cds-border); background: var(--color-panel); }
+  .lc-chip b { font-size: 1.35rem; line-height: 1.1; color: var(--color-fg); }
+  .lc-chip span { font-size: 11px; color: var(--color-fg-muted); }
+  .lc-chip.lc-red { border-color: var(--cds-chart-status-critical); } .lc-chip.lc-red b { color: var(--cds-chart-status-critical); }
+  .lc-box { margin-top: var(--cds-gap-md); max-height: 34rem; overflow: auto; border: 1px solid var(--cds-border); border-radius: 10px; }
+  .lc-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .lc-table thead th { position: sticky; top: 0; z-index: 1; background: var(--dm-green); color: #FFFFFF; font-weight: 700; text-align: left; padding: 10px 12px; font-size: 12px; }
+  .lc-table td { padding: 8px 12px; border-bottom: 1px solid var(--cds-border); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lc-table tbody tr.lc-row:nth-child(even) td { background: #FAFAF8; }
+  .lc-table tbody tr.lc-row:hover td { background: var(--dm-bg-soft, #EEF0FA); }
+  .lc-table .lc-n { text-align: right; } .lc-table .lc-c { text-align: center; }
+  .lc-table td.lc-city { font-weight: 700; }
+  .lc-table td.lc-ref { color: var(--color-fg-muted); font-weight: 600; }
+  .lc-group td { background: var(--dm-bg-soft, #EEF0FA) !important; font-weight: 800; color: var(--dm-green); font-size: 12px; letter-spacing: .03em; padding: 6px 12px; }
+  .lc-days { display: flex; align-items: center; gap: 8px; }
+  .lc-pill { min-width: 3.1rem; text-align: center; border-radius: 999px; padding: 2px 8px; font-weight: 800; font-size: 12px; color: #FFFFFF; background: var(--cds-chart-status-critical); }
+  .lc-pill.lc-warn { background: var(--dm-orange-2); }
+  .lc-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--color-border-line); overflow: hidden; }
+  .lc-bar i { display: block; height: 100%; border-radius: 3px; }
   .iv-fam-grid { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   @media (max-width: 1000px) { .iv-fam-grid { grid-template-columns: 1fr; } }
   .iv-top { max-height: none; }
@@ -415,11 +436,14 @@ window.dash = (() => {
     </div>
 
       <section class="dm-card" id="lista-criticos">
-        <h2 class="dm-h2">Referencias críticas</h2>
-        <p class="dm-note">Tipo A primero, luego las de mayor demanda.</p>
-        <div class="dm-tablebox">
-          <table class="dm-table" data-source="puntos" data-row-key="id">
-            <thead><tr><th data-field="ciudad">Ciudad</th><th data-field="ref">Ref</th><th data-field="desc">Producto</th><th data-field="abc">ABC</th><th data-field="inv" class="dm-num">Inv+tr</th><th data-field="dem" class="dm-num">Dem/día</th><th data-field="dias" class="dm-num">Días</th></tr></thead>
+        <div class="lc-head">
+          <div><h2 class="dm-h2">Referencias críticas</h2><p class="dm-note">Puntos bodega-referencia con menos de 3 días. Agrupados por tipo ABC; dentro de cada tipo, los de mayor demanda primero.</p></div>
+          <div class="lc-chips" data-draw="r-lista-chips" data-source="puntos"></div>
+        </div>
+        <div class="lc-box">
+          <table class="lc-table" data-source="puntos">
+            <colgroup><col style="width:11%"><col style="width:7%"><col><col style="width:6%"><col style="width:10%"><col style="width:10%"><col style="width:17%"></colgroup>
+            <thead><tr><th>Ciudad</th><th>Ref</th><th>Producto</th><th class="lc-c">ABC</th><th class="lc-n">Inv + tránsito</th><th class="lc-n">Demanda / día</th><th>Días de inventario</th></tr></thead>
             <tbody data-draw="r-lista"></tbody>
           </table>
         </div>
@@ -1132,15 +1156,34 @@ window.dash = (() => {
   dash.draw('r-lista', (tb) => {
     tb.replaceChildren();
     const t = today(); if (!t) return;
-    const ord = { A: 0, B: 1, C: 2 };
-    t.filter((r) => r.estado === 'CRITICO').sort((a, b) => ord[a.abc] - ord[b.abc] || b.dem - a.dem).forEach((r) => {
-      const tr = document.createElement('tr'); tr.dataset.key = r.id;
-      const cell = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.append(td); return td; };
-      cell(DM.NAME[r.ciudad] || r.ciudad); cell(r.ref); cell(r.desc, 'dm-desc');
-      const a = cell(''); const pill = document.createElement('span'); pill.className = 'dm-abc dm-abc-' + r.abc; pill.textContent = r.abc; a.append(pill);
-      cell(DM.f0.format(r.inv), 'dm-num'); cell(DM.f1.format(r.dem), 'dm-num'); cell(DM.fd(r.dias), 'dm-num dm-days');
-      tb.append(tr);
+    const crit = t.filter((r) => r.estado === 'CRITICO');
+    ['A', 'B', 'C'].forEach((abc) => {
+      const rs = crit.filter((r) => r.abc === abc).sort((a, b) => b.dem - a.dem);
+      if (!rs.length) return;
+      const g = document.createElement('tr'); g.className = 'lc-group'; const gt = document.createElement('td'); gt.colSpan = 7;
+      gt.textContent = 'TIPO ' + abc + ' · ' + rs.length + (rs.length === 1 ? ' punto' : ' puntos'); g.append(gt); tb.append(g);
+      rs.forEach((r) => {
+        const tr = document.createElement('tr'); tr.className = 'lc-row';
+        const cell = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.append(td); return td; };
+        cell(DM.NAME[r.ciudad] || r.ciudad, 'lc-city'); cell(r.ref, 'lc-ref'); const dsc = cell(r.desc); dsc.title = r.desc;
+        const a = cell('', 'lc-c'); const pill = document.createElement('span'); pill.className = 'dm-abc dm-abc-' + r.abc; pill.textContent = r.abc; a.append(pill);
+        cell(DM.f0.format(r.inv), 'lc-n'); cell(DM.f1.format(r.dem), 'lc-n');
+        // Días: etiqueta (roja si menos de 1 día, naranja de 1 a 2,9) y barra de cobertura frente al límite de 3 días.
+        const d = cell(''); const w = document.createElement('div'); w.className = 'lc-days';
+        const p = document.createElement('span'); p.className = 'lc-pill' + (r.dias >= 1 ? ' lc-warn' : ''); p.textContent = DM.f1.format(Math.floor(r.dias * 10) / 10) + ' d'; // truncado: 2,97 se ve 2,9 (crítico es menos de 3)
+        const bar = document.createElement('span'); bar.className = 'lc-bar'; const fill = document.createElement('i');
+        fill.style.width = Math.max(2, Math.min(100, (r.dias / DM.LIM_CRIT) * 100)) + '%'; fill.style.background = r.dias >= 1 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(fill);
+        w.append(p, bar); d.append(w);
+        tb.append(tr);
+      });
     });
+  });
+  // Resumen arriba de la tabla: total de críticas, por tipo y cuántas sin inventario.
+  dash.draw('r-lista-chips', (el) => {
+    el.replaceChildren(); const t = today(); if (!t) return;
+    const crit = t.filter((r) => r.estado === 'CRITICO');
+    [['Críticas', crit.length, 'lc-red'], ['Tipo A', crit.filter((r) => r.abc === 'A').length], ['Tipo B', crit.filter((r) => r.abc === 'B').length], ['Tipo C', crit.filter((r) => r.abc === 'C').length], ['Sin inventario', crit.filter((r) => r.inv <= 0).length, 'lc-red']]
+      .forEach(([l, v, c]) => { const ch = document.createElement('div'); ch.className = 'lc-chip' + (c ? ' ' + c : ''); const b = document.createElement('b'); b.textContent = DM.f0.format(v); const sp = document.createElement('span'); sp.textContent = l; ch.append(b, sp); el.append(ch); });
   });
 
   // Matriz ABC × estado.
@@ -2231,6 +2274,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 03:48 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 03:50 PM.</p>
 </body>
 </html>
