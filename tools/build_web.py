@@ -33,7 +33,7 @@ stamp = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=5)).strftime('%d/
 TOKENS = """
 :root { color-scheme: light;
   --color-fg: #1F1F1F; --color-fg-muted: #6B6B6B; --color-bg: #F6F6F4; --color-panel: #FFFFFF; --color-border-line: #E3E3DE;
-  --color-ok: #149A3A; --color-warn: #F7941D; --color-bad: #D93B3B; --dm-bg-soft: #F1F7F2;
+  --color-ok: #149A3A; --color-warn: #F7941D; --color-bad: #D93B3B; --dm-bg-soft: #EEF0FA;
   --cds-border: #E3E3DE; --cds-chart-axis: #BDBDB6; --cds-chart-grid: #EDEDE8; --cds-chart-muted: #BDBDBD; --cds-chart-reference: #8A8A85;
   --cds-chart-status-critical: #D93B3B; --cds-dur-slow: 300ms; --cds-text-secondary: #6B6B6B;
   --cds-font-size-caption: 12px; --cds-font-size-body: 14px; --cds-font-size-heading: 16px; --cds-font-size-title: 26px; --cds-font-weight-medium: 500;
@@ -56,7 +56,7 @@ window.dash = (() => {
   let params = %PARAMS%, loaded = false, queued = false;
   const ok = (rows) => ({ status: 'ok', data: rows, columns: rows && rows[0] ? Object.keys(rows[0]) : [], meta: [], refreshing: false });
   const api = {
-    colors: ['#149A3A', '#F7941D', '#2F6FB0', '#F15A29', '#7B2A78', '#0B6B2B', '#C9A100', '#5E8C9A'],
+    colors: ['#0A0F9A', '#F7941D', '#2F6FB0', '#F15A29', '#7B2A78', '#0B6B2B', '#C9A100', '#5E8C9A'],
     data(id) {
       if (calcs[id]) {
         if (!loaded) return { status: 'loading', data: [] };

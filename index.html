@@ -8,7 +8,7 @@
 <style>
 :root { color-scheme: light;
   --color-fg: #1F1F1F; --color-fg-muted: #6B6B6B; --color-bg: #F6F6F4; --color-panel: #FFFFFF; --color-border-line: #E3E3DE;
-  --color-ok: #149A3A; --color-warn: #F7941D; --color-bad: #D93B3B; --dm-bg-soft: #F1F7F2;
+  --color-ok: #149A3A; --color-warn: #F7941D; --color-bad: #D93B3B; --dm-bg-soft: #EEF0FA;
   --cds-border: #E3E3DE; --cds-chart-axis: #BDBDB6; --cds-chart-grid: #EDEDE8; --cds-chart-muted: #BDBDBD; --cds-chart-reference: #8A8A85;
   --cds-chart-status-critical: #D93B3B; --cds-dur-slow: 300ms; --cds-text-secondary: #6B6B6B;
   --cds-font-size-caption: 12px; --cds-font-size-body: 14px; --cds-font-size-heading: 16px; --cds-font-size-title: 26px; --cds-font-weight-medium: 500;
@@ -31,7 +31,7 @@ window.dash = (() => {
   let params = {"bods": [], "cat": "Nacional", "ciudades": [], "corte": null, "segs": []}, loaded = false, queued = false;
   const ok = (rows) => ({ status: 'ok', data: rows, columns: rows && rows[0] ? Object.keys(rows[0]) : [], meta: [], refreshing: false });
   const api = {
-    colors: ['#149A3A', '#F7941D', '#2F6FB0', '#F15A29', '#7B2A78', '#0B6B2B', '#C9A100', '#5E8C9A'],
+    colors: ['#0A0F9A', '#F7941D', '#2F6FB0', '#F15A29', '#7B2A78', '#0B6B2B', '#C9A100', '#5E8C9A'],
     data(id) {
       if (calcs[id]) {
         if (!loaded) return { status: 'loading', data: [] };
@@ -85,7 +85,7 @@ window.dash = (() => {
 <style>
   /* Layout: tab bar, green brand band with global filters, then one of two tabs: "Resumen general" (charts by city and family) or "Resumen" (detail tiles, charts, tables). */
   #dash-root { --dash-gutter: 12px; }
-  .dm { --dm-green: #149A3A; --dm-green-dk: #0B6B2B; --dm-orange: #F15A29; --dm-orange-2: #F7941D; --dm-on-band: #FFFFFF;
+  .dm { --dm-green: #0A0F9A; --dm-green-dk: #03098E; --dm-orange: #F15A29; --dm-orange-2: #F7941D; --dm-on-band: #FFFFFF;
         --dm-crit: var(--cds-chart-status-critical); --dm-ok: #149A3A; --dm-sob: #F7941D; --dm-sin: var(--cds-chart-muted);
         font-family: 'Poppins', var(--font-anthropic-sans); display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
   .dm-tabs { display: flex; gap: var(--cds-gap-xs); flex-wrap: wrap; }
@@ -162,9 +162,9 @@ window.dash = (() => {
   .dm-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-left: 4px solid var(--dm-green); border-radius: var(--cds-radius);
              padding: var(--cds-pad-sm) var(--cds-pad-md); display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
   .dm-tile-bad { border-left-color: var(--dm-crit); }
-  .pp-venta-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(11rem, 13rem); gap: var(--cds-gap-lg); align-items: center; }
-  .pp-kpis { display: grid; gap: var(--cds-gap-md); }
-  @media (max-width: 640px) { .pp-venta-wrap { grid-template-columns: 1fr; } }
+  .pp-venta-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--cds-gap-md); }
+  .pp-kpis { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 480px) { .pp-kpis { grid-template-columns: 1fr; } }
   .pp-select { min-width: 9rem; }
   .g-top { display: grid; gap: var(--cds-gap-md); grid-template-columns: minmax(0, 2.2fr) minmax(10rem, 1fr) minmax(10rem, 1fr); align-items: stretch; }
   .g-top > .dm-tile { justify-content: center; }
@@ -191,7 +191,7 @@ window.dash = (() => {
   .pp-big-v { font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 2rem; color: var(--color-fg); }
   .dm-tile-d { font-size: var(--cds-font-size-caption); font-weight: 600; color: var(--color-fg-muted); }
   .dm-tile-d:empty { display: none; }
-  .dm-tile-d.dm-up { color: var(--dm-green); } .dm-tile-d.dm-down { color: var(--cds-chart-status-critical); }
+  .dm-tile-d.dm-up { color: var(--dm-ok); } .dm-tile-d.dm-down { color: var(--cds-chart-status-critical); }
   .dm-halo { paint-order: stroke; stroke: var(--color-panel); stroke-width: 4px; stroke-linejoin: round; }
   .dm-small { font-size: 10px; }
   .dm-tile-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
@@ -460,7 +460,6 @@ window.dash = (() => {
     </div>
     <div class="pp-stack">
       <section class="dm-card" id="pp-card-dias"><h2 class="dm-h2">Días de inventario por categoría y ciudad</h2>
-        <div class="pp-tot-card"><span class="pp-tot-l">Total de la red</span><span class="pp-tot-v" data-draw="pp-tot" data-source="puntos ventas">—</span></div>
         <div class="dm-chart" data-draw="pp-dias-fam" data-source="puntos ventas"></div></section>
       <section class="dm-card dm-card-o" id="pp-card-gasto"><h2 class="dm-h2">Gasto logístico: presupuesto, forecast y real</h2>
         <div class="dm-legend"><span><span class="dm-sw" style="background: var(--cds-chart-muted)"></span>Presupuesto</span><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real</span><span><span class="dm-sw dm-sw-line" style="background: var(--dm-green-dk)"></span>Gasto por tonelada efectiva (franja de arriba)</span></div>
@@ -1883,7 +1882,7 @@ window.dash = (() => {
       svg.append('rect').attr('x', ml).attr('y', y(r.k)).attr('height', y.bandwidth()).attr('width', x(r.val) - ml).attr('rx', 3).style('fill', r.fill);
       svg.append('text').attr('class', 'dm-val').attr('x', x(r.val) + 6).attr('y', y(r.k) + y.bandwidth() / 2 + 4).text(GL.pesos(r.val));
     });
-    svg.append('text').attr('x', ml).attr('y', 96).style('font-weight', 700).style('font-size', 'var(--cds-font-size-caption)').style('fill', d > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-green)')
+    svg.append('text').attr('x', ml).attr('y', 96).style('font-weight', 700).style('font-size', 'var(--cds-font-size-caption)').style('fill', d > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-ok)')
       .text((d > 0 ? '▲ ' : '▼ ') + (d >= 0 ? '+' : '−') + GL.pesos(Math.abs(d)) + ' (' + DM.f1.format(Math.abs(d / v.ppto) * 100) + ' % ' + (d > 0 ? 'por encima' : 'por debajo') + ' del presupuesto)');
   });
   dash.draw('gk-dif', (el) => { const v = glAcum(); if (!v) { el.textContent = '—'; return; } glVal(v, el); });
@@ -1951,7 +1950,7 @@ window.dash = (() => {
       if (r.real && r.ppto) {
         const d = r.real - r.ppto, top = Math.min(y(r.real), y(r.ppto), r.fcst ? y(r.fcst) : Infinity);
         g.append('text').attr('class', 'dm-val dm-halo' + (x0.bandwidth() < 44 ? ' dm-small' : '')).attr('text-anchor', 'middle').attr('x', x0.bandwidth() / 2).attr('y', top - 6)
-          .style('fill', d > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-green)').text((d >= 0 ? '+' : '−') + DM.f1.format(Math.abs(d) / 1e6));
+          .style('fill', d > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-ok)').text((d >= 0 ? '+' : '−') + DM.f1.format(Math.abs(d) / 1e6));
       }
     });
     const tip = DM.tipFor(el);
@@ -2011,8 +2010,8 @@ window.dash = (() => {
     const bars = [{ k: 'Presupuesto ' + PP.MC[s.mes - 1], v: ppto, fill: 'var(--dm-orange-2)' }, { k: 'Venta efectiva ' + PP.MC[s.mes - 1], v: venta, fill: 'var(--dm-green)' }];
     const W = el.clientWidth, H = 300;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Presupuesto y venta efectiva del mes');
-    const y = d3.scaleLinear([0, Math.max(ppto || 0, venta) * 1.2], [H - 34, 10]);
-    const x = d3.scaleBand(bars.map((b) => b.k), [8, W - 8]).padding(0.32);
+    const y = d3.scaleLinear([0, Math.max(ppto || 0, venta) * 1.18], [H - 34, 10]);
+    const x = d3.scaleBand(bars.map((b) => b.k), [8, W - 8]).paddingInner(0.18).paddingOuter(0.06);
     svg.append('g').attr('transform', `translate(0,${H - 34})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickFormat((k) => k.split(' ').slice(0, -1).join(' '))).call(DM.cleanAxis);
     bars.forEach((b) => {
       const cx = x(b.k) + x.bandwidth() / 2;
@@ -2024,8 +2023,8 @@ window.dash = (() => {
       svg.append('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(b.v) - 8).text(PP.mill(b.v));
     });
     const kv = bars[1].k, cx = x(kv) + x.bandwidth() / 2;
-    // Cumplimiento en dos líneas pequeñas, para que no se monte sobre la barra del presupuesto.
-    if (ppto) ['Cumplimiento', DM.f1.format(venta / ppto * 100) + ' %'].forEach((t, i) => svg.append('text').attr('class', 'ag-var').style('font-size', '11px').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(venta) - 40 + i * 13).text(t));
+    // Cumplimiento encima del valor de la venta efectiva.
+    if (ppto) svg.append('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', cx).attr('y', y(venta) - 28).text('Cumplimiento ' + DM.f1.format(venta / ppto * 100) + ' %');
     const tip = DM.tipFor(el);
     svg.append('g').selectAll('rect.hit').data(bars).join('rect').attr('x', (b) => x(b.k)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 34).attr('fill', 'transparent')
       .on('mousemove', (ev, b) => DM.showTip(tip, el, x(b.k) + x.bandwidth() / 2, b.v == null ? H / 2 : y(b.v), [b.k, b.v == null ? 'Sin presupuesto cargado' : GL.pesos(b.v), ppto ? 'Cumplimiento: ' + DM.f1.format(venta / ppto * 100) + ' %' : 'Cumplimiento: falta el presupuesto del mes']))
@@ -2059,7 +2058,7 @@ window.dash = (() => {
     svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).tickValues([0, 0.2, 0.4, 0.6, 0.8, 1]).tickSize(-(W - ml - 8)).tickFormat((v) => DM.f0.format(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
     svg.append('g').attr('transform', `translate(0,${H - 30})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickFormat((k) => PP.MC[+k.slice(4) - 1] + (NS.parcial(k) ? '*' : ''))).call(DM.cleanAxis);
     const g = svg.append('g');
-    if (s) { const ks0 = ks.find((k) => k === s.k); if (ks0) svg.insert('rect', ':first-child').attr('x', x(ks0) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 4).attr('height', H - 34).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #F1F7F2)').style('stroke', 'var(--dm-green)').attr('stroke-width', 1.5); }
+    if (s) { const ks0 = ks.find((k) => k === s.k); if (ks0) svg.insert('rect', ':first-child').attr('x', x(ks0) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 4).attr('height', H - 34).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #EEF0FA)').style('stroke', 'var(--dm-green)').attr('stroke-width', 1.5); }
     g.selectAll('rect.ns').data(pts.filter((p) => p.ns != null)).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', (p) => y(p.ns)).attr('height', (p) => y(0) - y(p.ns)).style('fill', 'var(--dm-green)');
     g.selectAll('rect.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', (p) => y(Math.min(1, p.ns + p.ag))).attr('height', (p) => y(p.ns) - y(Math.min(1, p.ns + p.ag))).style('fill', 'var(--dm-orange-2)');
     svg.append('line').attr('x1', ml).attr('x2', W - 8).attr('y1', y(PP.META_NS)).attr('y2', y(PP.META_NS)).style('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5);
@@ -2128,7 +2127,7 @@ window.dash = (() => {
     svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - mr)).tickFormat((v) => '$' + DM.f0.format(v / 1e6) + ' mill.')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
     svg.append('g').attr('transform', `translate(0,${H - bm})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(6).tickFormat(GL.mCorto)).call(DM.cleanAxis)
       .selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.5em').attr('dy', '-0.35em').attr('transform', 'rotate(-90)');
-    const sp = PP.sel(); if (sp && R.some((r) => r.mes === sp.k)) svg.insert('rect', ':first-child').attr('x', x0(sp.k) - x0.step() * x0.paddingInner() / 2).attr('width', x0.step()).attr('y', y(vmax) - 6).attr('height', H - bm - y(vmax) + 6).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #F1F7F2)').style('stroke', 'var(--dm-green)').attr('stroke-width', 1.5);
+    const sp = PP.sel(); if (sp && R.some((r) => r.mes === sp.k)) svg.insert('rect', ':first-child').attr('x', x0(sp.k) - x0.step() * x0.paddingInner() / 2).attr('width', x0.step()).attr('y', y(vmax) - 6).attr('height', H - bm - y(vmax) + 6).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #EEF0FA)').style('stroke', 'var(--dm-green)').attr('stroke-width', 1.5);
     R.forEach((r) => {
       const g = svg.append('g').attr('transform', `translate(${x0(r.mes)},0)`);
       SER.forEach(([f, col]) => { if (r[f]) g.append('rect').attr('x', x1(f)).attr('width', x1.bandwidth()).attr('y', y(r[f])).attr('height', y(0) - y(r[f])).attr('rx', 1.5).style('fill', col); });
@@ -2152,6 +2151,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 09:31 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 09:39 AM.</p>
 </body>
 </html>
