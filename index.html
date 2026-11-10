@@ -234,6 +234,7 @@ window.dash = (() => {
   .dm-fail-dot { width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
 
   .dm-tablebox { overflow: auto; max-height: 26rem; }
+  .dm { --iv-arepas: #0A0F9A; --iv-salsas: #F7941D; --iv-empanadas: #5E8C9A; }
   .iv-fam-grid { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   @media (max-width: 1000px) { .iv-fam-grid { grid-template-columns: 1fr; } }
   .iv-top { max-height: none; }
@@ -321,9 +322,11 @@ window.dash = (() => {
     <section class="dm-card dm-card-o" id="dias-ciudad">
       <h2 class="dm-h2">Días de inventario por ciudad</h2>
       <div class="dm-legend">
-        <span><span class="dm-sw dm-sw-g"></span>Inventario físico</span>
-        <span><span class="dm-sw dm-sw-o"></span>Tránsito</span>
-        <span>Encima de cada barra: días de físico, de tránsito y el total. Última barra: total de la red.</span>
+        <span><span class="dm-sw" style="background: var(--iv-arepas)"></span>Arepas</span>
+        <span><span class="dm-sw" style="background: var(--iv-salsas)"></span>Salsas</span>
+        <span><span class="dm-sw" style="background: var(--iv-empanadas)"></span>Empanadas</span>
+        <span><span class="dm-sw" style="background: repeating-linear-gradient(135deg, #8A8A85 0 2px, #D9D9D4 2px 4px)"></span>Parte en tránsito (rayada)</span>
+        <span>Etiqueta naranja: total de la ciudad · número sobre cada barra: días de la familia</span>
       </div>
       <div class="dm-chart" data-draw="c2" data-source="puntos"></div>
     </section>
@@ -932,52 +935,60 @@ window.dash = (() => {
 
 <script>
   // Gráfico 2: días por ciudad, físico abajo y tránsito encima, con el total arriba.
+  // Días por ciudad y familia: tres barras por ciudad (Arepas, Salsas, Empanadas), cada una con su parte física (sólida) y en
+  // tránsito (rayada). Etiqueta naranja arriba: total de la ciudad (todas las familias). Último grupo: total de la red.
   dash.draw('c2', (el) => {
     const d = dash.data('puntos');
     if (d.status !== 'ok') { DM.fail(el, d.status); return; }
     el.replaceChildren();
     const t = DM.rowsCorte() || [];
-    const rows = DM.byCiudad(t).filter((r) => r.dias != null);
-    if (!rows.length) return;
-    // Total de la red: mismo cálculo que la tarjeta de días de la red (DM.kpis), separado en físico y tránsito.
-    const k = DM.kpis(t), conDem = t.filter((r) => r.dem > 0), soloSopo = t.length > 0 && t.every((r) => r.bod === 'DEPT8');
-    const den = soloSopo ? d3.sum(conDem, (r) => r.dem) : d3.sum(t, (r) => r.fcd);
-    if (k.dias != null && den > 0) rows.push({ ciudad: 'TOTAL', total: true, dias_fisico: d3.sum(conDem, (r) => r.ex) / den, dias_transito: d3.sum(conDem, (r) => r.tr) / den, dias: k.dias });
-    const nombre = (r) => (r.total ? 'Total red' : DM.NAME[r.ciudad] || r.ciudad);
-    const W = el.clientWidth, H = 340;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Días de inventario físico y en tránsito por ciudad y total de la red');
-    const y = d3.scaleLinear([0, Math.max(DM.LIM_SOB + 2, d3.max(rows, (r) => r.dias)) * 1.3], [1, 0]).nice();
+    const ciudades = DM.byCiudad(t).filter((r) => r.dias != null);
+    if (!ciudades.length) return;
+    const FAMS = [['AREPAS', 'Arepas', 'var(--iv-arepas)'], ['SALSAS', 'Salsas', 'var(--iv-salsas)'], ['EMPANADAS', 'Empanadas', 'var(--iv-empanadas)']];
+    const famDias = (rs) => { const c = rs.filter((r) => r.dem > 0); const dem = d3.sum(c, (r) => r.dem); return dem > 0 ? { f: d3.sum(c, (r) => r.ex) / dem, tr: d3.sum(c, (r) => r.tr) / dem } : null; };
+    const grupos = ciudades.map((c) => ({ k: c.ciudad, nombre: DM.NAME[c.ciudad] || c.ciudad, total: c.dias,
+      fams: FAMS.map(([F, n, col]) => { const v = famDias(t.filter((r) => r.ciudad === c.ciudad && r.fam === F)); return v && { F, n, col, ...v, dias: v.f + v.tr }; }).filter(Boolean) }));
+    const k = DM.kpis(t);
+    if (k.dias != null) grupos.push({ k: 'TOTAL', nombre: 'Total red', total: k.dias, red: true,
+      fams: FAMS.map(([F, n, col]) => { const v = famDias(t.filter((r) => r.fam === F)); return v && { F, n, col, ...v, dias: v.f + v.tr }; }).filter(Boolean) });
+    const W = el.clientWidth, H = 360;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Días de inventario por ciudad y familia');
+    const defs = svg.append('defs');
+    FAMS.forEach(([F, , col]) => { const p = defs.append('pattern').attr('id', 'iv-tr-' + F).attr('patternUnits', 'userSpaceOnUse').attr('width', 6).attr('height', 6).attr('patternTransform', 'rotate(45)');
+      p.append('rect').attr('width', 6).attr('height', 6).style('fill', col).style('opacity', 0.35); p.append('rect').attr('width', 2.5).attr('height', 6).style('fill', col); });
+    const vmax = d3.max(grupos.flatMap((g) => g.fams.map((f) => f.dias)).concat(grupos.map((g) => g.total))) || 1;
+    const y = d3.scaleLinear([0, Math.max(DM.LIM_SOB + 2, vmax) * 1.12], [1, 0]).nice();
     const ml = Math.max(...y.ticks(5).map((v) => DM.textW(svg, DM.f0.format(v), 'dm-axis-t'))) + 10;
     const mr = DM.textW(svg, DM.LIM_SOB + ' días', 'dm-reft') + 8;
-    const x = d3.scaleBand(rows.map((r) => r.ciudad), [ml, W - mr]).padding(0.28);
-    const y0 = H - 30;
-    y.range([y0, 10]);
+    const x0 = d3.scaleBand(grupos.map((g) => g.k), [ml, W - mr]).paddingInner(0.22).paddingOuter(0.08);
+    const x1 = d3.scaleBand(FAMS.map((f) => f[0]), [0, x0.bandwidth()]).padding(0.12);
+    const y0 = H - 30, top = 46;
+    y.range([y0, top]);
+    const red = grupos.find((g) => g.red);
+    if (red) svg.append('rect').attr('x', x0(red.k) - 6).attr('width', x0.bandwidth() + 12).attr('y', 2).attr('height', y0 - 2).attr('rx', 8).style('fill', 'var(--dm-bg-soft, #EEF0FA)');
     svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - mr)).tickFormat((v) => DM.f0.format(v))).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    svg.append('g').selectAll('text').data(rows).join('text').attr('class', 'dm-axis-t').attr('text-anchor', 'middle').style('font-weight', (r) => (r.total ? 800 : 600)).style('fill', 'var(--color-fg)')
-      .attr('x', (r) => x(r.ciudad) + x.bandwidth() / 2).attr('y', y0 + 20).text(nombre);
-    // Fondo suave para la barra de total
-    const tot = rows.find((r) => r.total);
-    if (tot) svg.append('rect').attr('x', x(tot.ciudad) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 4).attr('height', y0 - 4).attr('rx', 6).style('fill', 'var(--dm-bg-soft, #EEF0FA)');
     [[DM.LIM_CRIT, 'dm-ref dm-ref-bad'], [DM.LIM_SOB, 'dm-ref']].forEach(([v, cls]) => {
       svg.append('line').attr('class', cls).attr('x1', ml).attr('x2', W - mr).attr('y1', y(v)).attr('y2', y(v));
       svg.append('text').attr('class', 'dm-reft').attr('x', W - mr + 4).attr('y', y(v) + 4).text(v + ' días');
     });
-    const bw = Math.min(90, x.bandwidth());
-    const bx = (r) => x(r.ciudad) + (x.bandwidth() - bw) / 2, cx = (r) => x(r.ciudad) + x.bandwidth() / 2;
-    svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', bx).attr('width', bw).attr('y', (r) => y(r.dias_fisico)).attr('height', (r) => y(0) - y(r.dias_fisico)).attr('rx', 2).style('fill', 'var(--dm-green)');
-    svg.append('g').selectAll('rect').data(rows.filter((r) => r.dias_transito > 0)).join('rect').attr('x', bx).attr('width', bw).attr('y', (r) => y(r.dias)).attr('height', (r) => y(r.dias_fisico) - y(r.dias)).attr('rx', 2).style('fill', 'var(--dm-orange-2)');
-    // Encima de cada barra: físico, tránsito y total (días con un decimal para que la suma cuadre a la vista).
-    const lab = svg.append('g');
-    rows.forEach((r) => {
-      const top = y(r.dias);
-      lab.append('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', cx(r)).attr('y', top - 8).style('font-size', '15px').text('Total ' + DM.f1.format(r.dias));
-      lab.append('text').attr('text-anchor', 'middle').attr('x', cx(r)).attr('y', top - 26).style('font-size', '11.5px').style('font-weight', 700).style('fill', 'var(--dm-orange)').text('Tránsito ' + DM.f1.format(r.dias_transito));
-      lab.append('text').attr('text-anchor', 'middle').attr('x', cx(r)).attr('y', top - 41).style('font-size', '11.5px').style('font-weight', 700).style('fill', 'var(--dm-green)').text('Físico ' + DM.f1.format(r.dias_fisico));
-    });
     const tip = DM.tipFor(el);
-    svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (r) => x(r.ciudad) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 0).attr('height', y0).attr('fill', 'transparent')
-      .on('mousemove', (e, r) => DM.showTip(tip, el, cx(r), y(r.dias), [nombre(r), 'Inventario físico: ' + DM.f1.format(r.dias_fisico) + ' días', 'Tránsito: ' + DM.f1.format(r.dias_transito) + ' días', 'Total: ' + DM.f1.format(r.dias) + ' días']))
-      .on('mouseleave', () => { tip.hidden = true; });
+    grupos.forEach((g) => {
+      const gx = x0(g.k), gg = svg.append('g');
+      // Nombre de la ciudad y etiqueta naranja con su total
+      gg.append('text').attr('class', 'dm-axis-t').attr('text-anchor', 'middle').attr('x', gx + x0.bandwidth() / 2).attr('y', y0 + 20).style('font-weight', g.red ? 800 : 700).style('fill', 'var(--color-fg)').style('font-size', '13px').text(g.nombre);
+      const txt = 'Total ' + DM.f1.format(g.total) + ' días', pw = DM.textW(svg, txt, 'dm-val') + 22;
+      gg.append('rect').attr('x', gx + x0.bandwidth() / 2 - pw / 2).attr('y', 8).attr('width', pw).attr('height', 24).attr('rx', 12).style('fill', 'var(--dm-orange)');
+      gg.append('text').attr('text-anchor', 'middle').attr('x', gx + x0.bandwidth() / 2).attr('y', 25).style('fill', '#FFFFFF').style('font-weight', 700).style('font-size', '13px').text(txt);
+      g.fams.forEach((f) => {
+        const bx = gx + x1(f.F), bw = x1.bandwidth();
+        gg.append('rect').attr('x', bx).attr('width', bw).attr('y', y(f.f)).attr('height', y(0) - y(f.f)).style('fill', f.col);
+        if (f.tr > 0) gg.append('rect').attr('x', bx).attr('width', bw).attr('y', y(f.dias)).attr('height', y(f.f) - y(f.dias)).style('fill', 'url(#iv-tr-' + f.F + ')');
+        gg.append('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', bx + bw / 2).attr('y', y(f.dias) - 5).style('font-size', bw < 22 ? '10px' : '12px').text(DM.f1.format(f.dias));
+        gg.append('rect').attr('x', bx).attr('width', bw).attr('y', top).attr('height', y0 - top).attr('fill', 'transparent')
+          .on('mousemove', () => DM.showTip(tip, el, bx + bw / 2, y(f.dias), [g.nombre + ' · ' + f.n, 'Inventario físico: ' + DM.f1.format(f.f) + ' días', 'Tránsito: ' + DM.f1.format(f.tr) + ' días', 'Total: ' + DM.f1.format(f.dias) + ' días']))
+          .on('mouseleave', () => { tip.hidden = true; });
+      });
+    });
   });
 </script>
 
@@ -2231,6 +2242,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 03:11 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 03:23 PM.</p>
 </body>
 </html>
