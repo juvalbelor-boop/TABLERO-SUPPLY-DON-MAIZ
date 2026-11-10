@@ -454,7 +454,7 @@ window.dash = (() => {
     <div class="pp-row1">
       <section class="dm-card" id="pp-card-venta"><h2 class="dm-h2">Presupuesto y venta efectiva del mes</h2>
         <div class="pp-venta-wrap">
-          <div class="dm-chart pp-venta-chart" data-draw="pp-venta" data-source="ventas presupuesto_estado"></div>
+          <div class="dm-chart pp-venta-chart" data-draw="pp-venta" data-source="ventas presupuesto presupuesto_estado"></div>
           <div class="pp-kpis">
             <div class="dm-tile"><span class="dm-tile-l" data-draw="pp-ns-l" data-source="ns ns_estado ventas">—</span><span class="dm-tile-v" data-draw="pp-ns" data-source="ns ns_estado ventas">—</span><span class="dm-tile-d" data-draw="pp-ns-d" data-source="ns ns_estado ventas"></span></div>
             <div class="dm-tile"><span class="dm-tile-l" data-draw="pp-dias-l" data-source="puntos ventas">—</span><span class="dm-tile-v" data-draw="pp-dias" data-source="puntos ventas">—</span><span class="dm-tile-d" data-draw="pp-dias-d" data-source="puntos ventas"></span></div>
@@ -2014,12 +2014,17 @@ window.dash = (() => {
     el.replaceChildren();
     const ppto = e && e.mes === s.k ? +e.presupuesto_mes : null, venta = d3.sum(vd.data.filter((r) => String(r.mes) === s.k), (r) => +r.venta);
     const W = el.clientWidth, H = 250;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Presupuesto del mes: venta efectiva y lo que falta');
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Presupuesto del mes: venta efectiva, lo que falta y la meta a hoy');
     if (!ppto) {
       ['Presupuesto de ' + PP.MESL[s.mes - 1] + ' sin cargar', 'Venta efectiva: ' + PP.mill(venta)].forEach((t, i) => svg.append('text').attr('class', i ? 'dm-val' : 'dm-reft').attr('text-anchor', 'middle').attr('x', W / 2).attr('y', H / 2 - 8 + i * 22).text(t));
       return;
     }
     const falta = Math.max(0, ppto - venta), cump = venta / ppto;
+    // Meta a hoy: cuota diaria acumulada hasta ayer (hora de Bogotá); en un mes ya cerrado es el presupuesto completo.
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+    const pr = (dash.data('presupuesto').data || []).filter((r) => String(r.fecha).slice(0, 7).replace('-', '') === s.k);
+    const corteMeta = pr.filter((r) => r.fecha < hoy), meta = pr.length ? d3.sum(corteMeta, (r) => +r.cuota) : null;
+    const metaHasta = corteMeta.length ? corteMeta[corteMeta.length - 1].fecha : null;
     const parts = [{ k: 'Venta efectiva', v: Math.min(venta, ppto), real: venta, fill: 'var(--dm-green)' }, { k: 'Falta para el presupuesto', v: falta, real: falta, fill: 'var(--dm-orange-2)' }].filter((p) => p.v > 0);
     const legW = Math.min(230, W * 0.45), r = Math.min(H / 2 - 8, (W - legW - 24) / 2), cx = 8 + r, cy = H / 2;
     const g = svg.append('g').attr('transform', `translate(${cx},${cy})`);
@@ -2028,17 +2033,26 @@ window.dash = (() => {
     g.selectAll('path').data(arcs).join('path').attr('d', arc).style('fill', (a) => a.data.fill).style('stroke', 'var(--color-panel)').attr('stroke-width', 2)
       .on('mousemove', (ev, a) => { const [mx, my] = d3.pointer(ev, el); DM.showTip(tip, el, mx, my, [a.data.k, GL.pesos(a.data.real), DM.f1.format(a.data.real / ppto * 100) + ' % del presupuesto']); })
       .on('mouseleave', () => { tip.hidden = true; });
+    // Marca de la meta a hoy sobre el anillo.
+    if (meta != null && meta > 0 && meta < ppto) {
+      const ang = (meta / ppto) * 2 * Math.PI, sx = Math.sin(ang), cy0 = -Math.cos(ang);
+      g.append('line').attr('x1', sx * (r * 0.52)).attr('y1', cy0 * (r * 0.52)).attr('x2', sx * (r + 6)).attr('y2', cy0 * (r + 6)).style('stroke', 'var(--cds-chart-status-critical)').attr('stroke-width', 3).attr('stroke-linecap', 'round');
+      g.append('circle').attr('cx', sx * (r + 6)).attr('cy', cy0 * (r + 6)).attr('r', 4).style('fill', 'var(--cds-chart-status-critical)');
+    }
     // Centro: cumplimiento.
     g.append('text').attr('text-anchor', 'middle').attr('y', -10).style('font-size', '11px').style('fill', 'var(--color-fg-muted)').text('Cumplimiento');
     g.append('text').attr('text-anchor', 'middle').attr('y', 16).style('font-family', "'Poppins', var(--font-anthropic-sans)").style('font-weight', 700).style('font-size', Math.max(16, Math.min(26, r * 0.28)) + 'px').style('fill', 'var(--dm-green)').text(DM.f1.format(cump * 100) + ' %');
     // Leyenda con valores: total (presupuesto), venta y lo que falta.
-    const lx = cx + r + 20, rows = [['Presupuesto ' + PP.MC[s.mes - 1] + ' (total)', ppto, null], ['Venta efectiva', venta, 'var(--dm-green)'], [venta > ppto ? 'Por encima del presupuesto' : 'Falta para el presupuesto', Math.abs(ppto - venta), venta > ppto ? 'var(--dm-ok)' : 'var(--dm-orange-2)']];
-    const ly0 = cy - (rows.length * 46) / 2 + 10;
-    rows.forEach(([t, v, c], i) => {
-      const yy = ly0 + i * 46, gx = svg.append('g').attr('transform', `translate(${lx},${yy})`);
-      if (c) gx.append('rect').attr('x', 0).attr('y', -9).attr('width', 11).attr('height', 11).attr('rx', 2).style('fill', c);
+    const lx = cx + r + 20, rows = [['Presupuesto ' + PP.MC[s.mes - 1] + ' (total)', ppto, null, null], ['Venta efectiva', venta, 'var(--dm-green)', null], [venta > ppto ? 'Por encima del presupuesto' : 'Falta para el presupuesto', Math.abs(ppto - venta), venta > ppto ? 'var(--dm-ok)' : 'var(--dm-orange-2)', null]];
+    if (meta != null && meta > 0) rows.push([(meta < ppto && metaHasta ? 'Meta a hoy (cuota al ' + +metaHasta.slice(8, 10) + '-' + PP.MC[+metaHasta.slice(5, 7) - 1] + ')' : 'Meta del mes'), meta, 'line', DM.f1.format(meta / ppto * 100) + ' % · vamos ' + (venta >= meta ? '+' : '−') + PP.mill(Math.abs(venta - meta))]);
+    const step = 44, ly0 = cy - (rows.length * step) / 2 + 12;
+    rows.forEach(([t, v, c, sub], i) => {
+      const yy = ly0 + i * step, gx = svg.append('g').attr('transform', `translate(${lx},${yy})`);
+      if (c === 'line') gx.append('rect').attr('x', 0).attr('y', -6).attr('width', 11).attr('height', 3).attr('rx', 1.5).style('fill', 'var(--cds-chart-status-critical)');
+      else if (c) gx.append('rect').attr('x', 0).attr('y', -9).attr('width', 11).attr('height', 11).attr('rx', 2).style('fill', c);
       gx.append('text').attr('x', c ? 17 : 0).attr('y', 0).style('font-size', '11px').style('fill', 'var(--color-fg-muted)').text(t);
-      gx.append('text').attr('x', c ? 17 : 0).attr('y', 19).style('font-weight', 700).style('font-size', '14px').style('fill', 'var(--color-fg)').text(PP.mill(v));
+      gx.append('text').attr('x', c ? 17 : 0).attr('y', 18).style('font-weight', 700).style('font-size', '14px').style('fill', 'var(--color-fg)').text(PP.mill(v));
+      if (sub) gx.append('text').attr('x', 17).attr('y', 32).style('font-size', '10.5px').style('font-weight', 600).style('fill', venta >= meta ? 'var(--dm-ok)' : 'var(--cds-chart-status-critical)').text(sub);
     });
   });
   dash.draw('pp-venta-corte', (el) => { const e = PP.one('ventas_estado'); el.textContent = e ? e.archivo + ', guardado el ' + e.guardado.slice(8, 10) + '/' + e.guardado.slice(5, 7) : '—'; });
@@ -2162,6 +2176,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 10:03 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 10:06 AM.</p>
 </body>
 </html>
