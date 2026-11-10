@@ -699,15 +699,17 @@ window.dash = (() => {
 </div>
 
 <script>
+  // Límite de crítico: menos de 3 días (cambio del 10-nov-2026; antes 4).
+  const DM_LIM_CRIT = 3;
   // Cálculo base: cada fila del archivo diario con su estado. Los gráficos agregan estas filas según los filtros.
   dash.calc('puntos', {
     inputs: ['inventario'],
     title: 'Estado por bodega y referencia',
-    description: 'Cada fila del archivo con inventario + tránsito, días y estado: crítico (menos de 4 días), estable (4 a 13), sobrestock (más de 13) o sin demanda.',
+    description: 'Cada fila del archivo con inventario + tránsito, días y estado: crítico (menos de 3 días, o sea 2,9 o menos), estable (3 a 13), sobrestock (más de 13) o sin demanda.',
     fn: (inventario) => inventario.map((r) => {
       const inv = r.ex + r.tr;
       const dias = r.dem > 0 ? inv / r.dem : null;
-      const estado = r.dem > 0 ? (dias < 4 ? 'CRITICO' : dias <= 13 ? 'ESTABLE' : 'SOBRESTOCK') : (inv > 0 ? 'SIN DEMANDA' : null);
+      const estado = r.dem > 0 ? (dias < DM_LIM_CRIT ? 'CRITICO' : dias <= 13 ? 'ESTABLE' : 'SOBRESTOCK') : (inv > 0 ? 'SIN DEMANDA' : null);
       return { id: r.corte + '|' + r.bod + '-' + r.ref, corte: r.corte, cat: r.cat, bod: r.bod, ciudad: r.ciudad, ref: r.ref, desc: r.desc, seg: r.seg, fam: r.fam, abc: r.abc, ex: r.ex, tr: r.tr, inv, fcd: r.fcd, dem: r.dem, dias, estado };
     }),
   });
@@ -716,7 +718,7 @@ window.dash = (() => {
 <script>
   // Utilidades compartidas entre los scripts de la página.
   window.DM = (() => {
-    const LIM_CRIT = 4, LIM_SOB = 13, DIAS_MES = 26;
+    const LIM_CRIT = 3, LIM_SOB = 13, DIAS_MES = 26;
     const ORDER = ['Sopo', 'Bogota', 'Medellin', 'Cali', 'Barranquilla', 'Bucaramanga', 'Eje', 'Ransa', 'Planta', 'Despachos'];
     const NAME = { Sopo: 'Sopó', Bogota: 'Bogotá', Medellin: 'Medellín', Cali: 'Cali', Barranquilla: 'Barranquilla', Bucaramanga: 'Bucaramanga', Eje: 'Eje Cafetero', Ransa: 'Ransa', Planta: 'Planta', Despachos: 'Despachos' };
     const SHORT = { Sopo: 'Sopó', Bogota: 'Bogotá', Medellin: 'Medellín', Cali: 'Cali', Barranquilla: 'B/quilla', Bucaramanga: 'B/manga', Eje: 'Eje', Ransa: 'Ransa', Planta: 'Planta', Despachos: 'Desp.' };
@@ -1012,15 +1014,15 @@ window.dash = (() => {
       const y0 = H - ax.mb;
       y.range([y0, 16]);
       svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - mr)).tickFormat((v) => DM.f0.format(v))).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-      DM.drawCityAxis(svg, x, y0, ax);
+      DM.drawCityAxis(svg, x, y0, ax).selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)').style('font-size', '12.5px');
       [[DM.LIM_CRIT, 'dm-ref dm-ref-bad'], [DM.LIM_SOB, 'dm-ref']].forEach(([v, cls]) => svg.append('line').attr('class', cls).attr('x1', ml).attr('x2', W - mr).attr('y1', y(v)).attr('y2', y(v)));
       const lineA = rows.filter((r) => r.dias_a != null);
-      svg.append('path').datum(lineA).attr('fill', 'none').style('stroke', 'var(--dm-orange)').attr('stroke-width', 2).attr('stroke-dasharray', '5 3').attr('stroke-linejoin', 'round').attr('d', d3.line((r) => x(r.ciudad), (r) => y(r.dias_a)));
+      svg.append('path').datum(lineA).attr('fill', 'none').style('stroke', 'var(--dm-orange)').attr('stroke-width', 2).attr('stroke-dasharray', '5 3').attr('stroke-linejoin', 'round').attr('d', d3.line((r) => x(r.ciudad), (r) => y(r.dias_a)).curve(d3.curveMonotoneX));
       svg.append('g').selectAll('circle').data(lineA).join('circle').attr('cx', (r) => x(r.ciudad)).attr('cy', (r) => y(r.dias_a)).attr('r', 3).style('fill', 'var(--dm-orange)');
-      svg.append('path').datum(rows).attr('fill', 'none').style('stroke', 'var(--dm-green)').attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', d3.line((r) => x(r.ciudad), (r) => y(r.dias)));
+      svg.append('path').datum(rows).attr('fill', 'none').style('stroke', 'var(--dm-green)').attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', d3.line((r) => x(r.ciudad), (r) => y(r.dias)).curve(d3.curveMonotoneX));
       svg.append('g').selectAll('circle').data(rows).join('circle').attr('cx', (r) => x(r.ciudad)).attr('cy', (r) => y(r.dias)).attr('r', 4).style('fill', (r) => (r.dias < DM.LIM_CRIT ? 'var(--dm-crit)' : 'var(--dm-green)')).style('stroke', 'var(--color-panel)').attr('stroke-width', 1.5);
       svg.append('g').selectAll('text').data(rows).join('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', (r) => x(r.ciudad))
-        .attr('y', (r) => (r.dias_a != null && r.dias_a > r.dias && y(r.dias) - y(r.dias_a) < 16 ? y(r.dias) + 16 : y(r.dias) - 9)).text((r) => DM.fd(r.dias));
+        .attr('y', (r) => (r.dias_a != null && r.dias_a > r.dias && y(r.dias) - y(r.dias_a) < 16 ? y(r.dias) + 16 : y(r.dias) - 9)).text((r) => DM.f1.format(r.dias));
       const tip = DM.tipFor(el);
       svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (r) => x(r.ciudad) - x.step() / 2).attr('width', x.step()).attr('y', 0).attr('height', y0).attr('fill', 'transparent')
         .on('mousemove', (e, r) => DM.showTip(tip, el, x(r.ciudad), y(r.dias), [DM.NAME[r.ciudad] || r.ciudad, 'Días de la familia: ' + DM.fd(r.dias), 'Días tipo A: ' + (r.dias_a != null ? DM.fd(r.dias_a) : 'sin tipo A')]))
@@ -1053,14 +1055,14 @@ window.dash = (() => {
         cell(r.desc, 'dm-desc');
         const a = cell(''); const pill = document.createElement('span'); pill.className = 'dm-abc dm-abc-' + r.abc; pill.textContent = r.abc; a.append(pill);
         cell(DM.f0.format(r.n), 'dm-num');
-        cell(DM.fd(r.dias), 'dm-num dm-days');
+        cell(DM.f1.format(r.dias), 'dm-num dm-days');
         cell(DM.f0.format(r.inv), 'dm-num');
         cell(DM.f1.format(r.dem), 'dm-num');
         tb.append(tr);
         if (open) r.ciudades.forEach((c) => {
           const ch = document.createElement('tr'); ch.className = 'iv-child';
           const cc = (txt, cls, span) => { const td = document.createElement('td'); if (cls) td.className = cls; if (span) td.colSpan = span; td.textContent = txt; ch.append(td); };
-          cc(''); cc(DM.NAME[c.ciudad] || c.ciudad, 'iv-city', 3); cc('', 'dm-num'); cc(DM.fd(c.dias), 'dm-num dm-days'); cc(DM.f0.format(c.inv), 'dm-num'); cc(DM.f1.format(c.dem), 'dm-num');
+          cc(''); cc(DM.NAME[c.ciudad] || c.ciudad, 'iv-city', 3); cc('', 'dm-num'); cc(DM.f1.format(c.dias), 'dm-num dm-days'); cc(DM.f0.format(c.inv), 'dm-num'); cc(DM.f1.format(c.dem), 'dm-num');
           tb.append(ch);
         });
       });
@@ -2242,6 +2244,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 03:23 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 03:39 PM.</p>
 </body>
 </html>
