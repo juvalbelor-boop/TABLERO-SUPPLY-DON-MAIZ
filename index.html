@@ -136,6 +136,20 @@ window.dash = (() => {
   .mo-bar .dm-select, .mo-bar .dm-ms-btn { border-color: var(--dm-green); }
   .dm-grid2-sep { display: grid; gap: var(--cds-gap-xl); grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr)); }
   .ag-var { font-size: var(--cds-font-size-caption); font-weight: 800; font-family: 'Poppins', var(--font-anthropic-sans); fill: var(--dm-orange); }
+  .ag-bv-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(30rem, 1fr); gap: var(--cds-gap-xl); align-items: center; }
+  @media (max-width: 900px) { .ag-bv-wrap { grid-template-columns: 1fr; } }
+  .ag-var table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; font-variant-numeric: tabular-nums; border: 1px solid var(--cds-border); border-radius: 10px; overflow: hidden; }
+  .ag-var th { background: var(--dm-green); color: #FFFFFF; font-weight: 700; padding: 9px 12px; text-align: right; font-size: 12px; }
+  .ag-var th:first-child { text-align: left; }
+  .ag-var td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--cds-border); white-space: nowrap; }
+  .ag-var th:nth-child(2) { text-align: left; }
+  .ag-var td:nth-child(2) { text-align: left; color: var(--color-fg-muted); }
+  .ag-var td:first-child { text-align: left; font-weight: 700; color: var(--color-fg); white-space: normal; }
+  .ag-var tr:last-child td { border-bottom: 0; }
+  .ag-var td.ag-v { font-weight: 800; }
+  .ag-var .ag-up { color: var(--cds-chart-status-critical); } .ag-var .ag-dn { color: var(--dm-ok); } .ag-var .ag-neu { color: var(--color-fg); }
+  .ag-var .ag-cap { font-size: 11px; color: var(--color-fg-muted); margin: 8px 2px 0; line-height: 1.4; }
+  .ag-var .ag-ttl { font-weight: 800; font-size: 13px; margin: 0 2px 8px; color: var(--color-fg); }
   .ag-pct { font-size: var(--cds-font-size-caption); font-weight: 800; font-family: 'Poppins', var(--font-anthropic-sans); fill: var(--dm-orange); }
   .mo-bar .dm-flabel { color: var(--dm-green-dk); }
   .mo-gauges { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-gap-md); align-items: center; }
@@ -505,26 +519,15 @@ window.dash = (() => {
       <p class="dm-note">Backorder en pesos del archivo <b data-draw="ag-archivo" data-source="agotados_estado">—</b>. Venta mensual: tabla del gerente. Los segmentos salen del maestro de Segmentos (cruce por referencia). Meses mostrados: <b data-draw="ag-periodo" data-source="agotados_estado">—</b>.</p>
     </div>
 
-    <div class="dm-tiles" id="agotados-indicadores">
-      <div class="dm-tile"><span class="dm-tile-l">Último mes</span><span class="dm-tile-v" data-draw="ak-mes" data-source="agotados agotados_estado">—</span></div>
-      <div class="dm-tile dm-tile-bad"><span class="dm-tile-l">Backorder del último mes</span><span class="dm-tile-v" data-draw="ak-bo" data-source="agotados">—</span></div>
-      <div class="dm-tile dm-tile-bad"><span class="dm-tile-l">% backorder sobre venta</span><span class="dm-tile-v" data-draw="ak-pct" data-source="agotados venta_mensual">—</span></div>
-      <div class="dm-tile"><span class="dm-tile-l" data-draw="ak-ytd-l" data-source="agotados agotados_estado">—</span><span class="dm-tile-v" data-draw="ak-ytd" data-source="agotados agotados_estado">—</span></div>
-      <div class="dm-tile"><span class="dm-tile-l" data-draw="ak-var-l" data-source="agotados agotados_estado">—</span><span class="dm-tile-v" data-draw="ak-var" data-source="agotados agotados_estado">—</span></div>
-    </div>
 
-    <div class="dm-grid2-sep">
-      <section class="dm-card" id="agotados-vs-venta">
-        <h2 class="dm-h2">Agotados vs venta por año</h2>
-        <div class="dm-legend"><span><span class="dm-sw dm-sw-r"></span>Agotado ($)</span><span><span class="dm-sw dm-sw-g"></span>Venta ($)</span><span style="color: var(--dm-orange); font-weight: 800">% agotado sobre venta</span></div>
-        <p class="dm-note">Meses: <b data-draw="ag-periodo2" data-source="agotados_estado">—</b> (cámbialo en el filtro Mes). La venta viene de la tabla del gerente, que empieza en enero de 2025; para 2024 no hay venta cargada. El % se calcula con los meses que tienen venta y solo para el total de la compañía.</p>
+    <section class="dm-card" id="agotados-vs-venta">
+      <h2 class="dm-h2">Agotados vs venta por año</h2>
+      <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Venta ($)</span><span><span class="dm-sw" style="background: var(--dm-orange)"></span>Agotado ($)</span><span><span class="dm-sw" style="background: var(--dm-orange); border-radius: 999px"></span>% agotado sobre venta</span></div>
+      <div class="ag-bv-wrap">
         <div class="dm-chart" data-draw="ag-bv" data-source="agotados venta_mensual agotados_estado"></div>
-      </section>
-      <section class="dm-card dm-card-o" id="agotados-anio"><h2 class="dm-h2">Valor agotado por año</h2>
-        <div class="dm-legend"><span style="color: var(--dm-orange); font-weight: 800">Variación frente al año anterior</span></div>
-        <p class="dm-note">Meses elegidos en el filtro Mes (sin filtro, el año completo). 2026 solo tiene datos hasta el último mes cargado.</p>
-        <div class="dm-chart" data-draw="ag-anio" data-source="agotados agotados_estado"></div></section>
-    </div>
+        <div class="ag-var" data-draw="ag-var-tab" data-source="agotados venta_mensual agotados_estado"></div>
+      </div>
+    </section>
 
     <section class="dm-card" id="agotados-comparativo-pct"><h2 class="dm-h2">Comparativo por mes: % agotado sobre venta</h2>
       <p class="dm-note">Backorder del mes ÷ venta del mes (tabla de ventas del gerente, que empieza en enero de 2025; por eso 2024 no aparece). Solo para el total de la compañía: con filtro de ciudad, canal o segmento este % no se calcula.</p>
@@ -1563,26 +1566,30 @@ window.dash = (() => {
 
   // Agotados vs venta por año (mismos meses de cada año): barra de agotado, barra de venta y % de agotado sobre venta.
   dash.draw('ag-periodo2', (el) => { el.textContent = AG.ok() ? AG.etiquetaPeriodo(AG.sel()) : '—'; });
-  dash.draw('ag-bv', (el) => {
-    if (!AG.ok()) { DM.fail(el, dash.data('agotados').status); return; }
-    el.replaceChildren();
+  // Datos por año (mismos meses de cada año): agotado, venta (tabla del gerente) y % agotado sobre venta con los meses que tienen venta.
+  const agBV = () => {
     const s = AG.sel(), per = AG.periodo(s), venta = AG.V(), ys = s.anios.length ? [...s.anios].sort() : AG.anios();
     const pm = AG.porMes(AG.rowsDim(s));
-    const data = ys.map((y) => {
+    return { s, data: ys.map((y) => {
       const ms = per.map((m) => y + String(m).padStart(2, '0')), conV = ms.filter((m) => venta.has(m));
       const bo = ms.reduce((a, m) => a + (pm.get(m) || 0), 0), boV = conV.reduce((a, m) => a + (pm.get(m) || 0), 0);
       const v = conV.length ? conV.reduce((a, m) => a + venta.get(m), 0) : null;
-      const faltan = ms.filter((m) => !venta.has(m) && (pm.get(m) || 0) > 0).length;
-      return { y, bo, venta: v, pct: v && !AG.dimFiltro(s) ? boV / v : null, faltan, nV: conV.length };
-    });
-    const W = el.clientWidth, H = 300;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Agotados y venta por año');
-    const vmax = d3.max(data, (d) => Math.max(d.bo, AG.dimFiltro(s) ? 0 : d.venta || 0)) || 1;
-    const y = d3.scaleLinear([0, vmax * 1.2], [H - 30, 30]).nice();
+      return { y, bo, boV, venta: v, pct: v && !AG.dimFiltro(s) ? boV / v : null, nV: conV.length, nM: ms.filter((m) => pm.has(m)).length, ultV: conV.length ? conV[conV.length - 1] : null };
+    }) };
+  };
+  dash.draw('ag-bv', (el) => {
+    if (!AG.ok()) { DM.fail(el, dash.data('agotados').status); return; }
+    el.replaceChildren();
+    const { s, data } = agBV(), ys = data.map((d) => d.y);
+    const W = el.clientWidth, H = 320;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Venta y agotados por año, con % agotado sobre venta');
+    const keys = AG.dimFiltro(s) ? ['bo'] : ['venta', 'bo'];
+    const vmax = d3.max(data, (d) => Math.max(d.bo, keys.includes('venta') ? d.venta || 0 : 0)) || 1;
+    const y = d3.scaleLinear([0, vmax * 1.25], [H - 30, 40]).nice();
     const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, AGF.mill(v), 'dm-axis-t'))) + 10;
-    const x0 = d3.scaleBand(ys, [ml, W - 8]).padding(0.28), keys = AG.dimFiltro(s) ? ['bo'] : ['bo', 'venta'], x1 = d3.scaleBand(keys, [0, x0.bandwidth()]).padding(0.1);
+    const x0 = d3.scaleBand(ys, [ml, W - 8]).paddingInner(0.3).paddingOuter(0.15), x1 = d3.scaleBand(keys, [0, x0.bandwidth()]).padding(0.08);
     svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - 8)).tickFormat(AGF.mill)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    svg.append('g').attr('transform', `translate(0,${H - 30})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8)).call(DM.cleanAxis);
+    svg.append('g').attr('transform', `translate(0,${H - 30})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8)).call(DM.cleanAxis).call((g) => g.selectAll('text').style('font-weight', 800).style('font-size', '14px').style('fill', 'var(--color-fg)'));
     const col = { bo: 'var(--dm-orange)', venta: 'var(--dm-green)' }, tip = DM.tipFor(el);
     data.forEach((d) => {
       const g = svg.append('g').attr('transform', `translate(${x0(d.y)},0)`);
@@ -1590,13 +1597,54 @@ window.dash = (() => {
         const v = d[k];
         if (v == null) { g.append('text').attr('class', 'dm-reft').attr('text-anchor', 'middle').attr('x', x1(k) + x1.bandwidth() / 2).attr('y', y(0) - 6).text('sin venta'); return; }
         g.append('rect').attr('x', x1(k)).attr('width', x1.bandwidth()).attr('y', y(v)).attr('height', y(0) - y(v)).attr('rx', 3).style('fill', col[k]);
-        g.append('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', x1(k) + x1.bandwidth() / 2).attr('y', y(v) - 5).text(AGF.mill(v));
+        g.append('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', x1(k) + x1.bandwidth() / 2).attr('y', y(v) - 6).text(AGF.mill(v));
       });
-      if (d.pct != null) g.append('text').attr('class', 'ag-pct').attr('text-anchor', 'middle').attr('x', x0.bandwidth() / 2).attr('y', y(Math.max(d.bo, d.venta)) - 20).text(DM.f1.format(d.pct * 100) + ' % agotado');
+      // % agotado sobre venta en una etiqueta naranja encima del año
+      if (d.pct != null) {
+        const txt = DM.f1.format(d.pct * 100) + ' % agotado', pw = DM.textW(svg, txt, 'dm-val') + 20, top = y(Math.max(d.bo, d.venta || 0)) - 44;
+        g.append('rect').attr('x', x0.bandwidth() / 2 - pw / 2).attr('y', top).attr('width', pw).attr('height', 22).attr('rx', 11).style('fill', 'var(--dm-orange)');
+        g.append('text').attr('text-anchor', 'middle').attr('x', x0.bandwidth() / 2).attr('y', top + 15).style('fill', '#FFFFFF').style('font-weight', 700).style('font-size', '12px').text(txt);
+      }
       g.append('rect').attr('x', 0).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
-        .on('mousemove', () => DM.showTip(tip, el, x0(d.y) + x0.bandwidth() / 2, 30, [d.y, 'Agotado: ' + AGF.pesos(d.bo), 'Venta: ' + (d.venta != null ? AGF.pesos(d.venta) : 'sin venta cargada'), '% agotado sobre venta: ' + (d.pct != null ? DM.f1.format(d.pct * 100) + ' %' + (d.faltan ? ' (solo ' + d.nV + ' meses con venta)' : '') : '—')]))
+        .on('mousemove', () => DM.showTip(tip, el, x0(d.y) + x0.bandwidth() / 2, 40, [d.y, 'Venta: ' + (d.venta != null ? AGF.pesos(d.venta) : 'sin venta cargada'), 'Agotado: ' + AGF.pesos(d.bo), '% agotado sobre venta: ' + (d.pct != null ? DM.f1.format(d.pct * 100) + ' %' : '—')]))
         .on('mouseleave', () => { tip.hidden = true; });
     });
+  });
+  // Tabla de variación año contra año (los dos últimos años elegidos).
+  dash.draw('ag-var-tab', (el) => {
+    el.replaceChildren(); if (!AG.ok()) return;
+    const { s, data } = agBV(); if (!data.length) return;
+    const ult = data[data.length - 1].y, ant = data.length > 1 ? data[data.length - 2].y : null;
+    // Comparación justa: mismo periodo en los dos años. Agotado: meses que tiene el último año; venta y %: meses con venta del último año.
+    const per = AG.periodo(s), venta = AG.V(), pm = AG.porMes(AG.rowsDim(s)), k = (y, m) => y + String(m).padStart(2, '0');
+    const mAg = per.filter((m) => pm.has(k(ult, m))), mV = per.filter((m) => venta.has(k(ult, m)));
+    const sumAg = (y, ms) => ms.reduce((a, m) => a + (pm.get(k(y, m)) || 0), 0);
+    const sumV = (y, ms) => (ms.length && ms.every((m) => venta.has(k(y, m))) ? ms.reduce((a, m) => a + venta.get(k(y, m)), 0) : null);
+    const sinDim = !AG.dimFiltro(s);
+    const val = (y) => { const v = sinDim ? sumV(y, mV) : null; return { ag: sumAg(y, mAg), venta: v, pct: v ? sumAg(y, mV) / v : null }; };
+    const A = ant ? val(ant) : null, U = val(ult);
+    const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const rango = (ms) => (ms.length ? (ms.length === 12 ? 'año completo' : MES[ms[0] - 1] + (ms.length > 1 ? '–' + MES[ms[ms.length - 1] - 1] : '')) : '—');
+    const h = (tag, txt, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = txt; return e; };
+    el.append(h('p', 'Variación ' + (ant ? ant + ' → ' + ult : ult) + ' · mismo periodo', 'ag-ttl'));
+    const tb = document.createElement('table'), thead = document.createElement('tr');
+    ['', 'Periodo', ...(ant ? [ant] : []), ult, 'Variación'].forEach((t) => thead.append(h('th', t)));
+    tb.append(thead);
+    const pctVar = (a, b) => (a != null && b ? (a - b) / b : null);
+    const fmtVar = (v, malo) => (v == null ? ['—', 'ag-neu'] : [(v > 0 ? '▲ +' : v < 0 ? '▼ −' : '') + DM.f1.format(Math.abs(v) * 100) + ' %', v === 0 ? 'ag-neu' : ((v > 0) === malo ? 'ag-up' : 'ag-dn')]);
+    const fila = (lbl, perTxt, a, u, fmt, varCell) => {
+      const tr = document.createElement('tr'); tr.append(h('td', lbl)); tr.append(h('td', perTxt));
+      if (ant) tr.append(h('td', a == null ? '—' : fmt(a), 'ag-v')); tr.append(h('td', u == null ? '—' : fmt(u), 'ag-v'));
+      tr.append(h('td', varCell[0], 'ag-v ' + varCell[1])); tb.append(tr);
+    };
+    if (sinDim) fila('Venta', rango(mV), A && A.venta, U.venta, AGF.mill1, fmtVar(A && pctVar(U.venta, A.venta), false));
+    fila('Agotado', rango(mAg), A && A.ag, U.ag, AGF.mill1, fmtVar(A && pctVar(U.ag, A.ag), true));
+    if (sinDim) {
+      const dpp = A && U.pct != null && A.pct != null ? (U.pct - A.pct) * 100 : null;
+      fila('% agotado sobre venta', rango(mV), A && A.pct, U.pct, (v) => DM.f1.format(v * 100) + ' %', dpp == null ? ['—', 'ag-neu'] : [(dpp > 0 ? '▲ +' : dpp < 0 ? '▼ −' : '') + DM.f1.format(Math.abs(dpp)) + ' pp', dpp > 0 ? 'ag-up' : dpp < 0 ? 'ag-dn' : 'ag-neu']);
+    }
+    el.append(tb);
+    el.append(h('p', 'Cada fila compara los mismos meses en los dos años. La venta es la de la tabla del gerente. Las barras muestran el total de cada año. Rojo: empeora · verde: mejora.', 'ag-cap'));
   });
 
   // Comparativo por mes: una línea por año.
@@ -2274,6 +2322,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 03:50 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 04:00 PM.</p>
 </body>
 </html>
