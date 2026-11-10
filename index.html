@@ -136,20 +136,16 @@ window.dash = (() => {
   .mo-bar .dm-select, .mo-bar .dm-ms-btn { border-color: var(--dm-green); }
   .dm-grid2-sep { display: grid; gap: var(--cds-gap-xl); grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr)); }
   .ag-var { font-size: var(--cds-font-size-caption); font-weight: 800; font-family: 'Poppins', var(--font-anthropic-sans); fill: var(--dm-orange); }
-  .ag-bv-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(30rem, 1fr); gap: var(--cds-gap-xl); align-items: center; }
-  @media (max-width: 900px) { .ag-bv-wrap { grid-template-columns: 1fr; } }
-  .ag-var table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; font-variant-numeric: tabular-nums; border: 1px solid var(--cds-border); border-radius: 10px; overflow: hidden; }
-  .ag-var th { background: var(--dm-green); color: #FFFFFF; font-weight: 700; padding: 9px 12px; text-align: right; font-size: 12px; }
+  .ag-bv-wrap { position: relative; }
+  .ag-var { position: absolute; top: 4px; left: 96px; z-index: 1; }
+  .ag-var table { border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; background: var(--color-panel); border: 1px solid var(--cds-border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .ag-var th { background: var(--dm-green); color: #FFFFFF; font-weight: 700; padding: 5px 10px; font-size: 11px; text-align: right; }
   .ag-var th:first-child { text-align: left; }
-  .ag-var td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--cds-border); white-space: nowrap; }
-  .ag-var th:nth-child(2) { text-align: left; }
-  .ag-var td:nth-child(2) { text-align: left; color: var(--color-fg-muted); }
-  .ag-var td:first-child { text-align: left; font-weight: 700; color: var(--color-fg); white-space: normal; }
+  .ag-var td { padding: 4px 10px; text-align: right; border-bottom: 1px solid var(--cds-border); white-space: nowrap; font-weight: 800; }
+  .ag-var td:first-child { text-align: left; font-weight: 600; color: var(--color-fg); }
   .ag-var tr:last-child td { border-bottom: 0; }
-  .ag-var td.ag-v { font-weight: 800; }
   .ag-var .ag-up { color: var(--cds-chart-status-critical); } .ag-var .ag-dn { color: var(--dm-ok); } .ag-var .ag-neu { color: var(--color-fg); }
-  .ag-var .ag-cap { font-size: 11px; color: var(--color-fg-muted); margin: 8px 2px 0; line-height: 1.4; }
-  .ag-var .ag-ttl { font-weight: 800; font-size: 13px; margin: 0 2px 8px; color: var(--color-fg); }
+  @media (max-width: 700px) { .ag-var { position: static; margin-top: var(--cds-gap-sm); } }
   .ag-pct { font-size: var(--cds-font-size-caption); font-weight: 800; font-family: 'Poppins', var(--font-anthropic-sans); fill: var(--dm-orange); }
   .mo-bar .dm-flabel { color: var(--dm-green-dk); }
   .mo-gauges { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-gap-md); align-items: center; }
@@ -1611,40 +1607,28 @@ window.dash = (() => {
     });
   });
   // Tabla de variación año contra año (los dos últimos años elegidos).
+  // Tabla pequeña de variación (mismo periodo en los dos últimos años): venta, agotado y % agotado.
   dash.draw('ag-var-tab', (el) => {
     el.replaceChildren(); if (!AG.ok()) return;
-    const { s, data } = agBV(); if (!data.length) return;
-    const ult = data[data.length - 1].y, ant = data.length > 1 ? data[data.length - 2].y : null;
-    // Comparación justa: mismo periodo en los dos años. Agotado: meses que tiene el último año; venta y %: meses con venta del último año.
+    const { s, data } = agBV(); if (data.length < 2) return;
+    const ult = data[data.length - 1].y, ant = data[data.length - 2].y;
     const per = AG.periodo(s), venta = AG.V(), pm = AG.porMes(AG.rowsDim(s)), k = (y, m) => y + String(m).padStart(2, '0');
     const mAg = per.filter((m) => pm.has(k(ult, m))), mV = per.filter((m) => venta.has(k(ult, m)));
     const sumAg = (y, ms) => ms.reduce((a, m) => a + (pm.get(k(y, m)) || 0), 0);
     const sumV = (y, ms) => (ms.length && ms.every((m) => venta.has(k(y, m))) ? ms.reduce((a, m) => a + venta.get(k(y, m)), 0) : null);
     const sinDim = !AG.dimFiltro(s);
     const val = (y) => { const v = sinDim ? sumV(y, mV) : null; return { ag: sumAg(y, mAg), venta: v, pct: v ? sumAg(y, mV) / v : null }; };
-    const A = ant ? val(ant) : null, U = val(ult);
-    const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-    const rango = (ms) => (ms.length ? (ms.length === 12 ? 'año completo' : MES[ms[0] - 1] + (ms.length > 1 ? '–' + MES[ms[ms.length - 1] - 1] : '')) : '—');
+    const A = val(ant), U = val(ult);
     const h = (tag, txt, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = txt; return e; };
-    el.append(h('p', 'Variación ' + (ant ? ant + ' → ' + ult : ult) + ' · mismo periodo', 'ag-ttl'));
-    const tb = document.createElement('table'), thead = document.createElement('tr');
-    ['', 'Periodo', ...(ant ? [ant] : []), ult, 'Variación'].forEach((t) => thead.append(h('th', t)));
-    tb.append(thead);
-    const pctVar = (a, b) => (a != null && b ? (a - b) / b : null);
-    const fmtVar = (v, malo) => (v == null ? ['—', 'ag-neu'] : [(v > 0 ? '▲ +' : v < 0 ? '▼ −' : '') + DM.f1.format(Math.abs(v) * 100) + ' %', v === 0 ? 'ag-neu' : ((v > 0) === malo ? 'ag-up' : 'ag-dn')]);
-    const fila = (lbl, perTxt, a, u, fmt, varCell) => {
-      const tr = document.createElement('tr'); tr.append(h('td', lbl)); tr.append(h('td', perTxt));
-      if (ant) tr.append(h('td', a == null ? '—' : fmt(a), 'ag-v')); tr.append(h('td', u == null ? '—' : fmt(u), 'ag-v'));
-      tr.append(h('td', varCell[0], 'ag-v ' + varCell[1])); tb.append(tr);
-    };
-    if (sinDim) fila('Venta', rango(mV), A && A.venta, U.venta, AGF.mill1, fmtVar(A && pctVar(U.venta, A.venta), false));
-    fila('Agotado', rango(mAg), A && A.ag, U.ag, AGF.mill1, fmtVar(A && pctVar(U.ag, A.ag), true));
-    if (sinDim) {
-      const dpp = A && U.pct != null && A.pct != null ? (U.pct - A.pct) * 100 : null;
-      fila('% agotado sobre venta', rango(mV), A && A.pct, U.pct, (v) => DM.f1.format(v * 100) + ' %', dpp == null ? ['—', 'ag-neu'] : [(dpp > 0 ? '▲ +' : dpp < 0 ? '▼ −' : '') + DM.f1.format(Math.abs(dpp)) + ' pp', dpp > 0 ? 'ag-up' : dpp < 0 ? 'ag-dn' : 'ag-neu']);
-    }
+    const tb = document.createElement('table'), hr = document.createElement('tr');
+    hr.append(h('th', 'Variación'), h('th', String(ant).slice(2) + ' → ' + String(ult).slice(2))); tb.append(hr);
+    const pv = (a, b, malo) => { if (a == null || !b) return ['—', 'ag-neu']; const v = (a - b) / b; return [(v > 0 ? '▲ +' : v < 0 ? '▼ −' : '') + DM.f1.format(Math.abs(v) * 100) + ' %', v === 0 ? 'ag-neu' : ((v > 0) === malo ? 'ag-up' : 'ag-dn')]; };
+    const fila = (l, [t, c]) => { const tr = document.createElement('tr'); tr.append(h('td', l), h('td', t, c)); tb.append(tr); };
+    if (sinDim) fila('Venta', pv(U.venta, A.venta, false));
+    fila('Agotado', pv(U.ag, A.ag, true));
+    if (sinDim) { const d = U.pct != null && A.pct != null ? (U.pct - A.pct) * 100 : null; fila('% agotado', d == null ? ['—', 'ag-neu'] : [(d > 0 ? '▲ +' : d < 0 ? '▼ −' : '') + DM.f1.format(Math.abs(d)) + ' pp', d > 0 ? 'ag-up' : d < 0 ? 'ag-dn' : 'ag-neu']); }
+    tb.title = 'Mismos meses en los dos años (venta hasta el último mes de la tabla del gerente)';
     el.append(tb);
-    el.append(h('p', 'Cada fila compara los mismos meses en los dos años. La venta es la de la tabla del gerente. Las barras muestran el total de cada año. Rojo: empeora · verde: mejora.', 'ag-cap'));
   });
 
   // Comparativo por mes: una línea por año.
@@ -2322,6 +2306,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 04:00 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 10/11/2026 04:07 PM.</p>
 </body>
 </html>
