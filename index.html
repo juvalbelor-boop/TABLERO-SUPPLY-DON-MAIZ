@@ -275,6 +275,9 @@ window.dash = (() => {
   .lc-pill.lc-warn { background: var(--dm-orange-2); }
   .lc-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--color-border-line); overflow: hidden; }
   .lc-bar i { display: block; height: 100%; border-radius: 3px; }
+  .iv-leg { align-items: center; }
+  .iv-leg-f { display: inline-flex; align-items: center; gap: 8px; font-size: 1.05rem; font-weight: 800; color: var(--color-fg); margin-right: 10px; }
+  .iv-leg-sw { width: 20px; height: 20px; border-radius: 5px; display: inline-block; }
   .iv-fam-grid { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   @media (max-width: 1000px) { .iv-fam-grid { grid-template-columns: 1fr; } }
   .iv-top { max-height: none; }
@@ -361,10 +364,10 @@ window.dash = (() => {
   <section class="dm-page" id="general" role="tabpanel">
     <section class="dm-card dm-card-o" id="dias-ciudad">
       <h2 class="dm-h2">Días de inventario por ciudad</h2>
-      <div class="dm-legend">
-        <span><span class="dm-sw" style="background: var(--iv-arepas)"></span>Arepas</span>
-        <span><span class="dm-sw" style="background: var(--iv-salsas)"></span>Salsas</span>
-        <span><span class="dm-sw" style="background: var(--iv-empanadas)"></span>Empanadas</span>
+      <div class="dm-legend iv-leg">
+        <span class="iv-leg-f"><span class="iv-leg-sw" style="background: var(--iv-arepas)"></span>Arepas</span>
+        <span class="iv-leg-f"><span class="iv-leg-sw" style="background: var(--iv-salsas)"></span>Salsas</span>
+        <span class="iv-leg-f"><span class="iv-leg-sw" style="background: var(--iv-empanadas)"></span>Empanadas</span>
         <span><span class="dm-sw" style="background: repeating-linear-gradient(135deg, #8A8A85 0 2px, #D9D9D4 2px 4px)"></span>Parte en tránsito (rayada)</span>
         <span>Etiqueta naranja: total de la ciudad · número sobre cada barra: días de la familia</span>
       </div>
@@ -998,7 +1001,7 @@ window.dash = (() => {
     const k = DM.kpis(t);
     if (k.dias != null) grupos.push({ k: 'TOTAL', nombre: 'Total red', total: k.dias, red: true,
       fams: FAMS.map(([F, n, col]) => { const v = famDias(t.filter((r) => r.fam === F)); return v && { F, n, col, ...v, dias: v.f + v.tr }; }).filter(Boolean) });
-    const W = el.clientWidth, H = 360;
+    const W = el.clientWidth, H = 370;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Días de inventario por ciudad y familia');
     const defs = svg.append('defs');
     FAMS.forEach(([F, , col]) => { const p = defs.append('pattern').attr('id', 'iv-tr-' + F).attr('patternUnits', 'userSpaceOnUse').attr('width', 6).attr('height', 6).attr('patternTransform', 'rotate(45)');
@@ -1009,7 +1012,7 @@ window.dash = (() => {
     const mr = DM.textW(svg, DM.LIM_SOB + ' días', 'dm-reft') + 8;
     const x0 = d3.scaleBand(grupos.map((g) => g.k), [ml, W - mr]).paddingInner(0.22).paddingOuter(0.08);
     const x1 = d3.scaleBand(FAMS.map((f) => f[0]), [0, x0.bandwidth()]).padding(0.12);
-    const y0 = H - 30, top = 46;
+    const y0 = H - 38, top = 46;
     y.range([y0, top]);
     const red = grupos.find((g) => g.red);
     if (red) svg.append('rect').attr('x', x0(red.k) - 6).attr('width', x0.bandwidth() + 12).attr('y', 2).attr('height', y0 - 2).attr('rx', 8).style('fill', 'var(--dm-bg-soft, #EEF0FA)');
@@ -1022,7 +1025,7 @@ window.dash = (() => {
     grupos.forEach((g) => {
       const gx = x0(g.k), gg = svg.append('g');
       // Nombre de la ciudad y etiqueta naranja con su total
-      gg.append('text').attr('class', 'dm-axis-t').attr('text-anchor', 'middle').attr('x', gx + x0.bandwidth() / 2).attr('y', y0 + 20).style('font-weight', g.red ? 800 : 700).style('fill', 'var(--color-fg)').style('font-size', '13px').text(g.nombre);
+      gg.append('text').attr('class', 'dm-axis-t').attr('text-anchor', 'middle').attr('x', gx + x0.bandwidth() / 2).attr('y', y0 + 24).style('font-weight', 800).style('fill', 'var(--color-fg)').style('font-size', '16px').text(g.nombre);
       const txt = 'Total ' + DM.f1.format(g.total) + ' días', pw = DM.textW(svg, txt, 'dm-val') + 22;
       gg.append('rect').attr('x', gx + x0.bandwidth() / 2 - pw / 2).attr('y', 8).attr('width', pw).attr('height', 24).attr('rx', 12).style('fill', 'var(--dm-orange)');
       gg.append('text').attr('text-anchor', 'middle').attr('x', gx + x0.bandwidth() / 2).attr('y', 25).style('fill', '#FFFFFF').style('font-weight', 700).style('font-size', '13px').text(txt);
@@ -2373,6 +2376,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 11/11/2026 11:13 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 11/11/2026 12:25 PM.</p>
 </body>
 </html>
