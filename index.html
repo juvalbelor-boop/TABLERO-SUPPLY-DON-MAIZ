@@ -150,6 +150,14 @@ window.dash = (() => {
   .ag-pct { font-size: var(--cds-font-size-caption); font-weight: 800; font-family: 'Poppins', var(--font-anthropic-sans); fill: var(--dm-orange); }
   .mo-bar .dm-flabel { color: var(--dm-green-dk); }
   .mo-gauges { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-gap-md); align-items: center; }
+  .ot-gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: var(--cds-gap-lg); align-items: center; }
+  @media (max-width: 900px) { .ot-gauges { grid-template-columns: 1fr 1fr; } }
+  .ot-rangos table { border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; border: 1px solid var(--cds-border); border-radius: 8px; overflow: hidden; }
+  .ot-rangos th { background: var(--dm-green); color: #FFFFFF; font-weight: 700; padding: 5px 10px; font-size: 11px; text-align: right; }
+  .ot-rangos th:first-child, .ot-rangos td:first-child { text-align: left; }
+  .ot-rangos td { padding: 3px 10px; text-align: right; border-bottom: 1px solid var(--cds-border); font-weight: 700; }
+  .ot-rangos tr:last-child td { border-bottom: 0; color: var(--cds-chart-status-critical); }
+  .ot-rangos p { font-size: 11px; color: var(--color-fg-muted); margin: 6px 2px 0; max-width: 12rem; }
   .mo-gauges-3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
   @media (max-width: 640px) { .mo-gauges { grid-template-columns: 1fr; } .mo-eq { display: none; } }
   .mo-gauge { display: flex; flex-direction: column; align-items: center; gap: var(--cds-gap-xs); min-width: 0; }
@@ -629,10 +637,18 @@ window.dash = (() => {
     <section class="dm-card" id="otif-velocimetros">
       <h2 class="dm-h2">OTIF de la selección</h2>
       <p class="dm-note">OTIF = In Full × On Time, ponderado por lo programado (una referencia grande pesa más que una pequeña).</p>
-      <div class="mo-gauges mo-gauges-3">
+      <div class="ot-gauges">
         <div class="mo-gauge"><h3 class="mo-gauge-t">OTIF</h3><div class="mo-gauge-box" data-draw="g-otif" data-source="produccion"></div></div>
         <div class="mo-gauge"><h3 class="mo-gauge-t">In Full</h3><div class="mo-gauge-box" data-draw="g-inf" data-source="produccion"></div></div>
         <div class="mo-gauge"><h3 class="mo-gauge-t">On Time</h3><div class="mo-gauge-box" data-draw="g-ont" data-source="produccion"></div></div>
+        <div class="ot-rangos">
+          <table>
+            <tr><th>Variación hasta</th><th>On Time</th></tr>
+            <tr><td>0 %</td><td>100 %</td></tr><tr><td>5 %</td><td>90 %</td></tr><tr><td>10 %</td><td>80 %</td></tr>
+            <tr><td>15 %</td><td>70 %</td></tr><tr><td>20 %</td><td>60 %</td></tr><tr><td>&gt; 20 %</td><td>0 %</td></tr>
+          </table>
+          <p>Variación = lo que faltó frente a lo programado.</p>
+        </div>
       </div>
     </section>
 
@@ -640,14 +656,21 @@ window.dash = (() => {
       <section class="dm-card" id="otif-por-dia"><h2 class="dm-h2">OTIF por día</h2>
         <div class="dm-chart" data-draw="ot-dia" data-source="produccion mps_estado"></div></section>
       <section class="dm-card dm-card-o" id="otif-por-horno"><h2 class="dm-h2">OTIF por horno</h2>
+        <p class="dm-note">Debajo de cada horno, su cumplimiento (real ÷ programado). Un horno puede producir y tener OTIF 0 % si le faltó más del 20 % de lo programado.</p>
         <div class="dm-chart" data-draw="ot-horno" data-source="produccion"></div></section>
-      <section class="dm-card" id="otif-por-segmento"><h2 class="dm-h2">OTIF por segmento</h2>
-        <div class="dm-chart dm-chart-s" data-draw="ot-seg" data-source="produccion"></div></section>
-      <section class="dm-card dm-card-o" id="otif-top"><h2 class="dm-h2">Top 10 referencias con OTIF por debajo del 95 %</h2><p class="dm-note">De mayor a menor volumen no cumplido (programado × (1 − OTIF)).</p>
-        <div class="dm-tablebox"><table class="dm-table" data-source="produccion" data-row-key="ref">
-          <thead><tr><th>#</th><th data-field="ref">Ref</th><th data-field="desc">Producto</th><th data-field="seg">Segmento</th><th data-field="prog" class="dm-num">Programado</th><th class="dm-num">In Full</th><th class="dm-num">On Time</th><th class="dm-num">OTIF</th></tr></thead>
-          <tbody data-draw="ot-top"></tbody></table></div></section>
     </div>
+    <section class="dm-card" id="otif-por-segmento"><h2 class="dm-h2">OTIF por segmento</h2>
+      <div class="dm-chart dm-chart-s" data-draw="ot-seg" data-source="produccion"></div></section>
+    <section class="dm-card dm-card-o" id="otif-top">
+      <div class="lc-head"><div><h2 class="dm-h2">Top 10 referencias con OTIF por debajo del 95 %</h2><p class="dm-note">De mayor a menor volumen no cumplido (programado × (1 − OTIF)).</p></div></div>
+      <div class="lc-box">
+        <table class="lc-table" data-source="produccion">
+          <colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:15%"></colgroup>
+          <thead><tr><th class="lc-c">#</th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Programado</th><th class="lc-n">Real</th><th class="lc-n">In Full</th><th class="lc-n">On Time</th><th>OTIF</th></tr></thead>
+          <tbody data-draw="ot-top"></tbody>
+        </table>
+      </div>
+    </section>
   </section>
 
   <section class="dm-main" id="ns" role="tabpanel" hidden>
@@ -1290,12 +1313,22 @@ window.dash = (() => {
     // Velocímetro de 0 a 100 %, con la meta del 95 % marcada. Si el valor pasa de 100 %, el arco queda lleno y el número muestra el valor real.
     const gauge = (el, v, opt = {}) => {
       el.replaceChildren();
-      const W = Math.max(220, el.clientWidth), H = Math.round(Math.min(W * 0.62, 200)), r = Math.min(W / 2 - 24, H - 34), cx = W / 2, cy = r + 14;
+      const W = Math.max(220, el.clientWidth), H = Math.round(Math.min(W * 0.62, 200)) + (opt.limpio ? 22 : 0), r = Math.min(W / 2 - 24, H - 34 - (opt.limpio ? 22 : 0)), cx = W / 2, cy = r + 14;
       const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', opt.label || 'Velocímetro');
       const MAX = 1, ang = (x) => -Math.PI / 2 + Math.PI * Math.max(0, Math.min(x, MAX)) / MAX;
       const arc = d3.arc().innerRadius(r * 0.72).outerRadius(r).cornerRadius(3);
       svg.append('path').attr('transform', `translate(${cx},${cy})`).attr('d', arc({ startAngle: ang(0), endAngle: ang(MAX) })).style('fill', 'var(--cds-chart-grid)');
       if (v != null) svg.append('path').attr('transform', `translate(${cx},${cy})`).attr('d', arc({ startAngle: ang(0), endAngle: ang(v) })).style('fill', opt.na ? 'var(--dm-sin)' : color(v));
+      if (opt.limpio) {
+        // Marca de la meta cruzando el arco, 0 y 100 % debajo de los extremos, y "Meta 95 %" en negrita bajo el valor.
+        const a = ang(0.95) - Math.PI / 2;
+        svg.append('line').attr('x1', cx + Math.cos(a) * (r * 0.66)).attr('y1', cy + Math.sin(a) * (r * 0.66)).attr('x2', cx + Math.cos(a) * (r + 7)).attr('y2', cy + Math.sin(a) * (r + 7)).style('stroke', 'var(--dm-green-dk)').attr('stroke-width', 3).attr('stroke-linecap', 'round');
+        [[cx - r * 0.86, '0 %'], [cx + r * 0.86, '100 %']].forEach(([x, t]) => svg.append('text').attr('x', x).attr('y', cy + 16).attr('text-anchor', 'middle').style('font-size', '11px').style('font-weight', 700).style('fill', 'var(--color-fg-muted)').text(t));
+        svg.append('text').attr('class', 'mo-gauge-v').attr('x', cx).attr('y', cy - 6).attr('text-anchor', 'middle').style('font-weight', 800).style('fill', v == null ? 'var(--color-fg-muted)' : color(v)).text(v == null ? '—' : pct(v));
+        svg.append('text').attr('x', cx).attr('y', cy + 16).attr('text-anchor', 'middle').style('font-size', '12px').style('font-weight', 800).style('fill', 'var(--dm-green-dk)').text('Meta 95 %');
+        if (opt.tag) svg.append('text').attr('class', 'mo-gauge-tag').attr('x', cx).attr('y', cy + 32).attr('text-anchor', 'middle').text(opt.tag);
+        return;
+      }
       [[0, '0'], [0.95, '95'], [1, '100']].forEach(([t, lab]) => {
         const a = ang(t) - Math.PI / 2, x1 = cx + Math.cos(a) * (r + 2), y1 = cy + Math.sin(a) * (r + 2), x2 = cx + Math.cos(a) * (r + 9), y2 = cy + Math.sin(a) * (r + 9);
         svg.append('line').attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2).style('stroke', t === 0.95 ? 'var(--dm-green-dk)' : 'var(--color-fg-muted)').attr('stroke-width', t === 0.95 ? 2.5 : 1.5);
@@ -1308,19 +1341,21 @@ window.dash = (() => {
     const bars = (el, items, opt = {}) => {
       el.replaceChildren();
       if (!items.length) return;
-      const W = el.clientWidth, H = opt.h || 250;
+      const W = el.clientWidth, H = opt.h || 250, MB = opt.mb || 40;
       const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', opt.label || 'Porcentajes');
       const vmax = Math.max(1.1, d3.max(items, (d) => d.v || 0) * 1.12);
-      const y = d3.scaleLinear([0, vmax], [H - 40, 18]);
+      const y = d3.scaleLinear([0, vmax], [H - MB, 18]);
       const ml = DM.textW(svg, '100 %', 'dm-axis-t') + 10, mr = DM.textW(svg, '95 % meta', 'dm-reft') + 6;
       const x = d3.scaleBand(items.map((d) => d.k), [ml, W - mr]).padding(0.28);
       svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - mr)).tickFormat((v) => Math.round(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-      const g = svg.append('g').attr('transform', `translate(0,${H - 40})`).call(d3.axisBottom(x).tickSize(0).tickPadding(6).tickFormat((k) => (items.find((d) => d.k === k) || {}).label || k)).call(DM.cleanAxis);
+      const g = svg.append('g').attr('transform', `translate(0,${H - MB})`).call(d3.axisBottom(x).tickSize(0).tickPadding(6).tickFormat((k) => (items.find((d) => d.k === k) || {}).label || k)).call(DM.cleanAxis);
+      if (opt.bold) { g.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)').style('font-size', '12px'); svg.selectAll('g:first-of-type .tick text').style('font-weight', 700).style('fill', 'var(--color-fg)'); }
       const step = x.step(); const wMax = Math.max(...items.map((d) => DM.textW(svg, d.label || d.k, 'dm-axis-t')));
       if (wMax + 6 > step) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-30)');
-      if (opt.sub) g.selectAll('.tick').append('text').attr('class', 'dm-reft').attr('y', 26).attr('text-anchor', 'middle').text((k) => (items.find((d) => d.k === k) || {}).sub || '');
+      if (opt.sub) g.selectAll('.tick').append('text').attr('class', 'dm-reft').attr('y', 26).attr('text-anchor', 'middle').style('font-weight', opt.bold ? 600 : null)
+        .each(function (k) { const t = String((items.find((d) => d.k === k) || {}).sub || '').split('\n'); t.forEach((ln, i) => d3.select(this).append('tspan').attr('x', 0).attr('dy', i ? 11 : 0).text(ln)); });
       [[1, 'dm-ref'], [0.95, 'dm-ref dm-ref-bad']].forEach(([v, cls]) => svg.append('line').attr('class', cls).attr('x1', ml).attr('x2', W - mr).attr('y1', y(v)).attr('y2', y(v)));
-      svg.append('text').attr('class', 'dm-reft').attr('x', W - mr + 4).attr('y', y(0.95) + 10).text('95 % meta');
+      svg.append('text').attr('class', 'dm-reft').attr('x', W - mr + 4).attr('y', y(0.95) + 10).style('font-weight', opt.bold ? 700 : null).text('95 % meta');
       const bw = Math.min(40, x.bandwidth()), bx = (d) => x(d.k) + (x.bandwidth() - bw) / 2;
       const withV = items.filter((d) => d.v != null);
       svg.append('g').selectAll('rect').data(withV).join('rect').attr('x', bx).attr('width', bw).attr('y', (d) => y(d.v)).attr('height', (d) => y(0) - y(d.v)).attr('rx', 3)
@@ -1328,7 +1363,7 @@ window.dash = (() => {
       svg.append('g').selectAll('text').data(withV).join('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', (d) => x(d.k) + x.bandwidth() / 2).attr('y', (d) => y(d.v) - 6).text((d) => pct(d.v));
       svg.append('g').selectAll('text').data(items.filter((d) => d.v == null)).join('text').attr('class', 'dm-reft').attr('text-anchor', 'middle').attr('x', (d) => x(d.k) + x.bandwidth() / 2).attr('y', y(0) - 6).text((d) => d.empty || '—');
       const tip = DM.tipFor(el);
-      svg.append('g').selectAll('rect').data(items).join('rect').attr('x', (d) => x(d.k) - (x.step() * x.paddingInner()) / 2).attr('width', x.step()).attr('y', 0).attr('height', H - 40).attr('fill', 'transparent')
+      svg.append('g').selectAll('rect').data(items).join('rect').attr('x', (d) => x(d.k) - (x.step() * x.paddingInner()) / 2).attr('width', x.step()).attr('y', 0).attr('height', H - MB).attr('fill', 'transparent')
         .on('mousemove', (e, d) => DM.showTip(tip, el, x(d.k) + x.bandwidth() / 2, d.v != null ? y(d.v) : y(0), d.tip || [d.label || d.k, pct(d.v)]))
         .on('mouseleave', () => { tip.hidden = true; });
     };
@@ -1342,7 +1377,8 @@ window.dash = (() => {
       const vmax = Math.max(1.1, d3.max(items, (d) => d.v || 0) * 1.05);
       const x = d3.scaleLinear([0, vmax], [ml, W - mr]); const y = d3.scaleBand(items.map((d) => d.k), [8, H - 26]).padding(0.25);
       svg.append('g').attr('transform', `translate(0,${H - 26})`).call(d3.axisBottom(x).ticks(4).tickSize(-(H - 34)).tickFormat((v) => Math.round(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-      svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(6).tickFormat((k) => items.find((d) => d.k === k).label)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
+      const ya = svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(6).tickFormat((k) => items.find((d) => d.k === k).label)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
+      if (opt.bold) { ya.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)'); svg.selectAll('g .tick text').style('font-weight', 700).style('fill', 'var(--color-fg)'); }
       [[1, 'dm-ref'], [0.95, 'dm-ref dm-ref-bad']].forEach(([v, cls]) => svg.append('line').attr('class', cls).attr('x1', x(v)).attr('x2', x(v)).attr('y1', 8).attr('y2', H - 26));
       const withV = items.filter((d) => d.v != null);
       svg.append('g').selectAll('rect').data(withV).join('rect').attr('x', ml).attr('width', (d) => Math.max(1, x(d.v) - ml)).attr('y', (d) => y(d.k)).attr('height', y.bandwidth()).attr('rx', 3).style('fill', (d) => color(d.v));
@@ -1446,20 +1482,26 @@ window.dash = (() => {
   kpi('ok-np', () => DM.f0.format(otT().np));
   [['g-otif', 'otif', 'OTIF ponderado'], ['g-inf', 'inf', 'In Full ponderado'], ['g-ont', 'ont', 'On Time ponderado']].forEach(([n, k, lab]) => dash.draw(n, (el) => {
     if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
-    const t = otT(); MOG.gauge(el, t[k], { tag: k === 'otif' ? 'promedio simple ' + MOG.pct(t.otifProm) : '', label: lab });
+    const t = otT(); MOG.gauge(el, t[k], { tag: k === 'otif' ? 'promedio simple ' + MOG.pct(t.otifProm) : '', label: lab, limpio: true });
   }));
-  dash.draw('ot-dia', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, diaItems('ot_', 'otif'), { sub: true, selected: MO.sel('ot_').dia || null, label: 'OTIF por día' }); });
-  dash.draw('ot-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('ot_')), 'otif'), { label: 'OTIF por horno' }); });
+  dash.draw('ot-dia', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, diaItems('ot_', 'otif'), { sub: true, bold: true, h: 280, selected: MO.sel('ot_').dia || null, label: 'OTIF por día' }); });
+  dash.draw('ot-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('ot_')), 'otif').map((d) => { const o = MO.porHorno(MO.sel('ot_')).find((x) => x.k === d.k); return { ...d, label: String(d.k).replace(/^Línea\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()), sub: o && o.prog ? 'cumpl.\n' + MOG.pct(o.realPlan / o.prog) : '' }; }), { sub: true, bold: true, h: 292, mb: 52, label: 'OTIF por horno' }); });
   dash.draw('ot-seg', (el) => {
     if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
-    MOG.hbars(el, MO.porSeg(MO.sel('ot_')).filter((o) => o.prog > 0).map((o) => ({ k: o.k, label: MOG.cap(o.k), v: o.otif, tip: [MOG.cap(o.k), 'Programado: ' + DM.f0.format(o.prog), 'OTIF: ' + MOG.pct(o.otif), 'In Full: ' + MOG.pct(o.inf), 'On Time: ' + MOG.pct(o.ont)] })), { label: 'OTIF por segmento' });
+    MOG.hbars(el, MO.porSeg(MO.sel('ot_')).filter((o) => o.prog > 0).map((o) => ({ k: o.k, label: MOG.cap(o.k), v: o.otif, tip: [MOG.cap(o.k), 'Programado: ' + DM.f0.format(o.prog), 'OTIF: ' + MOG.pct(o.otif), 'In Full: ' + MOG.pct(o.inf), 'On Time: ' + MOG.pct(o.ont)] })), { bold: true, label: 'OTIF por segmento' });
   });
   dash.draw('ot-top', (tb) => {
     tb.replaceChildren(); if (!MO.ok()) return;
     MO.topOtif(MO.sel('ot_')).forEach((o, i) => {
-      const tr = document.createElement('tr'); tr.dataset.key = o.ref;
-      const c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); };
-      c(String(i + 1)); c(o.ref); c(o.desc, 'dm-desc'); c(MOG.cap(o.seg)); c(DM.f0.format(o.prog), 'dm-num'); c(MOG.pct(o.inf), 'dm-num'); c(MOG.pct(o.ont), 'dm-num'); c(MOG.pct(o.otif), 'dm-num dm-days');
+      const tr = document.createElement('tr'); tr.className = 'lc-row'; tr.dataset.key = o.ref;
+      const c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); return td; };
+      c(String(i + 1), 'lc-c lc-ref'); c(o.ref, 'lc-ref'); const d = c(o.desc, 'lc-city'); d.title = o.desc; c(MOG.cap(o.seg));
+      c(DM.f0.format(o.prog), 'lc-n'); c(DM.f0.format(o.realPlan), 'lc-n'); c(MOG.pct(o.inf), 'lc-n'); c(MOG.pct(o.ont), 'lc-n');
+      // OTIF: etiqueta roja/naranja y barra frente a la meta de 95 %
+      const td = c(''); const w = document.createElement('div'); w.className = 'lc-days';
+      const p = document.createElement('span'); p.className = 'lc-pill' + (o.otif >= 0.5 ? ' lc-warn' : ''); p.textContent = MOG.pct(o.otif);
+      const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, Math.min(100, o.otif / 0.95 * 100)) + '%'; f.style.background = o.otif >= 0.5 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f);
+      w.append(p, bar); td.append(w);
       tb.append(tr);
     });
   });
@@ -2308,6 +2350,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 11/11/2026 10:36 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 11/11/2026 11:08 AM.</p>
 </body>
 </html>
