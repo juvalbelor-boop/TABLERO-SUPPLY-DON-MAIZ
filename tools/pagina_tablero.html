@@ -667,6 +667,14 @@
 </div>
 
 <script>
+  // Los desplegables de selección múltiple se llenan al abrirlos (lo oculto no siempre se dibuja).
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('.dm-ms-btn'); if (!btn) return;
+    const box = btn.closest('.dm-ms'), list = box && box.querySelector('.dm-ms-list'), f = list && window.DMms && window.DMms[list.dataset.draw];
+    if (f) { try { f(list); } catch (err) { console.error(err); } }
+  }, true);
+</script>
+<script>
   // Límite de crítico: menos de 3 días (cambio del 10-nov-2026; antes 4).
   const DM_LIM_CRIT = 3;
   // Cálculo base: cada fila del archivo diario con su estado. Los gráficos agregan estas filas según los filtros.
@@ -834,7 +842,7 @@
   };
   const msAll = { ciudades: 'Todas', bods: 'Todas', segs: 'Todos' };
   Object.keys(msOptions).forEach((key) => {
-    dash.draw('ms-' + key, (el) => {
+    dash.draw('ms-' + key, (window.DMms = window.DMms || {})['ms-' + key] = (el) => {
       const d = dash.data('puntos');
       el.replaceChildren();
       if (d.status !== 'ok') return;
@@ -1450,7 +1458,7 @@
     ag_segs: () => [...new Set(AG.D().map((r) => r.seg))].sort().map((g) => [g, g.charAt(0) + g.slice(1).toLowerCase()]),
   };
   Object.keys(agOpts).forEach((key) => {
-    dash.draw('ms-' + key, (el) => {
+    dash.draw('ms-' + key, (window.DMms = window.DMms || {})['ms-' + key] = (el) => {
       el.replaceChildren(); if (!AG.ok()) return;
       const picked = list2(dash.params()[key]);
       agOpts[key]().forEach(([v, label]) => {
@@ -1713,7 +1721,7 @@
   document.addEventListener('click', nsClose);
   const nsOpts = { ns_anios: () => NS.anios().map((y) => [y, y]), ns_meses: () => NS.MES.map((m, i) => [String(i + 1), m]), ns_canales: () => NS.canales().map((c) => [c, NS.nom(c)]) };
   Object.keys(nsOpts).forEach((key) => {
-    dash.draw('ms-' + key, (el) => {
+    dash.draw('ms-' + key, (window.DMms = window.DMms || {})['ms-' + key] = (el) => {
       el.replaceChildren(); if (!NS.ok()) return;
       const picked = NS.list(dash.params()[key]);
       nsOpts[key]().forEach(([v, label]) => {
