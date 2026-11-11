@@ -696,8 +696,10 @@ window.dash = (() => {
         <div class="dm-field dm-ms" data-ms="ns_canales"><span class="dm-flabel">Canal</span>
           <button class="dm-ms-btn" type="button" aria-expanded="false" aria-label="Elegir canales"><span data-draw="msl-ns_canales" data-source="ns">—</span></button>
           <div class="dm-ms-pop" hidden><button class="dm-ms-all" type="button">Todos los canales</button><div class="dm-ms-list" data-draw="ms-ns_canales" data-source="ns"></div></div></div>
+        <label class="dm-field"><span class="dm-flabel">Unidad</span><select class="dm-select ns-uni" aria-label="Unidad del nivel de servicio">
+          <option value="cant">Cantidad</option><option value="dinero">Dinero</option></select></label>
       </div>
-      <p class="dm-note">Nivel de servicio = unidades facturadas ÷ unidades pedidas, sumando los canales y meses elegidos (ponderado, igual que la tabla dinámica del archivo). Meta: 97 %. Las tarjetas usan el filtro de canal; los gráficos, año, mes y canal. Archivo <b data-draw="ns-archivo" data-source="ns_estado">—</b>, datos hasta <b data-draw="ns-hasta" data-source="ns_estado">—</b>.</p>
+      <p class="dm-note">Nivel de servicio = <span data-draw="ns-def" data-source="ns">unidades facturadas ÷ unidades pedidas</span>, sumando los canales y meses elegidos (ponderado, igual que la tabla dinámica del archivo). Meta: 97 %. Las tarjetas usan el filtro de canal; los gráficos, año, mes y canal. Archivo <b data-draw="ns-archivo" data-source="ns_estado">—</b>, datos hasta <b data-draw="ns-hasta" data-source="ns_estado">—</b>.</p>
     </div>
 
     <div class="dm-tiles" id="ns-indicadores">
@@ -712,11 +714,11 @@ window.dash = (() => {
         <div class="dm-chart" data-draw="ns-anio" data-source="ns ns_estado"></div></section>
 
     <section class="dm-card" id="ns-canal"><h2 class="dm-h2">Nivel de servicio por canal y año</h2>
-      <p class="dm-note">Cada barra es el nivel de servicio de un canal en un año: unidades facturadas ÷ unidades pedidas de los meses elegidos (sin filtro de mes, todos los meses con datos). "Total" suma todos los canales elegidos. El número encima de cada barra es el % del año. Pasa el mouse para ver las unidades.</p>
+      <p class="dm-note">Cada barra es el nivel de servicio de un canal en un año: <span data-draw="ns-def2" data-source="ns">unidades facturadas ÷ unidades pedidas</span> de los meses elegidos (sin filtro de mes, todos los meses con datos). "Total" suma todos los canales elegidos. El número encima de cada barra es el % del año. Pasa el mouse para ver el detalle.</p>
       <div class="dm-chart" data-draw="ns-canal" data-source="ns ns_estado"></div></section>
 
-    <section class="dm-card" id="ns-nofact"><h2 class="dm-h2">Unidades pedidas no facturadas por canal</h2>
-        <p class="dm-note">Pedido − facturado en los años elegidos (sin filtro: todos). En naranja, el nivel de servicio del canal en ese periodo.</p>
+    <section class="dm-card" id="ns-nofact"><h2 class="dm-h2" data-draw="ns-nofact-t" data-source="ns">Unidades pedidas no facturadas por canal</h2>
+        <p class="dm-note"><span data-draw="ns-pend-def" data-source="ns">Pedido − facturado</span> en los años elegidos (sin filtro: todos). En naranja, el nivel de servicio del canal en ese periodo.</p>
         <div class="dm-chart" data-draw="ns-nofact" data-source="ns"></div></section>
   </section>
 
@@ -1762,7 +1764,11 @@ window.dash = (() => {
     const MC = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     const list = (v) => (Array.isArray(v) ? v : []);
     const ok = () => dash.data('ns').status === 'ok';
-    const D = () => (ok() ? dash.data('ns').data.map((r) => ({ anio: String(r.anio), mes: +r.mes, canal: String(r.canal), fact: +r.fact, ped: +r.ped, k: String(r.anio) + String(r.mes).padStart(2, '0') })) : []);
+    // Unidad: 'cant' (unidades) o 'dinero' (valor facturado ÷ valor pedido). En dinero, fact y ped llevan pesos.
+    const din = () => dash.params().ns_uni === 'dinero' && ok() && dash.data('ns').data.some((r) => r.vp != null);
+    const D = () => { if (!ok()) return []; const m = din(); return dash.data('ns').data.map((r) => ({ anio: String(r.anio), mes: +r.mes, canal: String(r.canal), fact: m ? +r.vf || 0 : +r.fact, ped: m ? +r.vp || 0 : +r.ped, pend: m ? +r.vpend || 0 : +r.ped - +r.fact, k: String(r.anio) + String(r.mes).padStart(2, '0') })); };
+    const cant = (v) => (din() ? (Math.abs(v) >= 1e9 ? '$' + DM.f1.format(v / 1e9) + ' mil mill.' : '$' + DM.f0.format(Math.round(v / 1e6)) + ' mill.') : DM.f0.format(v) + ' und');
+    const eje = (v) => (din() ? '$' + DM.f0.format(Math.round(v / 1e6)) + ' M' : DM.f0.format(v));
     const est = () => { const d = dash.data('ns_estado'); if (d.status !== 'ok' || !d.data) return null; return Array.isArray(d.data) ? d.data[0] || null : d.data; };
     const sel = () => { const p = dash.params(); return { anios: list(p.ns_anios), canales: list(p.ns_canales), meses: list(p.ns_meses).map(Number) }; };
     const anios = () => [...new Set(D().map((r) => r.anio))].sort();
@@ -1780,9 +1786,15 @@ window.dash = (() => {
     const nom = (c) => c.charAt(0) + c.slice(1).toLowerCase();
     const col = (v) => (v == null ? '' : v >= META ? 'var(--dm-green)' : 'var(--dm-orange)');
     const YCOL = (y, ys) => { const i = ys.indexOf(y), n = ys.length; return i === n - 1 ? 'var(--dm-green)' : i === n - 2 ? 'var(--dm-orange-2)' : 'var(--cds-chart-muted)'; };
-    return { META, MES, MC, list, ok, D, est, sel, anios, canales, porCanal, porAnio, ns, parcial, meses, ultCerrado, kTxt, kCorto, pct, nom, col, YCOL };
+    return { META, MES, MC, list, ok, din, cant, eje, D, est, sel, anios, canales, porCanal, porAnio, ns, parcial, meses, ultCerrado, kTxt, kCorto, pct, nom, col, YCOL };
   })();
 
+  dash.draw('ns-def', (el) => { el.textContent = NS.din() ? 'valor facturado ÷ valor pedido (en pesos)' : 'unidades facturadas ÷ unidades pedidas'; });
+  dash.draw('ns-def2', (el) => { el.textContent = NS.din() ? 'valor facturado ÷ valor pedido' : 'unidades facturadas ÷ unidades pedidas'; });
+  dash.draw('ns-pend-def', (el) => { el.textContent = NS.din() ? 'Valor pendiente (Vlr_Pendiente del archivo)' : 'Unidades pendientes (pedido − facturado)'; });
+  dash.draw('ns-nofact-t', (el) => { el.textContent = NS.din() ? 'Valor pedido no facturado por canal' : 'Unidades pedidas no facturadas por canal'; });
+  document.querySelectorAll('.ns-uni').forEach((s) => s.addEventListener('change', () => dash.setParams({ ns_uni: s.value === 'dinero' ? 'dinero' : null })));
+  dash.onData(() => { const v = dash.params().ns_uni === 'dinero' ? 'dinero' : 'cant'; document.querySelectorAll('.ns-uni').forEach((s) => { s.value = v; }); });
   dash.draw('ns-archivo', (el) => { const e = NS.est(); el.textContent = e ? e.archivo : '—'; });
   dash.draw('ns-hasta', (el) => { const e = NS.est(); el.textContent = e ? NS.kTxt(e.ultimo_mes) + (NS.parcial(e.ultimo_mes) ? ' (mes en curso, parcial)' : '') : '—'; });
 
@@ -1841,8 +1853,8 @@ window.dash = (() => {
   dash.draw('nk-ant-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? 'Mismo periodo ' + k.ya + ' (' + k.rango + ')' : 'Mismo periodo año anterior'; });
   dash.draw('nk-ant', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? NS.pct(NS.ns(k.ant)) : '—'; });
   dash.draw('nk-meta-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } nsDelta(el, NS.ns(k.ytd), NS.META, 'frente a la meta de 97 %'); });
-  dash.draw('nk-nof-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? 'Unidades no facturadas ' + k.y + ' (' + k.rango + ')' : 'Unidades no facturadas'; });
-  dash.draw('nk-nof', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? DM.f0.format(d3.sum(k.ytd, (r) => r.ped - r.fact)) + ' und' : '—'; });
+  dash.draw('nk-nof-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? (NS.din() ? 'Valor no facturado ' : 'Unidades no facturadas ') + k.y + ' (' + k.rango + ')' : 'Unidades no facturadas'; });
+  dash.draw('nk-nof', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? NS.cant(d3.sum(k.ytd, (r) => r.pend)) : '—'; });
 
   // Línea de meta 97 % en un gráfico.
   const nsMeta = (svg, y, x0, x1) => {
@@ -1890,7 +1902,7 @@ window.dash = (() => {
     });
     const tip = DM.tipFor(el);
     svg.append('g').selectAll('rect.hit').data(cs).join('rect').attr('x', (c) => x0(c)).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - 44).attr('fill', 'transparent')
-      .on('mousemove', (e, c) => DM.showTip(tip, el, x0(c) + x0.bandwidth() / 2, 30, [c === 'TOTAL' ? 'Total' : NS.nom(c), ...ys.map((yy) => { const rs = R.filter((r) => r.anio === yy && (c === 'TOTAL' || r.canal === c)); return nsYearName(yy, R) + ': ' + NS.pct(NS.ns(rs)) + ' (' + DM.f0.format(d3.sum(rs, (r) => r.fact)) + ' de ' + DM.f0.format(d3.sum(rs, (r) => r.ped)) + ' und)'; })]))
+      .on('mousemove', (e, c) => DM.showTip(tip, el, x0(c) + x0.bandwidth() / 2, 30, [c === 'TOTAL' ? 'Total' : NS.nom(c), ...ys.map((yy) => { const rs = R.filter((r) => r.anio === yy && (c === 'TOTAL' || r.canal === c)); return nsYearName(yy, R) + ': ' + NS.pct(NS.ns(rs)) + ' (' + (NS.din() ? NS.cant(d3.sum(rs, (r) => r.fact)) + ' de ' + NS.cant(d3.sum(rs, (r) => r.ped)) : DM.f0.format(d3.sum(rs, (r) => r.fact)) + ' de ' + NS.cant(d3.sum(rs, (r) => r.ped))) + ')'; })]))
       .on('mouseleave', () => { tip.hidden = true; });
   });
 
@@ -1929,24 +1941,24 @@ window.dash = (() => {
     if (!NS.ok()) { DM.fail(el, dash.data('ns').status); return; }
     el.replaceChildren();
     const s = NS.sel(), R = NS.D().filter(NS.porAnio(s)).filter(NS.porCanal(s));
-    const cs = d3.rollups(R, (v) => ({ nf: d3.sum(v, (r) => r.ped - r.fact), ns: NS.ns(v) }), (r) => r.canal).map(([c, o]) => ({ c, ...o })).filter((o) => o.ns != null).sort((a, b) => b.nf - a.nf);
+    const cs = d3.rollups(R, (v) => ({ nf: d3.sum(v, (r) => r.pend), ns: NS.ns(v) }), (r) => r.canal).map(([c, o]) => ({ c, ...o })).filter((o) => o.ns != null).sort((a, b) => b.nf - a.nf);
     if (!cs.length) return;
     const W = el.clientWidth, H = 300;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Unidades no facturadas por canal');
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', NS.din() ? 'Valor no facturado por canal' : 'Unidades no facturadas por canal');
     const y = d3.scaleLinear([0, (d3.max(cs, (o) => o.nf) || 1) * 1.25], [H - 40, 14]).nice();
-    const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, DM.f0.format(v), 'dm-axis-t'))) + 10;
+    const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, NS.eje(v), 'dm-axis-t'))) + 10;
     const x = d3.scaleBand(cs.map((o) => o.c), [ml, W - 8]).padding(0.3);
-    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - 8)).tickFormat((v) => DM.f0.format(v))).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
+    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - 8)).tickFormat(NS.eje)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
     const g = svg.append('g').attr('transform', `translate(0,${H - 40})`).call(d3.axisBottom(x).tickSize(0).tickPadding(6).tickFormat(NS.nom)).call(DM.cleanAxis);
     if (Math.max(...cs.map((o) => DM.textW(svg, NS.nom(o.c), 'dm-axis-t'))) + 6 > x.step()) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-30)');
     svg.append('g').selectAll('rect').data(cs).join('rect').attr('x', (o) => x(o.c)).attr('width', x.bandwidth()).attr('y', (o) => y(o.nf)).attr('height', (o) => y(0) - y(o.nf)).attr('rx', 3).style('fill', 'var(--dm-green)');
     if (x.bandwidth() > 34) {
-      svg.append('g').selectAll('text').data(cs).join('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', (o) => x(o.c) + x.bandwidth() / 2).attr('y', (o) => y(o.nf) - 5).text((o) => DM.f0.format(o.nf));
+      svg.append('g').selectAll('text').data(cs).join('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', (o) => x(o.c) + x.bandwidth() / 2).attr('y', (o) => y(o.nf) - 5).text((o) => (NS.din() ? NS.eje(o.nf) : DM.f0.format(o.nf)));
       svg.append('g').selectAll('text').data(cs).join('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', (o) => x(o.c) + x.bandwidth() / 2).attr('y', (o) => y(o.nf) - 21).text((o) => NS.pct(o.ns));
     }
     const tip = DM.tipFor(el);
     svg.append('g').selectAll('rect.hit').data(cs).join('rect').attr('x', (o) => x(o.c)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 40).attr('fill', 'transparent')
-      .on('mousemove', (e, o) => DM.showTip(tip, el, x(o.c) + x.bandwidth() / 2, y(o.nf), [NS.nom(o.c), 'No facturadas: ' + DM.f0.format(o.nf) + ' und', 'Nivel de servicio: ' + NS.pct(o.ns)]))
+      .on('mousemove', (e, o) => DM.showTip(tip, el, x(o.c) + x.bandwidth() / 2, y(o.nf), [NS.nom(o.c), (NS.din() ? 'Valor no facturado: $' + DM.f0.format(Math.round(o.nf)) : 'No facturadas: ' + NS.cant(o.nf)), 'Nivel de servicio: ' + NS.pct(o.ns)]))
       .on('mouseleave', () => { tip.hidden = true; });
   });
 </script>
@@ -2165,7 +2177,7 @@ window.dash = (() => {
 
   // Indicadores: nivel de servicio del último mes cerrado y días de inventario de la red.
   const ppNs = () => { if (!NS.ok()) return null; const s = PP.sel(); if (!s) return null; const u = s.k; const R = NS.D(); return { u, v: NS.ns(R.filter((r) => r.k === u)) }; };
-  dash.draw('pp-ns-l', (el) => { const k = ppNs(); el.textContent = k ? 'Nivel de servicio ' + NS.kTxt(k.u) + (NS.parcial(k.u) ? ' (parcial)' : '') : 'Nivel de servicio'; });
+  dash.draw('pp-ns-l', (el) => { const k = ppNs(); el.textContent = k ? 'Nivel de servicio ' + (NS.din() ? 'en dinero ' : '') + NS.kTxt(k.u) + (NS.parcial(k.u) ? ' (parcial)' : '') : 'Nivel de servicio'; });
   dash.draw('pp-ns', (el) => { const k = ppNs(); el.textContent = k ? NS.pct(k.v) : '—'; });
   dash.draw('pp-ns-d', (el) => { const k = ppNs(); el.textContent = ''; el.className = 'dm-tile-d'; if (!k || k.v == null) return; const d = (k.v - PP.META_NS) * 100; el.classList.add(d >= 0 ? 'dm-up' : 'dm-down'); el.textContent = (d >= 0 ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(d)) + ' pp frente a la meta de ' + DM.f0.format(PP.META_NS * 100) + ' %'; });
   dash.draw('pp-dias-l', (el) => { const t = PP.inv(), s = PP.sel(); el.textContent = t && t.corte ? 'Días de inventario de la red (corte ' + DM.fDate(t.corte) + ')' : 'Días de inventario de la red' + (s ? ': sin cortes en ' + PP.mTxt(s.k) + ' (el histórico empieza el 27-oct-2026)' : ''); });
@@ -2280,6 +2292,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 11/11/2026 02:48 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 11/11/2026 03:04 PM.</p>
 </body>
 </html>
