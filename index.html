@@ -603,13 +603,19 @@ window.dash = (() => {
         <div class="dm-chart" data-draw="mps-dia" data-source="produccion mps_estado"></div></section>
       <section class="dm-card dm-card-o" id="mps-por-horno"><h2 class="dm-h2">Cumplimiento programado por horno</h2><p class="dm-note">Cada SKU-día va al horno donde fue programado.</p>
         <div class="dm-chart" data-draw="mps-horno" data-source="produccion"></div></section>
-      <section class="dm-card" id="mps-por-segmento"><h2 class="dm-h2">Cumplimiento programado por segmento</h2>
-        <div class="dm-chart dm-chart-s" data-draw="mps-seg" data-source="produccion"></div></section>
-      <section class="dm-card dm-card-o" id="mps-top"><h2 class="dm-h2">Top 10 referencias por debajo del 95 %</h2><p class="dm-note">Cumplimiento vs programado menor a 95 %, de mayor a menor faltante.</p>
-        <div class="dm-tablebox"><table class="dm-table" data-source="produccion" data-row-key="ref">
-          <thead><tr><th>#</th><th data-field="ref">Ref</th><th data-field="desc">Producto</th><th data-field="seg">Segmento</th><th data-field="prog" class="dm-num">Programado</th><th data-field="real" class="dm-num">Real</th><th data-field="falt" class="dm-num">Faltante</th><th class="dm-num">% Cumpl.</th></tr></thead>
-          <tbody data-draw="mps-top"></tbody></table></div></section>
     </div>
+    <section class="dm-card" id="mps-por-segmento"><h2 class="dm-h2">Cumplimiento programado por segmento</h2>
+      <div class="dm-chart dm-chart-s" data-draw="mps-seg" data-source="produccion"></div></section>
+    <section class="dm-card dm-card-o" id="mps-top">
+      <div class="lc-head"><div><h2 class="dm-h2">Top 10 referencias por debajo del 95 %</h2><p class="dm-note">Cumplimiento vs programado menor a 95 %, de mayor a menor faltante.</p></div></div>
+      <div class="lc-box">
+        <table class="lc-table" data-source="produccion">
+          <colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:15%"></colgroup>
+          <thead><tr><th class="lc-c">#</th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Programado</th><th class="lc-n">Real</th><th class="lc-n">Faltante</th><th>Cumplimiento</th></tr></thead>
+          <tbody data-draw="mps-top"></tbody>
+        </table>
+      </div>
+    </section>
   </section>
 
   <section class="dm-main" id="otif" role="tabpanel" hidden>
@@ -1437,12 +1443,12 @@ window.dash = (() => {
   dash.draw('g-mps', (el) => {
     if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
     const s = MO.sel('mps_'), m = MO.mpsTot(s), t = mpsT();
-    if (s.dia) { MOG.gauge(el, null, { na: true, tag: 'El MPS es semanal', label: 'Cumplimiento MPS' }); return; }
-    MOG.gauge(el, m ? t.real / m : null, { tag: MO.cerrada(s.w) ? 'Real ÷ MPS' : 'Avance parcial', label: 'Cumplimiento MPS' });
+    if (s.dia) { MOG.gauge(el, null, { na: true, tag: 'El MPS es semanal', label: 'Cumplimiento MPS', limpio: true }); return; }
+    MOG.gauge(el, m ? t.real / m : null, { tag: MO.cerrada(s.w) ? 'Real ÷ MPS' : 'Avance parcial', label: 'Cumplimiento MPS', limpio: true });
   });
   dash.draw('g-prog', (el) => {
     if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
-    const t = mpsT(); MOG.gauge(el, t.prog ? t.real / t.prog : null, { tag: 'Real ÷ programado', label: 'Cumplimiento programado' });
+    const t = mpsT(); MOG.gauge(el, t.prog ? t.real / t.prog : null, { tag: 'Real ÷ programado', label: 'Cumplimiento programado', limpio: true });
   });
   kpi('gb-mps', () => { const s = MO.sel('mps_'); return s.dia ? '—' : DM.f0.format(MO.mpsTot(s)) + U(); });
   kpi('gb-real', () => DM.f0.format(mpsT().real) + U());
@@ -1459,19 +1465,25 @@ window.dash = (() => {
     k: d.dia, label: DIA_C[d.dia], sub: +d.f.slice(8, 10) + '-' + PP.MC[+d.f.slice(5, 7) - 1], v: campo === 'cumpl' ? d.cumpl : d.otif, empty: d.estado === 'Sin reporte aún' ? 'Sin reporte' : d.estado === 'Sin producción' ? 'Sin prod.' : '—',
     tip: [d.dia + ' ' + DM.fDay(d.f), 'Programado: ' + DM.f0.format(d.prog), 'Real: ' + DM.f0.format(d.real), campo === 'cumpl' ? 'Cumplimiento: ' + MOG.pct(d.cumpl) : 'OTIF: ' + MOG.pct(d.otif), 'Faltante: ' + DM.f0.format(d.falt), d.estado],
   }));
-  dash.draw('mps-dia', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, diaItems('mps_', 'cumpl'), { sub: true, selected: MO.sel('mps_').dia || null, label: 'Cumplimiento por día' }); });
+  dash.draw('mps-dia', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, diaItems('mps_', 'cumpl'), { sub: true, bold: true, h: 280, selected: MO.sel('mps_').dia || null, label: 'Cumplimiento por día' }); });
   const grpItems = (list, campo) => list.filter((o) => o.prog > 0).map((o) => ({
     k: o.k, label: campo === 'seg' ? MOG.cap(o.k) : o.k, v: campo === 'otif' ? o.otif : o.cumpl,
     tip: [campo === 'seg' ? MOG.cap(o.k) : o.k, 'Programado: ' + DM.f0.format(o.prog), 'Real: ' + DM.f0.format(o.real), campo === 'otif' ? 'OTIF: ' + MOG.pct(o.otif) : 'Cumplimiento: ' + MOG.pct(o.cumpl), 'Faltante: ' + DM.f0.format(o.falt)],
   }));
-  dash.draw('mps-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('mps_')), 'cumpl'), { label: 'Cumplimiento por horno' }); });
-  dash.draw('mps-seg', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.hbars(el, grpItems(MO.porSeg(MO.sel('mps_')), 'seg').map((d, i, a) => d), { label: 'Cumplimiento por segmento' }); });
+  dash.draw('mps-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('mps_')), 'cumpl').map((d) => ({ ...d, label: String(d.k).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()) })), { bold: true, h: 280, label: 'Cumplimiento por horno' }); });
+  dash.draw('mps-seg', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.hbars(el, grpItems(MO.porSeg(MO.sel('mps_')), 'seg').map((d, i, a) => d), { bold: true, label: 'Cumplimiento por segmento' }); });
   dash.draw('mps-top', (tb) => {
     tb.replaceChildren(); if (!MO.ok()) return;
     MO.topMps(MO.sel('mps_')).forEach((o, i) => {
-      const tr = document.createElement('tr'); tr.dataset.key = o.ref;
-      const c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); };
-      c(String(i + 1)); c(o.ref); c(o.desc, 'dm-desc'); c(MOG.cap(o.seg)); c(DM.f0.format(o.prog), 'dm-num'); c(DM.f0.format(o.real), 'dm-num'); c(DM.f0.format(o.falt), 'dm-num dm-days'); c(MOG.pct(o.real / o.prog), 'dm-num');
+      const tr = document.createElement('tr'); tr.className = 'lc-row'; tr.dataset.key = o.ref;
+      const c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); return td; };
+      c(String(i + 1), 'lc-c lc-ref'); c(o.ref, 'lc-ref'); const d = c(o.desc, 'lc-city'); d.title = o.desc; c(MOG.cap(o.seg));
+      c(DM.f0.format(o.prog), 'lc-n'); c(DM.f0.format(o.real), 'lc-n'); c(DM.f0.format(o.falt), 'lc-n');
+      // Cumplimiento: etiqueta y barra frente a la meta de 95 %
+      const v = o.real / o.prog, td = c(''); const w = document.createElement('div'); w.className = 'lc-days';
+      const p = document.createElement('span'); p.className = 'lc-pill' + (v >= 0.85 ? ' lc-warn' : ''); p.textContent = MOG.pct(v);
+      const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, Math.min(100, v / 0.95 * 100)) + '%'; f.style.background = v >= 0.85 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f);
+      w.append(p, bar); td.append(w);
       tb.append(tr);
     });
   });
@@ -1490,10 +1502,10 @@ window.dash = (() => {
     const t = otT(); MOG.gauge(el, t[k], { tag: k === 'otif' ? 'promedio simple ' + MOG.pct(t.otifProm) : '', label: lab, limpio: true });
   }));
   dash.draw('ot-dia', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, diaItems('ot_', 'otif'), { sub: true, bold: true, h: 280, selected: MO.sel('ot_').dia || null, label: 'OTIF por día' }); });
-  dash.draw('ot-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('ot_')), 'otif').map((d) => { const o = MO.porHorno(MO.sel('ot_')).find((x) => x.k === d.k); return { ...d, label: String(d.k).replace(/^Línea\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()), sub: o && o.prog ? 'cumpl.\n' + MOG.pct(o.realPlan / o.prog) : '' }; }), { sub: true, bold: true, h: 292, mb: 52, label: 'OTIF por horno' }); });
+  dash.draw('ot-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('ot_')), 'otif').map((d) => { const o = MO.porHorno(MO.sel('ot_')).find((x) => x.k === d.k); return { ...d, label: String(d.k).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()), sub: o && o.prog ? 'cumpl.\n' + MOG.pct(o.realPlan / o.prog) : '' }; }), { sub: true, bold: true, h: 292, mb: 52, label: 'OTIF por horno' }); });
   dash.draw('ot-horno-cump', (el) => {
     if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
-    const items = MO.porHorno(MO.sel('ot_')).filter((o) => o.prog > 0).map((o) => { const lab = String(o.k).replace(/^Línea\s+/i, '').replace(/^\w/, (c) => c.toUpperCase());
+    const items = MO.porHorno(MO.sel('ot_')).filter((o) => o.prog > 0).map((o) => { const lab = String(o.k).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase());
       return { k: o.k, label: lab, v: o.realPlan / o.prog, tip: [lab, 'Programado: ' + DM.f0.format(o.prog), 'Real de lo programado: ' + DM.f0.format(o.realPlan), 'Faltante: ' + DM.f0.format(o.falt), 'Cumplimiento: ' + MOG.pct(o.realPlan / o.prog)] }; });
     MOG.bars(el, items, { bold: true, h: 260, label: 'Cumplimiento por horno' });
   });
@@ -2361,6 +2373,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 11/11/2026 11:10 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 11/11/2026 11:13 AM.</p>
 </body>
 </html>
