@@ -582,8 +582,13 @@
         <p class="dm-note">Debajo de cada horno, su cumplimiento (real ÷ programado). Un horno puede producir y tener OTIF 0 % si le faltó más del 20 % de lo programado.</p>
         <div class="dm-chart" data-draw="ot-horno" data-source="produccion"></div></section>
     </div>
-    <section class="dm-card" id="otif-por-segmento"><h2 class="dm-h2">OTIF por segmento</h2>
-      <div class="dm-chart dm-chart-s" data-draw="ot-seg" data-source="produccion"></div></section>
+    <div class="dm-grid2">
+      <section class="dm-card" id="otif-por-segmento"><h2 class="dm-h2">OTIF por segmento</h2>
+        <div class="dm-chart dm-chart-s" data-draw="ot-seg" data-source="produccion"></div></section>
+      <section class="dm-card dm-card-o" id="otif-cumpl-horno"><h2 class="dm-h2">Cumplimiento por horno</h2>
+        <p class="dm-note">Real de lo programado ÷ programado (sin lo que se hizo sin programar).</p>
+        <div class="dm-chart" data-draw="ot-horno-cump" data-source="produccion"></div></section>
+    </div>
     <section class="dm-card dm-card-o" id="otif-top">
       <div class="lc-head"><div><h2 class="dm-h2">Top 10 referencias con OTIF por debajo del 95 %</h2><p class="dm-note">De mayor a menor volumen no cumplido (programado × (1 − OTIF)).</p></div></div>
       <div class="lc-box">
@@ -1409,6 +1414,12 @@
   }));
   dash.draw('ot-dia', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, diaItems('ot_', 'otif'), { sub: true, bold: true, h: 280, selected: MO.sel('ot_').dia || null, label: 'OTIF por día' }); });
   dash.draw('ot-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('ot_')), 'otif').map((d) => { const o = MO.porHorno(MO.sel('ot_')).find((x) => x.k === d.k); return { ...d, label: String(d.k).replace(/^Línea\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()), sub: o && o.prog ? 'cumpl.\n' + MOG.pct(o.realPlan / o.prog) : '' }; }), { sub: true, bold: true, h: 292, mb: 52, label: 'OTIF por horno' }); });
+  dash.draw('ot-horno-cump', (el) => {
+    if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
+    const items = MO.porHorno(MO.sel('ot_')).filter((o) => o.prog > 0).map((o) => { const lab = String(o.k).replace(/^Línea\s+/i, '').replace(/^\w/, (c) => c.toUpperCase());
+      return { k: o.k, label: lab, v: o.realPlan / o.prog, tip: [lab, 'Programado: ' + DM.f0.format(o.prog), 'Real de lo programado: ' + DM.f0.format(o.realPlan), 'Faltante: ' + DM.f0.format(o.falt), 'Cumplimiento: ' + MOG.pct(o.realPlan / o.prog)] }; });
+    MOG.bars(el, items, { bold: true, h: 260, label: 'Cumplimiento por horno' });
+  });
   dash.draw('ot-seg', (el) => {
     if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
     MOG.hbars(el, MO.porSeg(MO.sel('ot_')).filter((o) => o.prog > 0).map((o) => ({ k: o.k, label: MOG.cap(o.k), v: o.otif, tip: [MOG.cap(o.k), 'Programado: ' + DM.f0.format(o.prog), 'OTIF: ' + MOG.pct(o.otif), 'In Full: ' + MOG.pct(o.inf), 'On Time: ' + MOG.pct(o.ont)] })), { bold: true, label: 'OTIF por segmento' });
