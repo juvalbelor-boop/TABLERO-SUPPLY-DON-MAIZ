@@ -452,10 +452,9 @@
 
     <section class="dm-card" id="agotados-vs-venta">
       <h2 class="dm-h2">Agotados vs venta por año</h2>
-      <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Venta ($)</span><span><span class="dm-sw" style="background: var(--dm-orange)"></span>Agotado ($)</span><span><span class="dm-sw" style="background: var(--dm-orange); border-radius: 999px"></span>% agotado sobre venta</span></div>
+      <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Venta ($)</span><span><span class="dm-sw" style="background: var(--dm-orange)"></span>Agotado ($)</span><span><span class="dm-sw" style="background: var(--dm-orange); border-radius: 999px"></span>% agotado sobre venta</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--dm-orange) 0 5px, transparent 5px 9px)"></span>Variación del agotado año contra año</span></div>
       <div class="ag-bv-wrap">
         <div class="dm-chart" data-draw="ag-bv" data-source="agotados ventas agotados_estado"></div>
-        <div class="ag-var" data-draw="ag-var-tab" data-source="agotados ventas agotados_estado"></div>
       </div>
     </section>
 
@@ -1569,16 +1568,22 @@
     if (!AG.ok()) { DM.fail(el, dash.data('agotados').status); return; }
     el.replaceChildren();
     const { s, data } = agBV(), ys = data.map((d) => d.y);
-    const W = el.clientWidth, H = 320;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Venta y agotados por año, con % agotado sobre venta');
+    const W = el.clientWidth, H = 290;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Venta y agotados por año, con % agotado sobre venta y variación del agotado entre años');
     const keys = AG.dimFiltro(s) ? ['bo'] : ['venta', 'bo'];
     const vmax = d3.max(data, (d) => Math.max(d.bo, keys.includes('venta') ? d.venta || 0 : 0)) || 1;
-    const y = d3.scaleLinear([0, vmax * 1.25], [H - 30, 40]).nice();
+    const y = d3.scaleLinear([0, vmax * 1.12], [H - 30, 44]);
     const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, AGF.mill(v), 'dm-axis-t'))) + 10;
     const x0 = d3.scaleBand(ys, [ml, W - 8]).paddingInner(0.3).paddingOuter(0.15), x1 = d3.scaleBand(keys, [0, x0.bandwidth()]).padding(0.08);
     svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - 8)).tickFormat(AGF.mill)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
     svg.append('g').attr('transform', `translate(0,${H - 30})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8)).call(DM.cleanAxis).call((g) => g.selectAll('text').style('font-weight', 800).style('font-size', '14px').style('fill', 'var(--color-fg)'));
     const col = { bo: 'var(--dm-orange)', venta: 'var(--dm-green)' }, tip = DM.tipFor(el);
+    // Variación del agotado año contra año. Si el último año va incompleto, se compara el mismo periodo (mismos meses) del año anterior.
+    const per = AG.periodo(s), pmAll = AG.porMes(AG.rowsDim(s)), kk = (yy, m) => yy + String(m).padStart(2, '0');
+    const varAg = (a, b) => { const ms = per.filter((m) => pmAll.has(kk(b, m))), sa = ms.reduce((t, m) => t + (pmAll.get(kk(a, m)) || 0), 0), sb = ms.reduce((t, m) => t + (pmAll.get(kk(b, m)) || 0), 0);
+      return { v: sa ? (sb - sa) / sa : null, parcial: ms.length < per.length, ms }; };
+    const bx = (d) => x0(d.y) + x1('bo') + x1.bandwidth() / 2;
+    if (data.length > 1) svg.append('path').attr('d', d3.line((d) => bx(d), (d) => y(d.bo))(data)).style('fill', 'none').style('stroke', 'var(--dm-orange)').attr('stroke-width', 2).attr('stroke-dasharray', '6 5');
     data.forEach((d) => {
       const g = svg.append('g').attr('transform', `translate(${x0(d.y)},0)`);
       keys.forEach((k) => {
@@ -1593,8 +1598,16 @@
         g.append('rect').attr('x', x0.bandwidth() / 2 - pw / 2).attr('y', top).attr('width', pw).attr('height', 22).attr('rx', 11).style('fill', 'var(--dm-orange)');
         g.append('text').attr('text-anchor', 'middle').attr('x', x0.bandwidth() / 2).attr('y', top + 15).style('fill', '#FFFFFF').style('font-weight', 700).style('font-size', '12px').text(txt);
       }
+      // Variación frente al año anterior, encima del valor de la barra de agotado
+      const i = data.indexOf(d), vv = i > 0 ? varAg(data[i - 1].y, d.y) : null;
+      if (vv && vv.v != null) {
+        const MESC = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const t1 = (vv.v > 0 ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(vv.v) * 100) + ' % vs ' + data[i - 1].y, cxb = x1('bo') + x1.bandwidth() / 2, yt = y(d.bo) - 24;
+        g.append('text').attr('text-anchor', 'middle').attr('x', cxb).attr('y', yt).style('font-weight', 800).style('font-size', '12.5px').style('fill', vv.v > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-ok)').text(t1);
+        if (vv.parcial) g.append('text').attr('text-anchor', 'middle').attr('x', cxb).attr('y', yt - 14).style('font-size', '10.5px').style('fill', 'var(--color-fg-muted)').text('mismo periodo ' + MESC[vv.ms[0] - 1] + '–' + MESC[vv.ms[vv.ms.length - 1] - 1]);
+      }
       g.append('rect').attr('x', 0).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
-        .on('mousemove', () => DM.showTip(tip, el, x0(d.y) + x0.bandwidth() / 2, 40, [d.y, 'Venta: ' + (d.venta != null ? AGF.pesos(d.venta) : 'sin venta cargada'), 'Agotado: ' + AGF.pesos(d.bo), '% agotado sobre venta: ' + (d.pct != null ? DM.f1.format(d.pct * 100) + ' %' : '—')]))
+        .on('mousemove', () => DM.showTip(tip, el, x0(d.y) + x0.bandwidth() / 2, 40, [d.y, 'Venta: ' + (d.venta != null ? AGF.pesos(d.venta) : 'sin venta cargada'), 'Agotado: ' + AGF.pesos(d.bo), '% agotado sobre venta: ' + (d.pct != null ? DM.f1.format(d.pct * 100) + ' %' : '—')].concat(vv && vv.v != null ? ['Agotado vs ' + data[i - 1].y + (vv.parcial ? ' (mismo periodo)' : '') + ': ' + (vv.v > 0 ? '+' : '−') + DM.f1.format(Math.abs(vv.v) * 100) + ' %'] : [])))
         .on('mouseleave', () => { tip.hidden = true; });
     });
   });
