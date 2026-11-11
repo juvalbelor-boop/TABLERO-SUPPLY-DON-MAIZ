@@ -446,7 +446,6 @@
           <button class="dm-ms-btn" type="button" aria-expanded="false" aria-label="Elegir segmentos"><span data-draw="msl-ag_segs" data-source="agotados">—</span></button>
           <div class="dm-ms-pop" hidden><button class="dm-ms-all" type="button">Todos los segmentos</button><div class="dm-ms-list" data-draw="ms-ag_segs" data-source="agotados"></div></div></div>
       </div>
-      <p class="dm-note">Backorder en pesos del archivo <b data-draw="ag-archivo" data-source="agotados_estado">—</b>. Venta mensual: venta efectiva (archivo del TCV). Los segmentos salen del maestro de Segmentos (cruce por referencia). Meses mostrados: <b data-draw="ag-periodo" data-source="agotados_estado">—</b>.</p>
     </div>
 
 
@@ -1602,9 +1601,8 @@
       const i = data.indexOf(d), vv = i > 0 ? varAg(data[i - 1].y, d.y) : null;
       if (vv && vv.v != null) {
         const MESC = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-        const t1 = (vv.v > 0 ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(vv.v) * 100) + ' % vs ' + data[i - 1].y, cxb = x1('bo') + x1.bandwidth() / 2, yt = y(d.bo) - 24;
+        const t1 = (vv.v > 0 ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(vv.v) * 100) + ' % vs ' + data[i - 1].y, cxb = x1('bo') + x1.bandwidth() / 2, yt = y(d.bo) - 34;
         g.append('text').attr('text-anchor', 'middle').attr('x', cxb).attr('y', yt).style('font-weight', 800).style('font-size', '12.5px').style('fill', vv.v > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-ok)').text(t1);
-        if (vv.parcial) g.append('text').attr('text-anchor', 'middle').attr('x', cxb).attr('y', yt - 14).style('font-size', '10.5px').style('fill', 'var(--color-fg-muted)').text('mismo periodo ' + MESC[vv.ms[0] - 1] + '–' + MESC[vv.ms[vv.ms.length - 1] - 1]);
       }
       g.append('rect').attr('x', 0).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
         .on('mousemove', () => DM.showTip(tip, el, x0(d.y) + x0.bandwidth() / 2, 40, [d.y, 'Venta: ' + (d.venta != null ? AGF.pesos(d.venta) : 'sin venta cargada'), 'Agotado: ' + AGF.pesos(d.bo), '% agotado sobre venta: ' + (d.pct != null ? DM.f1.format(d.pct * 100) + ' %' : '—')].concat(vv && vv.v != null ? ['Agotado vs ' + data[i - 1].y + (vv.parcial ? ' (mismo periodo)' : '') + ': ' + (vv.v > 0 ? '+' : '−') + DM.f1.format(Math.abs(vv.v) * 100) + ' %'] : [])))
@@ -1637,31 +1635,42 @@
   });
 
   // Comparativo por mes: una línea por año.
+  // Valor agotado por mes: una barra por año en cada mes, con el valor (millones) dentro de la barra.
   dash.draw('ag-comp', (el) => {
     if (!AG.ok()) { DM.fail(el, dash.data('agotados').status); return; }
     el.replaceChildren();
     const s = AG.sel(), pm = AG.porMes(AG.rowsDim(s)), ys = s.anios.length ? [...s.anios].sort() : AG.anios(), mm = s.meses.length ? s.meses.map(Number).sort((a, b) => a - b) : Array.from({ length: 12 }, (_, i) => i + 1);
-    const series = ys.map((y) => ({ y, pts: mm.map((m) => ({ m, k: y + String(m).padStart(2, '0') })).filter((p) => pm.has(p.k)).map((p) => ({ ...p, v: pm.get(p.k) })) })).filter((sr) => sr.pts.length);
-    if (!series.length) return;
-    const W = el.clientWidth, H = 290;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Backorder por mes y año');
-    const y = d3.scaleLinear([0, d3.max(series, (sr) => d3.max(sr.pts, (p) => p.v)) * 1.12], [H - 28, 14]).nice();
-    const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, AGF.mill(v), 'dm-axis-t'))) + 10, mr = DM.textW(svg, '2026', 'dm-reft') + 16;
-    const x = d3.scalePoint(mm, [ml, W - mr]).padding(0.3);
-    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - mr)).tickFormat(AGF.mill)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickFormat((m) => AG.MES[m - 1])).call(DM.cleanAxis);
-    const all = AG.anios();
-    series.forEach((sr) => {
-      const col = YCOL(sr.y, all);
-      svg.append('path').datum(sr.pts).attr('fill', 'none').style('stroke', col).attr('stroke-width', sr.y === all[all.length - 1] ? 2.5 : 2).attr('stroke-linejoin', 'round').attr('d', d3.line((p) => x(p.m), (p) => y(p.v)));
-      svg.append('g').selectAll('circle').data(sr.pts).join('circle').attr('cx', (p) => x(p.m)).attr('cy', (p) => y(p.v)).attr('r', 3.5).style('fill', col);
-      const last = sr.pts[sr.pts.length - 1];
-      svg.append('text').attr('class', 'dm-reft').style('fill', col).style('font-weight', 700).attr('x', x(last.m) + 8).attr('y', y(last.v) + 4).text(sr.y);
+    const all = AG.anios(), conDatos = ys.filter((y) => mm.some((m) => pm.has(y + String(m).padStart(2, '0'))));
+    if (!conDatos.length) return;
+    const W = el.clientWidth, H = 330;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Valor agotado por mes y año');
+    // Leyenda de años
+    let lx = 0; conDatos.forEach((y) => { const g = svg.append('g').attr('transform', `translate(${lx},6)`); g.append('rect').attr('width', 16).attr('height', 16).attr('rx', 4).style('fill', YCOL(y, all));
+      g.append('text').attr('x', 22).attr('y', 13).style('font-weight', 800).style('font-size', '14px').style('fill', 'var(--color-fg)').text(y); lx += 22 + DM.textW(svg, String(y), 'dm-val') + 26; });
+    svg.append('text').attr('x', lx + 4).attr('y', 19).style('font-size', '11.5px').style('fill', 'var(--color-fg-muted)').text('Valores en millones de $ · * mes en curso');
+    const vmax = d3.max(conDatos.flatMap((y) => mm.map((m) => pm.get(y + String(m).padStart(2, '0')) || 0))) || 1;
+    const y = d3.scaleLinear([0, vmax * 1.08], [H - 30, 36]).nice();
+    const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, AGF.mill(v), 'dm-axis-t'))) + 10;
+    const x0 = d3.scaleBand(mm, [ml, W - 4]).paddingInner(0.22).paddingOuter(0.05), x1 = d3.scaleBand(conDatos, [0, x0.bandwidth()]).padding(0.06);
+    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - 4)).tickFormat(AGF.mill)).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)'));
+    svg.append('g').attr('transform', `translate(0,${H - 30})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat((m) => AG.MES[m - 1])).call(DM.cleanAxis).call((g) => g.selectAll('text').style('font-weight', 800).style('font-size', '13px').style('fill', 'var(--color-fg)'));
+    const tip = DM.tipFor(el), bw = x1.bandwidth();
+    mm.forEach((m) => {
+      const g = svg.append('g').attr('transform', `translate(${x0(m)},0)`);
+      conDatos.forEach((yy) => {
+        const k = yy + String(m).padStart(2, '0'); if (!pm.has(k)) return;
+        const v = pm.get(k), col = YCOL(yy, all), x = x1(yy);
+        g.append('rect').attr('x', x).attr('width', bw).attr('y', y(v)).attr('height', y(0) - y(v)).attr('rx', 2).style('fill', col);
+        const txt = DM.f0.format(v / 1e6) + (AG.esParcial(k) ? '*' : ''), tw = DM.textW(svg, txt, 'dm-val'), alto = y(0) - y(v);
+        // Valor en vertical: dentro de la barra si cabe; si no, encima.
+        const dentro = alto > tw + 10, claro = col.includes('muted');
+        g.append('text').attr('text-anchor', dentro ? 'end' : 'start').attr('dominant-baseline', 'central').attr('transform', `translate(${x + bw / 2},${dentro ? y(v) + 6 : y(v) - 4}) rotate(-90)`)
+          .style('font-weight', 700).style('font-size', bw < 16 ? '9.5px' : '11px').style('fill', dentro && !claro ? '#FFFFFF' : 'var(--color-fg)').text(txt);
+      });
+      g.append('rect').attr('x', 0).attr('width', x0.bandwidth()).attr('y', 30).attr('height', H - 60).attr('fill', 'transparent')
+        .on('mousemove', () => DM.showTip(tip, el, x0(m) + x0.bandwidth() / 2, 40, [AG.MESL[m - 1], ...conDatos.map((yy) => { const k = yy + String(m).padStart(2, '0'); return yy + ': ' + (pm.has(k) ? AGF.mill1(pm.get(k)) + (AG.esParcial(k) ? ' (parcial)' : '') : '—'); })]))
+        .on('mouseleave', () => { tip.hidden = true; });
     });
-    const tip = DM.tipFor(el);
-    svg.append('g').selectAll('rect').data(mm).join('rect').attr('x', (m) => x(m) - x.step() / 2).attr('width', x.step()).attr('y', 0).attr('height', H - 28).attr('fill', 'transparent')
-      .on('mousemove', (e, m) => DM.showTip(tip, el, x(m), 20, [AG.MESL[m - 1], ...series.map((sr) => { const p = sr.pts.find((q) => q.m === m); return sr.y + ': ' + (p ? AGF.mill1(p.v) + (AG.esParcial(p.k) ? ' (parcial)' : '') : '—'); })]))
-      .on('mouseleave', () => { tip.hidden = true; });
   });
 
   // Comparativo por mes en % (backorder ÷ venta del mes), mismo formato que el comparativo en pesos.
@@ -1684,11 +1693,15 @@
     const all = AG.anios();
     series.forEach((sr) => {
       const col = YCOL(sr.y, all);
-      svg.append('path').datum(sr.pts).attr('fill', 'none').style('stroke', col).attr('stroke-width', sr.y === all[all.length - 1] ? 2.5 : 2).attr('stroke-linejoin', 'round').attr('d', d3.line((p) => x(p.m), (p) => y(p.v)));
-      svg.append('g').selectAll('circle').data(sr.pts).join('circle').attr('cx', (p) => x(p.m)).attr('cy', (p) => y(p.v)).attr('r', 3.5).style('fill', col);
+      const ult = sr.y === all[all.length - 1];
+      // El año actual va en curva y con el % de cada mes; los demás, rectos y sin etiquetas.
+      svg.append('path').datum(sr.pts).attr('fill', 'none').style('stroke', col).attr('stroke-width', ult ? 3 : 2).attr('stroke-linejoin', 'round').attr('d', d3.line((p) => x(p.m), (p) => y(p.v)).curve(ult ? d3.curveMonotoneX : d3.curveLinear));
+      svg.append('g').selectAll('circle').data(sr.pts).join('circle').attr('cx', (p) => x(p.m)).attr('cy', (p) => y(p.v)).attr('r', ult ? 4.5 : 3.5).style('fill', col);
+      if (ult) svg.append('g').selectAll('text').data(sr.pts).join('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', (p) => x(p.m)).attr('y', (p) => y(p.v) - 10).style('fill', col).style('font-size', '12px').text((p) => fp(p.v) + (AG.esParcial(p.k) ? '*' : ''));
       const last = sr.pts[sr.pts.length - 1];
       svg.append('text').attr('class', 'dm-reft').style('fill', col).style('font-weight', 700).attr('x', x(last.m) + 8).attr('y', y(last.v) + 4).text(sr.y);
     });
+    svg.selectAll('.tick text').style('font-weight', 700).style('fill', 'var(--color-fg)');
     const tip = DM.tipFor(el);
     svg.append('g').selectAll('rect').data(mm).join('rect').attr('x', (m) => x(m) - x.step() / 2).attr('width', x.step()).attr('y', 0).attr('height', H - 28).attr('fill', 'transparent')
       .on('mousemove', (e, m) => DM.showTip(tip, el, x(m), 20, [AG.MESL[m - 1], ...series.map((sr) => { const p = sr.pts.find((q) => q.m === m); return sr.y + ': ' + (p ? fp(p.v) + (AG.esParcial(p.k) ? ' (parcial)' : '') : '—'); })]))
