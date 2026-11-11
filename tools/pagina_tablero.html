@@ -808,9 +808,6 @@
     s.onchange = () => dash.setParams({ corte: s.value || null });
   });
 
-  dash.draw('k-mes', (el) => { el.textContent = DM.DIAS_MES; });
-  dash.draw('k-lcrit', (el) => { el.textContent = DM.LIM_CRIT; });
-  dash.draw('k-lsob', (el) => { el.textContent = DM.LIM_SOB; });
 
   dash.draw('t-corte', (el) => { const s = DM.sel(); el.textContent = s.corte ? DM.fDate(s.corte) : '—'; });
   const kNow = () => { const t = DM.rowsCorte(); return t ? DM.kpis(t) : null; };
@@ -865,42 +862,6 @@
 
 <script>
   // Gráfico 1: forecast del mes (barras) y días de inventario (línea, eje derecho) por ciudad.
-  dash.draw('c1', (el) => {
-    const d = dash.data('puntos');
-    if (d.status !== 'ok') { DM.fail(el, d.status); return; }
-    el.replaceChildren();
-    const rows = DM.byCiudad(DM.rowsCorte() || []).filter((r) => r.forecast_mes > 0 || r.dias != null);
-    if (!rows.length) return;
-    const W = el.clientWidth, H = 290;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Forecast del mes y días de inventario por ciudad');
-    const yL = d3.scaleLinear([0, d3.max(rows, (r) => r.forecast_mes) * 1.15 || 1], [1, 0]).nice();
-    const yR = d3.scaleLinear([0, Math.max(DM.LIM_SOB + 2, d3.max(rows, (r) => r.dias || 0) * 1.2)], [1, 0]).nice();
-    const ml = Math.max(...yL.ticks(4).map((v) => DM.textW(svg, DM.fc.format(v), 'dm-axis-t'))) + 10;
-    const mr = Math.max(...yR.ticks(4).map((v) => DM.textW(svg, DM.f0.format(v), 'dm-axis-t'))) + 10;
-    const x = d3.scaleBand(rows.map((r) => r.ciudad), [ml, W - mr]).padding(0.3);
-    const ax = DM.cityAxis(svg, rows.map((r) => r.ciudad), x.step());
-    const y0 = H - ax.mb;
-    yL.range([y0, 24]); yR.range([y0, 24]);
-    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(yL).ticks(4).tickSize(-(W - ml - mr)).tickFormat((v) => DM.fc.format(v))).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    svg.append('g').attr('transform', `translate(${W - mr},0)`).call(d3.axisRight(yR).ticks(4).tickSize(0).tickFormat((v) => DM.f0.format(v))).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    DM.drawCityAxis(svg, x, y0, ax);
-    const bw = Math.min(32, x.bandwidth());
-    svg.append('g').selectAll('rect').data(rows).join('rect')
-      .attr('x', (r) => x(r.ciudad) + (x.bandwidth() - bw) / 2).attr('width', bw)
-      .attr('y', (r) => yL(r.forecast_mes)).attr('height', (r) => yL(0) - yL(r.forecast_mes))
-      .attr('rx', 3).style('fill', 'var(--dm-green)');
-    const pts = rows.filter((r) => r.dias != null);
-    svg.append('path').datum(pts).attr('fill', 'none').style('stroke', 'var(--dm-orange)').attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round')
-      .attr('d', d3.line((r) => x(r.ciudad) + x.bandwidth() / 2, (r) => yR(r.dias)));
-    svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (r) => x(r.ciudad) + x.bandwidth() / 2).attr('cy', (r) => yR(r.dias)).attr('r', 4)
-      .style('fill', 'var(--dm-orange)').style('stroke', 'var(--color-panel)').attr('stroke-width', 1.5);
-    svg.append('g').selectAll('text').data(pts).join('text').attr('class', 'dm-val').attr('text-anchor', 'middle')
-      .attr('x', (r) => x(r.ciudad) + x.bandwidth() / 2).attr('y', (r) => yR(r.dias) - 9).text((r) => DM.fd(r.dias));
-    const tip = DM.tipFor(el);
-    svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (r) => x(r.ciudad) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 0).attr('height', y0).attr('fill', 'transparent')
-      .on('mousemove', (e, r) => DM.showTip(tip, el, x(r.ciudad) + x.bandwidth() / 2, Math.min(yR(r.dias || 0), yL(r.forecast_mes)), [DM.NAME[r.ciudad] || r.ciudad, 'Forecast del mes: ' + DM.f0.format(r.forecast_mes) + ' und', 'Días de inventario: ' + (r.dias != null ? DM.fd(r.dias) : 'sin demanda')]))
-      .on('mouseleave', () => { tip.hidden = true; });
-  });
 </script>
 
 <script>
@@ -1144,25 +1105,6 @@
   });
 
   // Matriz ABC × estado.
-  dash.draw('r-matriz', (tb) => {
-    tb.replaceChildren();
-    const t = (today() || []).filter((r) => r.estado); if (!t.length) return;
-    const maxCrit = Math.max(1, ...['A', 'B', 'C'].map((a) => t.filter((r) => r.abc === a && r.estado === 'CRITICO').length));
-    ['A', 'B', 'C', 'Total'].forEach((a) => {
-      const tr = document.createElement('tr');
-      const rows = a === 'Total' ? t : t.filter((r) => r.abc === a);
-      const th = document.createElement('td'); th.className = 'dm-tot'; th.textContent = a; tr.append(th);
-      DM.estados.forEach((e) => {
-        const n = rows.filter((r) => r.estado === e).length;
-        const td = document.createElement('td'); td.textContent = DM.f0.format(n);
-        if (e === 'CRITICO' && a !== 'Total') { td.style.background = `color-mix(in srgb, var(--dm-crit) ${Math.round((n / maxCrit) * 55)}%, transparent)`; td.style.fontWeight = '800'; }
-        if (a === 'Total') td.className = 'dm-tot';
-        tr.append(td);
-      });
-      const tot = document.createElement('td'); tot.className = 'dm-tot'; tot.textContent = DM.f0.format(rows.length); tr.append(tot);
-      tb.append(tr);
-    });
-  });
 </script>
 
 <script>
@@ -1532,26 +1474,13 @@
     const s = AG.sel(); const pm = AG.porMes(AG.rowsDim(s).filter((r) => (!s.anios.length || s.anios.includes(r.mes.slice(0, 4))) && (!s.meses.length || s.meses.includes(String(+r.mes.slice(4))))));
     const ms = [...pm.keys()].filter((m) => pm.get(m) > 0).sort(); const m = ms[ms.length - 1]; return { s, pm, m };
   };
-  dash.draw('ak-mes', (el) => { if (!AG.ok()) { el.textContent = '—'; return; } const { m } = agUlt(); el.textContent = m ? AGF.mesTxt(m) + (AG.esParcial(m) ? ' (parcial)' : '') : '—'; });
-  dash.draw('ak-bo', (el) => { if (!AG.ok()) { el.textContent = '—'; return; } const { pm, m } = agUlt(); el.textContent = m ? AGF.pesos(pm.get(m)) : '—'; });
-  dash.draw('ak-pct', (el) => {
-    if (!AG.ok()) { el.textContent = '—'; return; } const { s, pm, m } = agUlt(); const v = m && AG.V().get(m);
-    el.textContent = AG.dimFiltro(s) ? 'Solo para el total' : v ? DM.f1.format((pm.get(m) / v) * 100) + ' %' : 'Sin venta del mes';
-  });
   const agYtd = () => {
     const s = AG.sel(), per = AG.periodoYtd(s), ys = AG.anios(), y = s.anios.length ? [...s.anios].sort().pop() : ys[ys.length - 1], y0 = String(+y - 1);
     const sumY = (yy) => AG.rowsDim(s).filter((r) => r.mes.slice(0, 4) === yy && per.includes(+r.mes.slice(4))).reduce((a, r) => a + r.v, 0);
     return { y, y0, a: sumY(y), b: sumY(y0), per: AG.etiquetaPeriodo(s, per) };
   };
-  dash.draw('ak-ytd-l', (el) => { if (!AG.ok()) { el.textContent = '—'; return; } const t = agYtd(); el.textContent = 'Acumulado ' + t.y + ' (' + t.per + ')'; });
-  dash.draw('ak-ytd', (el) => { if (!AG.ok()) { el.textContent = '—'; return; } el.textContent = AGF.mill1(agYtd().a); });
-  dash.draw('ak-var-l', (el) => { if (!AG.ok()) { el.textContent = '—'; return; } const t = agYtd(); el.textContent = 'Variación vs ' + t.y0 + ' (mismo periodo)'; });
-  dash.draw('ak-var', (el) => { if (!AG.ok()) { el.textContent = '—'; return; } const t = agYtd(); el.textContent = t.b ? (t.a >= t.b ? '+' : '') + DM.f1.format(((t.a - t.b) / t.b) * 100) + ' %' : '—'; });
-  dash.draw('ag-periodo', (el) => { el.textContent = AG.ok() ? AG.etiquetaPeriodo(AG.sel()) : '—'; });
-  dash.draw('ag-archivo', (el) => { const e = AG.est(); el.textContent = e ? e.archivo + ' (' + DM.fDate(e.guardado) + ')' : '—'; });
 
   // Agotados vs venta por año (mismos meses de cada año): barra de agotado, barra de venta y % de agotado sobre venta.
-  dash.draw('ag-periodo2', (el) => { el.textContent = AG.ok() ? AG.etiquetaPeriodo(AG.sel()) : '—'; });
   // Datos por año (mismos meses de cada año): agotado, venta efectiva y % agotado sobre venta con los meses que tienen venta.
   const agBV = () => {
     const s = AG.sel(), per = AG.periodo(s), venta = AG.V(), ys = s.anios.length ? [...s.anios].sort() : AG.anios();
@@ -1611,28 +1540,6 @@
   });
   // Tabla de variación año contra año (los dos últimos años elegidos).
   // Tabla pequeña de variación (mismo periodo en los dos últimos años): venta, agotado y % agotado.
-  dash.draw('ag-var-tab', (el) => {
-    el.replaceChildren(); if (!AG.ok()) return;
-    const { s, data } = agBV(); if (data.length < 2) return;
-    const ult = data[data.length - 1].y, ant = data[data.length - 2].y;
-    const per = AG.periodo(s), venta = AG.V(), pm = AG.porMes(AG.rowsDim(s)), k = (y, m) => y + String(m).padStart(2, '0');
-    const mAg = per.filter((m) => pm.has(k(ult, m))), mV = per.filter((m) => venta.has(k(ult, m)));
-    const sumAg = (y, ms) => ms.reduce((a, m) => a + (pm.get(k(y, m)) || 0), 0);
-    const sumV = (y, ms) => (ms.length && ms.every((m) => venta.has(k(y, m))) ? ms.reduce((a, m) => a + venta.get(k(y, m)), 0) : null);
-    const sinDim = !AG.dimFiltro(s);
-    const val = (y) => { const v = sinDim ? sumV(y, mV) : null; return { ag: sumAg(y, mAg), venta: v, pct: v ? sumAg(y, mV) / v : null }; };
-    const A = val(ant), U = val(ult);
-    const h = (tag, txt, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = txt; return e; };
-    const tb = document.createElement('table'), hr = document.createElement('tr');
-    hr.append(h('th', 'Variación'), h('th', String(ant).slice(2) + ' → ' + String(ult).slice(2))); tb.append(hr);
-    const pv = (a, b, malo) => { if (a == null || !b) return ['—', 'ag-neu']; const v = (a - b) / b; return [(v > 0 ? '▲ +' : v < 0 ? '▼ −' : '') + DM.f1.format(Math.abs(v) * 100) + ' %', v === 0 ? 'ag-neu' : ((v > 0) === malo ? 'ag-up' : 'ag-dn')]; };
-    const fila = (l, [t, c]) => { const tr = document.createElement('tr'); tr.append(h('td', l), h('td', t, c)); tb.append(tr); };
-    if (sinDim) fila('Venta', pv(U.venta, A.venta, false));
-    fila('Agotado', pv(U.ag, A.ag, true));
-    if (sinDim) { const d = U.pct != null && A.pct != null ? (U.pct - A.pct) * 100 : null; fila('% agotado', d == null ? ['—', 'ag-neu'] : [(d > 0 ? '▲ +' : d < 0 ? '▼ −' : '') + DM.f1.format(Math.abs(d)) + ' pp', d > 0 ? 'ag-up' : d < 0 ? 'ag-dn' : 'ag-neu']); }
-    tb.title = 'Mismos meses en los dos años (venta efectiva hasta el último mes cargado)';
-    el.append(tb);
-  });
 
   // Comparativo por mes: una línea por año.
   // Valor agotado por mes: una barra por año en cada mes, con el valor (millones) dentro de la barra.
@@ -1735,30 +1642,6 @@
     });
   };
   const agYears = (s) => (s.anios.length ? [...s.anios].sort() : AG.anios());
-  dash.draw('ag-anio', (el) => {
-    if (!AG.ok()) { DM.fail(el, dash.data('agotados').status); return; }
-    el.replaceChildren();
-    const s = AG.sel(), ys = agYears(s), f = AG.enPeriodo(s), all = AG.anios();
-    const tot = new Map(ys.map((y) => [y, 0])), meses = new Map(ys.map((y) => [y, new Set()]));
-    AG.rowsDim(s).filter(f).forEach((r) => { const y = r.mes.slice(0, 4); tot.set(y, tot.get(y) + r.v); meses.get(y).add(+r.mes.slice(4)); });
-    const lab = (y) => { const m = [...meses.get(y)]; const u = m.length ? Math.max(...m) : 0; return !s.meses.length && u && u < 12 && y === all[all.length - 1] ? y + ' (hasta ' + AG.MES[u - 1].toLowerCase() + ')' : y; };
-    const W = el.clientWidth, H = 300;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Valor agotado por año');
-    const y = d3.scaleLinear([0, (d3.max(ys, (yy) => tot.get(yy)) || 1) * 1.3], [H - 30, 16]).nice();
-    const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, AGF.mill(v), 'dm-axis-t'))) + 10;
-    const x = d3.scaleBand(ys, [ml, W - 8]).padding(0.3);
-    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - 8)).tickFormat(AGF.mill)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    svg.append('g').attr('transform', `translate(0,${H - 30})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickFormat(lab)).call(DM.cleanAxis);
-    const bw = Math.min(90, x.bandwidth()), bx = (yy) => x(yy) + (x.bandwidth() - bw) / 2, cx = (yy) => x(yy) + x.bandwidth() / 2;
-    svg.append('g').selectAll('rect').data(ys).join('rect').attr('x', bx).attr('width', bw).attr('y', (yy) => y(tot.get(yy))).attr('height', (yy) => y(0) - y(tot.get(yy))).attr('rx', 3).style('fill', (yy) => YCOL(yy, all));
-    svg.append('g').selectAll('text').data(ys).join('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', cx).attr('y', (yy) => y(tot.get(yy)) - 6).text((yy) => AGF.mill(tot.get(yy)));
-    const varTxt = (yy) => { const i = ys.indexOf(yy), prev = ys[i - 1], v = tot.get(yy); return prev && tot.get(prev) ? (v >= tot.get(prev) ? '+' : '') + DM.f1.format(((v - tot.get(prev)) / tot.get(prev)) * 100) + ' %' : ''; };
-    svg.append('g').selectAll('text').data(ys).join('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', cx).attr('y', (yy) => y(tot.get(yy)) - 22).text(varTxt);
-    const tip = DM.tipFor(el);
-    svg.append('g').selectAll('rect').data(ys).join('rect').attr('x', (yy) => x(yy)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
-      .on('mousemove', (e, yy) => DM.showTip(tip, el, cx(yy), y(tot.get(yy)), [lab(yy), 'Valor agotado: ' + AGF.pesos(tot.get(yy)), varTxt(yy) ? 'Variación vs año anterior: ' + varTxt(yy) : 'Primer año']))
-      .on('mouseleave', () => { tip.hidden = true; });
-  });
   const agDim = (key, nameFn, order) => (el) => {
     if (!AG.ok()) { DM.fail(el, dash.data('agotados').status); return; }
     const s = AG.sel(), ys = agYears(s), gr = AG.grupo(AG.rowsDim(s).filter(AG.enPeriodo(s)), key);
@@ -2009,13 +1892,7 @@
   const glDel = (v, el) => { const x = v.real - v.ppto; el.className = 'dm-tile-d ' + (x > 0 ? 'dm-down' : 'dm-up'); el.textContent = (x > 0 ? '▲ ' : '▼ ') + DM.f1.format(Math.abs(x / v.ppto) * 100) + ' % ' + (x > 0 ? 'por encima' : 'por debajo') + ' del presupuesto'; };
   const glUlt = () => { const c = GL.conReal(); return c.length ? c[c.length - 1] : null; };
   const glAcum = () => { const c = GL.conReal(); return c.length ? { real: d3.sum(c, (o) => o.real), ppto: d3.sum(c, (o) => o.ppto) } : null; };
-  dash.draw('gk-ult-l', (el) => { const u = glUlt(); el.textContent = u ? 'Real vs presupuesto ' + GL.mTxt(u.mes) : 'Real vs presupuesto del último mes'; });
-  dash.draw('gk-ult', (el) => { const u = glUlt(); if (!u) { el.textContent = '—'; return; } glVal(u, el); });
-  dash.draw('gk-ult-d', (el) => { const u = glUlt(); if (!u) { el.textContent = ''; return; } glDel(u, el); });
   dash.draw('gk-acum-l', (el) => { el.textContent = GL.ok() ? 'Real acumulado (' + GL.rango() + ')' : 'Real acumulado'; });
-  dash.draw('gk-acum', (el) => { const c = GL.conReal(); el.textContent = c.length ? GL.pesos(d3.sum(c, (r) => r.real)) : '—'; });
-  dash.draw('gk-ppto', (el) => { const c = GL.conReal(); el.textContent = c.length ? GL.pesos(d3.sum(c, (r) => r.ppto)) : '—'; });
-  dash.draw('gk-dif-l', (el) => { el.textContent = GL.ok() ? 'Real vs presupuesto acumulado (' + GL.rango() + ')' : 'Real vs presupuesto acumulado'; });
   dash.draw('gk-acum-l', (el) => { el.textContent = GL.ok() ? '(' + GL.rango() + ', meses con real)' : ''; });
   // Barras horizontales compactas: presupuesto y real acumulados de los meses con real, con la diferencia.
   dash.draw('g-acum', (el) => {
@@ -2035,8 +1912,6 @@
     svg.append('text').attr('x', ml).attr('y', 96).style('font-weight', 700).style('font-size', 'var(--cds-font-size-caption)').style('fill', d > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-ok)')
       .text((d > 0 ? '▲ ' : '▼ ') + (d >= 0 ? '+' : '−') + GL.pesos(Math.abs(d)) + ' (' + DM.f1.format(Math.abs(d / v.ppto) * 100) + ' % ' + (d > 0 ? 'por encima' : 'por debajo') + ' del presupuesto)');
   });
-  dash.draw('gk-dif', (el) => { const v = glAcum(); if (!v) { el.textContent = '—'; return; } glVal(v, el); });
-  dash.draw('gk-dif-d', (el) => { const v = glAcum(); if (!v) { el.textContent = ''; return; } glDel(v, el); });
   dash.draw('gk-prom', (el) => { const c = GL.conReal(); el.textContent = c.length ? GL.pesos(d3.mean(c, (r) => r.real)) : '—'; });
   dash.draw('gk-xton-l', (el) => { const c = GL.D().filter((r) => r.xe); el.textContent = c.length ? 'Gasto por ton efectiva, promedio (' + GL.MC[+c[0].mes.slice(4) - 1] + '–' + GL.MC[+c[c.length - 1].mes.slice(4) - 1] + ')' : 'Gasto por ton efectiva, promedio'; });
   dash.draw('gk-xton', (el) => { const c = GL.D().filter((r) => r.xe); el.textContent = c.length ? GL.pesos(d3.mean(c, (r) => r.xe)) : '—'; });
@@ -2148,7 +2023,6 @@
     el.value = s.k;
     el.onchange = () => dash.setParams({ pp_mes: el.value });
   });
-  dash.draw('pp-ppto-mes', (el) => { const e = PP.one('presupuesto_estado'); el.textContent = e ? PP.MC[+e.mes.slice(4) - 1] + ' ' + e.mes.slice(0, 4) : '—'; });
 
   // Gráfico 1: presupuesto del mes vs venta efectiva acumulada del mes (con exportación, igual que el presupuesto) y % de cumplimiento.
   // Gráfico 1: pastel (dona) cuyo total es el presupuesto del mes: venta efectiva y lo que falta para cumplirlo.
@@ -2203,7 +2077,6 @@
       if (sub) gx.append('text').attr('x', 17).attr('y', 32).style('font-size', '10.5px').style('font-weight', 600).style('fill', venta >= meta ? 'var(--dm-ok)' : 'var(--cds-chart-status-critical)').text(sub);
     });
   });
-  dash.draw('pp-venta-corte', (el) => { const e = PP.one('ventas_estado'); el.textContent = e ? e.archivo + ', guardado el ' + e.guardado.slice(8, 10) + '/' + e.guardado.slice(5, 7) : '—'; });
 
   // Indicadores: nivel de servicio del último mes cerrado y días de inventario de la red.
   const ppNs = () => { if (!NS.ok()) return null; const s = PP.sel(); if (!s) return null; const u = s.k; const R = NS.D(); return { u, v: NS.ns(R.filter((r) => r.k === u)) }; };
@@ -2246,8 +2119,6 @@
 
   // Gráfico 3: días de inventario por categoría (arepas, salsas, empanadas) y ciudad, con el total de cada categoría.
   const ppFam = (rows, fam) => { const v = rows.filter((r) => r.fam === fam && r.dem > 0); const dem = d3.sum(v, (r) => r.dem); return dem > 0 ? d3.sum(v, (r) => r.inv) / dem : null; };
-  dash.draw('pp-tot-l', (el) => { const t = PP.inv(), s = PP.sel(); el.textContent = t && t.corte ? 'Total días de inventario de la red · corte ' + DM.fDate(t.corte) : 'Sin cortes de inventario' + (s ? ' en ' + PP.mTxt(s.k) + ' (el histórico empieza el 27-oct-2026)' : ''); });
-  dash.draw('pp-tot', (el) => { const t = PP.inv(); const k = t && t.corte && DM.kpis(t.rows); el.textContent = k && k.dias != null ? DM.f0.format(k.dias) + ' días' : '—'; });
   dash.draw('pp-dias-fam', (el) => {
     const t = PP.inv(); if (!t) { DM.fail(el, dash.data('puntos').status); return; }
     el.replaceChildren(); if (!t.corte) return;
