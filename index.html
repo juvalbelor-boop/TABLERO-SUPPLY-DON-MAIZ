@@ -684,7 +684,6 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-card" id="otif-por-dia"><h2 class="dm-h2">OTIF por día</h2>
 <div class="dm-chart" data-draw="ot-dia" data-source="produccion mps_estado"></div></section>
 <section class="dm-card dm-card-o" id="otif-por-horno"><h2 class="dm-h2">OTIF por horno</h2>
-<p class="dm-note">Debajo de cada horno, su cumplimiento (real ÷ programado). Un horno puede producir y tener OTIF 0 % si le faltó más del 20 % de lo programado.</p>
 <div class="dm-chart" data-draw="ot-horno" data-source="produccion"></div></section>
 </div>
 <div class="dm-grid2">
@@ -1463,7 +1462,7 @@ if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
 const t = otT(); MOG.gauge(el, t[k], { tag: k === 'otif' ? 'promedio simple ' + MOG.pct(t.otifProm) : '', label: lab, limpio: true });
 }));
 dash.draw('ot-dia', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, diaItems('ot_', 'otif'), { sub: true, bold: true, h: 280, selected: MO.sel('ot_').dia || null, label: 'OTIF por día' }); });
-dash.draw('ot-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('ot_')), 'otif').map((d) => { const o = MO.porHorno(MO.sel('ot_')).find((x) => x.k === d.k); return { ...d, label: String(d.k).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()), sub: o && o.prog ? 'cumpl.\n' + MOG.pct(o.real / o.prog) : '' }; }), { sub: true, bold: true, h: 292, mb: 52, label: 'OTIF por horno' }); });
+dash.draw('ot-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('ot_')), 'otif').map((d) => { const o = MO.porHorno(MO.sel('ot_')).find((x) => x.k === d.k); return { ...d, label: String(d.k).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()) }; }), { bold: true, h: 260, label: 'OTIF por horno' }); });
 dash.draw('ot-horno-cump', (el) => {
 if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
 const items = MO.porHorno(MO.sel('ot_')).filter((o) => o.prog > 0).map((o) => { const lab = String(o.k).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase());
@@ -2264,6 +2263,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 01:18 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 01:20 PM.</p>
 </body>
 </html>
