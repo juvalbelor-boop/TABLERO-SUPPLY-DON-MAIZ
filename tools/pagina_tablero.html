@@ -96,6 +96,12 @@ box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-sm); display: flex
 
 .dm-page { display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
 .dm-grid2 { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr)); }
+.dm-tiles.ns-tiles { grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); }
+@media (max-width: 800px) { .dm-tiles.ns-tiles { grid-template-columns: 1fr; } }
+.dm-tile.ns-acum { display: flex; flex-direction: row; gap: var(--cds-gap-md); align-items: center; flex-wrap: wrap; } .ns-acum > div:first-child { display: flex; flex-direction: column; flex: 1 1 13rem; }
+.ns-prev { display: flex; gap: var(--cds-gap-sm); flex: 1.4 1 20rem; align-self: center; }
+.ns-mini { flex: 1; border: 1px solid var(--cds-border); border-radius: 10px; padding: 8px 12px; background: var(--color-panel); display: flex; flex-direction: column; gap: 2px; }
+.ns-mini span { font-size: 12px; color: var(--color-fg-muted); } .ns-mini b { font-size: 1.5rem; line-height: 1.15; color: var(--color-fg); } .ns-mini i { font-style: normal; font-size: 12px; font-weight: 700; }
 .dm-tiles { display: grid; gap: var(--cds-gap-sm); grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); }
 .dm-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-left: 4px solid var(--dm-green); border-radius: var(--cds-radius);
 padding: var(--cds-pad-sm) var(--cds-pad-md); display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
@@ -645,13 +651,12 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </div>
 </div>
 
-<div class="dm-tiles" id="ns-indicadores">
-<div class="dm-tile"><span class="dm-tile-l" data-draw="nk-ult-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="nk-ult" data-source="ns ns_estado">—</span><span class="dm-tile-d" data-draw="nk-ult-d" data-source="ns ns_estado"></span></div>
-<div class="dm-tile"><span class="dm-tile-l" data-draw="nk-ytd-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="nk-ytd" data-source="ns ns_estado">—</span><span class="dm-tile-d" data-draw="nk-ytd-d" data-source="ns ns_estado"></span><span class="dm-tile-d" data-draw="nk-meta-d" data-source="ns ns_estado"></span></div>
+<div class="dm-tiles ns-tiles" id="ns-indicadores">
+<div class="dm-tile"><span class="dm-tile-l" data-draw="nk-ult-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="nk-ult" data-source="ns ns_estado">—</span><span class="dm-tile-d" data-draw="nk-ult-d" data-source="ns ns_estado"></span><span class="dm-tile-d" data-draw="nk-ult-meta" data-source="ns ns_estado"></span></div>
+<div class="dm-tile ns-acum"><div><span class="dm-tile-l" data-draw="nk-ytd-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="nk-ytd" data-source="ns ns_estado">—</span><span class="dm-tile-d" data-draw="nk-ytd-d" data-source="ns ns_estado"></span><span class="dm-tile-d" data-draw="nk-meta-d" data-source="ns ns_estado"></span></div><div class="ns-prev" data-draw="nk-prev" data-source="ns ns_estado"></div></div>
 </div>
 
 <section class="dm-card dm-card-o" id="ns-anio"><h2 class="dm-h2">Comparativo por año</h2>
-<p class="dm-note">Nivel de servicio de cada mes, una línea por año (total de los canales elegidos). Los valores escritos son los del año más reciente; * = mes en curso (parcial).</p>
 <div class="dm-chart" data-draw="ns-anio" data-source="ns ns_estado"></div></section>
 
 <section class="dm-card" id="ns-canal"><h2 class="dm-h2">Nivel de servicio por canal y año</h2>
@@ -1686,7 +1691,7 @@ w.append(pl, bar); td.append(w); tb.append(tr);
 
 <script>
 window.NS = (() => {
-const META = 0.97;
+const META = 0.95;
 const MES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const MC = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const list = (v) => (Array.isArray(v) ? v : []);
@@ -1768,10 +1773,24 @@ el.textContent = (up ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(d)) + ' pp '
 dash.draw('nk-ult-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? (NS.parcial(k.u) ? 'Mes en curso (' + NS.kTxt(k.u) + ', parcial)' : 'Último mes (' + NS.kTxt(k.u) + ')') : 'Último mes'; });
 dash.draw('nk-ult', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? NS.pct(NS.ns(k.R.filter((r) => r.k === k.u))) : '—'; });
 dash.draw('nk-ult-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } const ka = k.ya + k.u.slice(4); nsDelta(el, NS.ns(k.R.filter((r) => r.k === k.u)), NS.ns(k.R.filter((r) => r.k === ka)), 'vs ' + NS.kTxt(ka)); });
+dash.draw('nk-ult-meta', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } nsDelta(el, NS.ns(k.R.filter((r) => r.k === k.u)), NS.META, 'frente a la meta de 95 %'); });
+dash.draw('nk-prev', (el) => {
+el.replaceChildren(); const k = NS.ok() && nsK(); if (!k) return;
+const cur = NS.ns(k.ytd);
+[String(+k.y - 1), String(+k.y - 2)].forEach((yy) => {
+const v = NS.ns(k.R.filter((r) => r.anio === yy && r.mes <= k.m)); if (v == null) return;
+const d = document.createElement('div'); d.className = 'ns-mini';
+const l = document.createElement('span'); l.textContent = 'Acumulado ' + yy + ' (' + k.rango + ')';
+const b = document.createElement('b'); b.textContent = NS.pct(v);
+const i = document.createElement('i'); const df = (cur - v) * 100; i.style.color = df >= 0 ? 'var(--dm-ok)' : 'var(--cds-chart-status-critical)';
+i.textContent = (df >= 0 ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(df)) + ' pp ' + k.y + ' vs ' + yy;
+d.append(l, b, i); el.append(d);
+});
+});
 dash.draw('nk-ytd-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? 'Acumulado ' + k.y + ' (' + k.rango + ')' : 'Acumulado del año'; });
 dash.draw('nk-ytd', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? NS.pct(NS.ns(k.ytd)) : '—'; });
 dash.draw('nk-ytd-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } nsDelta(el, NS.ns(k.ytd), NS.ns(k.ant), 'vs mismo periodo ' + k.ya + ' (' + NS.pct(NS.ns(k.ant)) + ')'); });
-dash.draw('nk-meta-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } nsDelta(el, NS.ns(k.ytd), 0.95, 'frente a la meta de 95 %'); });
+dash.draw('nk-meta-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } nsDelta(el, NS.ns(k.ytd), NS.META, 'frente a la meta de 95 %'); });
 
 const nsMeta = (svg, y, x0, x1) => {
 svg.append('line').attr('x1', x0).attr('x2', x1).attr('y1', y(NS.META)).attr('y2', y(NS.META)).style('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5);
@@ -1793,7 +1812,7 @@ const ys = (s.anios.length ? [...s.anios].sort() : all).filter((yy) => R.some((r
 if (!ys.length) return;
 const cs = ['TOTAL', ...NS.canales().filter((c) => R.some((r) => r.canal === c && r.ped > 0))];
 const val = (c, yy) => NS.ns(R.filter((r) => r.anio === yy && (c === 'TOTAL' || r.canal === c)));
-nsLeg(el, [...ys.map((yy) => [nsYearName(yy, R), NS.YCOL(yy, all)]), ['Meta 97 %', 'var(--cds-chart-status-critical)', true, true]]);
+nsLeg(el, [...ys.map((yy) => [nsYearName(yy, R), NS.YCOL(yy, all)]), ['Meta 95 %', 'var(--cds-chart-status-critical)', true, true]]);
 const W = el.clientWidth, H = 340;
 const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Nivel de servicio por canal y año');
 const vals = cs.flatMap((c) => ys.map((yy) => val(c, yy))).filter((v) => v != null);
@@ -1824,7 +1843,7 @@ if (!NS.ok()) { DM.fail(el, dash.data('ns').status); return; }
 el.replaceChildren();
 const s = NS.sel(), R = NS.D().filter(NS.porCanal(s)), all = NS.anios(), ys = s.anios.length ? [...s.anios].sort() : all;
 const series = ys.map((yy) => ({ yy, pts: d3.range(1, 13).map((m) => ({ m, k: yy + String(m).padStart(2, '0'), v: NS.ns(R.filter((r) => r.anio === yy && r.mes === m)) })) }));
-nsLeg(el, [...series.map((sr) => [nsYearName(sr.yy, R), NS.YCOL(sr.yy, ys), true]), ['Meta 97 %', 'var(--cds-chart-status-critical)', true, true]]);
+nsLeg(el, [...series.map((sr) => [nsYearName(sr.yy, R), NS.YCOL(sr.yy, ys), true]), ['Meta 95 %', 'var(--cds-chart-status-critical)', true, true]]);
 const W = el.clientWidth, H = 300;
 const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Nivel de servicio por año');
 const y = nsY(series.flatMap((sr) => sr.pts.map((p) => p.v)), H, 22);
@@ -1839,7 +1858,7 @@ svg.append('path').datum(sr.pts).attr('fill', 'none').style('stroke', c).attr('s
 svg.append('g').selectAll('circle').data(sr.pts.filter((p) => p.v != null)).join('circle').attr('cx', (p) => x(p.m)).attr('cy', (p) => y(p.v)).attr('r', last ? 3.5 : 2.5).style('fill', c);
 const otros = (p) => series.filter((o) => o !== sr).map((o) => o.pts[p.m - 1].v).filter((v) => v != null);
 const arriba = (p) => otros(p).every((v) => v <= p.v);
-if (last && x.step() > 30) svg.append('g').selectAll('text').data(sr.pts.filter((p) => p.v != null)).join('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', (p) => x(p.m)).attr('y', (p) => (arriba(p) ? y(p.v) - 9 : y(p.v) + 17)).text((p) => DM.f1.format(p.v * 100) + (NS.parcial(p.k) ? '*' : ''));
+if (last && x.step() > 30) svg.append('g').selectAll('text').data(sr.pts.filter((p) => p.v != null)).join('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', (p) => x(p.m)).attr('y', (p) => (arriba(p) ? y(p.v) - 9 : y(p.v) + 17)).text((p) => DM.f1.format(p.v * 100) + ' %' + (NS.parcial(p.k) ? '*' : ''));
 });
 const tip = DM.tipFor(el);
 svg.append('g').selectAll('rect').data(d3.range(1, 13)).join('rect').attr('x', (m) => x(m) - x.step() / 2).attr('width', x.step()).attr('y', 0).attr('height', H - 34).attr('fill', 'transparent')
