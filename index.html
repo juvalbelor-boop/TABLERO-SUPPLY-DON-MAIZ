@@ -200,6 +200,9 @@ window.dash = (() => {
   .pp-row1 { display: grid; gap: var(--cds-gap-xl); grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); }
   @media (max-width: 1100px) { .pp-row1 { grid-template-columns: 1fr; } }
   .pp-stack { display: grid; grid-template-columns: 1fr; gap: var(--cds-gap-xl); }
+  .pp-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .pp-head .dm-h2 { margin-bottom: 0; }
+  .pp-uni-f { min-width: 140px; }
   .pp-badge-t { fill: #FFFFFF; font-family: 'Poppins', var(--font-anthropic-sans); font-weight: 700; font-size: 13px; }
   .pp-big { display: flex; flex-direction: column; align-items: center; margin: var(--cds-gap-sm) 0; }
   .pp-bar-v { font-weight: 700; pointer-events: none; }
@@ -492,8 +495,9 @@ window.dash = (() => {
             <div class="dm-tile"><span class="dm-tile-l" data-draw="pp-dias-l" data-source="puntos ventas">—</span><span class="dm-tile-v" data-draw="pp-dias" data-source="puntos ventas">—</span><span class="dm-tile-d" data-draw="pp-dias-d" data-source="puntos ventas"></span></div>
           </div>
         </div></section>
-      <section class="dm-card dm-card-o" id="pp-card-nsag"><h2 class="dm-h2">Nivel de servicio y agotados por mes</h2>
-        <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Nivel de servicio en dinero</span><span><span class="dm-sw dm-sw-o"></span>% agotado (agotado ÷ (facturado + agotado))</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 95 %</span></div>
+      <section class="dm-card dm-card-o" id="pp-card-nsag"><div class="pp-head"><h2 class="dm-h2">Nivel de servicio y agotados por mes</h2>
+        <label class="dm-field pp-uni-f"><span class="dm-flabel">Unidad</span><select class="dm-select pp-uni" aria-label="Unidad de la gráfica de nivel de servicio"><option value="dinero">Dinero</option><option value="cant">Cantidad</option></select></label></div>
+        <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span><span data-draw="pp-nsag-l1" data-source="ns">Nivel de servicio en dinero</span></span><span><span class="dm-sw dm-sw-o"></span>% agotado (100 % − nivel de servicio)</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--cds-chart-status-critical) 0 5px, transparent 5px 8px)"></span>Meta 95 %</span></div>
         <div class="dm-chart" data-draw="pp-nsag" data-source="ns ns_estado agotados ventas"></div></section>
     </div>
     <div class="pp-stack">
@@ -528,14 +532,14 @@ window.dash = (() => {
 
     <section class="dm-card" id="agotados-vs-venta">
       <h2 class="dm-h2">Agotados vs venta por año</h2>
-      <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Venta ($)</span><span><span class="dm-sw" style="background: var(--dm-orange)"></span>Agotado ($)</span><span><span class="dm-sw" style="background: var(--dm-orange); border-radius: 999px"></span>% agotado (÷ facturado + agotado)</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--dm-orange) 0 5px, transparent 5px 9px)"></span>Variación del agotado año contra año</span></div>
+      <div class="dm-legend"><span><span class="dm-sw dm-sw-g"></span>Venta ($)</span><span><span class="dm-sw" style="background: var(--dm-orange)"></span>Agotado ($)</span><span><span class="dm-sw" style="background: var(--dm-orange); border-radius: 999px"></span>% agotado (100 % − NS en dinero)</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--dm-orange) 0 5px, transparent 5px 9px)"></span>Variación del agotado año contra año</span></div>
       <div class="ag-bv-wrap">
         <div class="dm-chart" data-draw="ag-bv" data-source="agotados ventas agotados_estado"></div>
       </div>
     </section>
 
     <section class="dm-card" id="agotados-comparativo-pct"><h2 class="dm-h2">Comparativo por mes: % agotado</h2>
-      <p class="dm-note">Agotado del mes ÷ (valor facturado del mes + agotado). El valor facturado es el del archivo de nivel de servicio, así que este % es el complemento del nivel de servicio en dinero y coincide con la gráfica de la pestaña principal. Solo para el total de la compañía: con filtro de ciudad, canal o segmento no se calcula.</p>
+      <p class="dm-note">% agotado = 100 % − nivel de servicio en dinero (valor facturado ÷ valor pedido del archivo de nivel de servicio). Coincide con la pestaña Nivel de servicio y con la gráfica de la principal en dinero. Solo para el total de la compañía: con filtro de ciudad, canal o segmento no se calcula.</p>
       <div class="dm-chart" data-draw="ag-comp-pct" data-source="agotados ventas agotados_estado"></div></section>
 
     <section class="dm-card" id="agotados-comparativo"><h2 class="dm-h2">Comparativo por mes: valor agotado ($)</h2>
@@ -1494,6 +1498,9 @@ window.dash = (() => {
     const V = () => { const m = new Map(); if (dash.data('ventas').status === 'ok') dash.data('ventas').data.forEach((r) => m.set(String(r.mes), (m.get(String(r.mes)) || 0) + +r.venta)); return m; };
     // Valor facturado del mes (ValorFacturadoPedido del archivo de nivel de servicio). Desde el 12-nov-2026 el % agotado = agotado ÷ (facturado + agotado), complemento del NS en dinero.
     const F = () => { const m = new Map(); const d = dash.data('ns'); if (d.status === 'ok') d.data.forEach((r) => { if (r.vf != null) { const k = String(r.anio) + String(r.mes).padStart(2, '0'); m.set(k, (m.get(k) || 0) + +r.vf); } }); return m; };
+    // Desde el 17-nov-2026: % agotado = 100 % − NS en dinero del archivo de nivel de servicio (valor facturado ÷ valor pedido), igual que la principal.
+    const VPm = () => { const m = new Map(); const d = dash.data('ns'); if (d.status === 'ok') d.data.forEach((r) => { if (r.vp != null) { const k = String(r.anio) + String(r.mes).padStart(2, '0'); m.set(k, (m.get(k) || 0) + +r.vp); } }); return m; };
+    const pctMeses = (ks) => { const f = F(), v = VPm(); const ok = ks.filter((k) => f.has(k) && v.get(k)); if (!ok.length) return null; return 1 - d3.sum(ok, (k) => f.get(k)) / d3.sum(ok, (k) => v.get(k)); };
     const pctAg = (bo, f) => (f != null && bo + f > 0 ? bo / (f + bo) : null);
     const list = (v) => (Array.isArray(v) ? v : []);
     const sel = () => { const p = dash.params(); return { anios: list(p.ag_anios), meses: list(p.ag_meses), ciudades: list(p.ag_ciudades), canales: list(p.ag_canales), segs: list(p.ag_segs) }; };
@@ -1510,7 +1517,7 @@ window.dash = (() => {
     const etiquetaPeriodo = (s, per = periodo(s)) => { return per.length === 1 ? MESL[per[0] - 1] : per.length === 12 ? 'todos los meses' : per.every((m, i) => i === 0 || m === per[i - 1] + 1) ? MES[per[0] - 1].toLowerCase() + ' a ' + MES[per[per.length - 1] - 1].toLowerCase() : per.length + ' meses'; };
     const esParcial = (mes) => { const e = est(); return !!e && e.ultimo_mes_parcial && mes === e.ultimo_mes; };
     const grupo = (rs, key) => { const m = new Map(); rs.forEach((r) => { const k = r[key]; const y = r.mes.slice(0, 4); if (!m.has(k)) m.set(k, new Map()); const g = m.get(k); g.set(y, (g.get(y) || 0) + r.v); }); return m; };
-    return { MES, MESL, ok, D, est, V, F, pctAg, sel, dimFiltro, rowsDim, anios, porMes, periodo, periodoYtd, enPeriodo, etiquetaPeriodo, esParcial, grupo };
+    return { MES, MESL, ok, D, est, V, F, pctAg, pctMeses, sel, dimFiltro, rowsDim, anios, porMes, periodo, periodoYtd, enPeriodo, etiquetaPeriodo, esParcial, grupo };
   })();
 
   // Formatos en pesos.
@@ -1579,8 +1586,8 @@ window.dash = (() => {
       const ms = per.map((m) => y + String(m).padStart(2, '0')), conV = ms.filter((m) => venta.has(m));
       const bo = ms.reduce((a, m) => a + (pm.get(m) || 0), 0), boV = conV.reduce((a, m) => a + (pm.get(m) || 0), 0);
       const v = conV.length ? conV.reduce((a, m) => a + venta.get(m), 0) : null;
-      const conF = ms.filter((m) => fac.has(m)), boF = conF.reduce((a, m) => a + (pm.get(m) || 0), 0), f = conF.length ? conF.reduce((a, m) => a + fac.get(m), 0) : null;
-      return { y, bo, boV, venta: v, pct: !AG.dimFiltro(s) ? AG.pctAg(boF, f) : null, nV: conV.length, nM: ms.filter((m) => pm.has(m)).length, ultV: conV.length ? conV[conV.length - 1] : null };
+      const conF = ms.filter((m) => fac.has(m) && pm.has(m));
+      return { y, bo, boV, venta: v, pct: !AG.dimFiltro(s) ? AG.pctMeses(conF) : null, nV: conV.length, nM: ms.filter((m) => pm.has(m)).length, ultV: conV.length ? conV[conV.length - 1] : null };
     }) };
   };
   dash.draw('ag-bv', (el) => {
@@ -1625,7 +1632,7 @@ window.dash = (() => {
         g.append('text').attr('text-anchor', 'middle').attr('x', cxb).attr('y', yt).style('font-weight', 800).style('font-size', '12.5px').style('fill', vv.v > 0 ? 'var(--cds-chart-status-critical)' : 'var(--dm-ok)').text(t1);
       }
       g.append('rect').attr('x', 0).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
-        .on('mousemove', () => DM.showTip(tip, el, x0(d.y) + x0.bandwidth() / 2, 40, [d.y, 'Venta: ' + (d.venta != null ? AGF.pesos(d.venta) : 'sin venta cargada'), 'Agotado: ' + AGF.pesos(d.bo), '% agotado (agotado ÷ (facturado + agotado)): ' + (d.pct != null ? DM.f1.format(d.pct * 100) + ' %' : '—')].concat(vv && vv.v != null ? ['Agotado vs ' + data[i - 1].y + (vv.parcial ? ' (mismo periodo)' : '') + ': ' + (vv.v > 0 ? '+' : '−') + DM.f1.format(Math.abs(vv.v) * 100) + ' %'] : [])))
+        .on('mousemove', () => DM.showTip(tip, el, x0(d.y) + x0.bandwidth() / 2, 40, [d.y, 'Venta: ' + (d.venta != null ? AGF.pesos(d.venta) : 'sin venta cargada'), 'Agotado: ' + AGF.pesos(d.bo), '% agotado (100 % − NS en dinero): ' + (d.pct != null ? DM.f1.format(d.pct * 100) + ' %' : '—')].concat(vv && vv.v != null ? ['Agotado vs ' + data[i - 1].y + (vv.parcial ? ' (mismo periodo)' : '') + ': ' + (vv.v > 0 ? '+' : '−') + DM.f1.format(Math.abs(vv.v) * 100) + ' %'] : [])))
         .on('mouseleave', () => { tip.hidden = true; });
     });
   });
@@ -1678,7 +1685,7 @@ window.dash = (() => {
     const s = AG.sel();
     if (AG.dimFiltro(s)) { const p = document.createElement('p'); p.className = 'dm-note'; p.textContent = 'Quita los filtros de ciudad, canal y segmento para ver el % agotado (el valor facturado es del total de la compañía).'; el.append(p); return; }
     const pm = AG.porMes(AG.rowsDim(s)), F = AG.F(), ys = s.anios.length ? [...s.anios].sort() : AG.anios(), mm = s.meses.length ? s.meses.map(Number).sort((a, b) => a - b) : Array.from({ length: 12 }, (_, i) => i + 1);
-    const series = ys.map((y) => ({ y, pts: mm.map((m) => ({ m, k: y + String(m).padStart(2, '0') })).filter((p) => pm.has(p.k) && F.has(p.k)).map((p) => ({ ...p, v: AG.pctAg(pm.get(p.k), F.get(p.k)) })) })).filter((sr) => sr.pts.length);
+    const series = ys.map((y) => ({ y, pts: mm.map((m) => ({ m, k: y + String(m).padStart(2, '0') })).filter((p) => pm.has(p.k) && F.has(p.k)).map((p) => ({ ...p, v: AG.pctMeses([p.k]) })) })).filter((sr) => sr.pts.length);
     if (!series.length) return;
     const W = el.clientWidth, H = 290;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Porcentaje agotado por mes y año: agotado sobre facturado más agotado');
@@ -1769,8 +1776,8 @@ window.dash = (() => {
     const list = (v) => (Array.isArray(v) ? v : []);
     const ok = () => dash.data('ns').status === 'ok';
     // Unidad: 'cant' (unidades) o 'dinero' (valor facturado ÷ valor pedido). En dinero, fact y ped llevan pesos.
-    const din = () => dash.params().ns_uni === 'dinero' && ok() && dash.data('ns').data.some((r) => r.vp != null);
-    const D = () => { if (!ok()) return []; const m = din(); return dash.data('ns').data.map((r) => ({ anio: String(r.anio), mes: +r.mes, canal: String(r.canal), fact: m ? +r.vf || 0 : +r.fact, ped: m ? +r.vp || 0 : +r.ped, pend: m ? +r.vpend || 0 : +r.ped - +r.fact, k: String(r.anio) + String(r.mes).padStart(2, '0') })); };
+    const din = (u) => (u ? u === 'dinero' : dash.params().ns_uni === 'dinero') && ok() && dash.data('ns').data.some((r) => r.vp != null);
+    const D = (u) => { if (!ok()) return []; const m = din(u); return dash.data('ns').data.map((r) => ({ anio: String(r.anio), mes: +r.mes, canal: String(r.canal), fact: m ? +r.vf || 0 : +r.fact, ped: m ? +r.vp || 0 : +r.ped, pend: m ? +r.vpend || 0 : +r.ped - +r.fact, k: String(r.anio) + String(r.mes).padStart(2, '0') })); };
     const cant = (v) => (din() ? (Math.abs(v) >= 1e9 ? '$' + DM.f1.format(v / 1e9) + ' mil mill.' : '$' + DM.f0.format(Math.round(v / 1e6)) + ' mill.') : DM.f0.format(v) + ' und');
     const eje = (v) => (din() ? '$' + DM.f0.format(Math.round(v / 1e6)) + ' M' : DM.f0.format(v));
     const est = () => { const d = dash.data('ns_estado'); if (d.status !== 'ok' || !d.data) return null; return Array.isArray(d.data) ? d.data[0] || null : d.data; };
@@ -2180,8 +2187,8 @@ window.dash = (() => {
   });
 
   // Indicadores: nivel de servicio del último mes cerrado y días de inventario de la red.
-  const ppNs = () => { if (!NS.ok()) return null; const s = PP.sel(); if (!s) return null; const u = s.k; const R = NS.D(); return { u, v: NS.ns(R.filter((r) => r.k === u)) }; };
-  dash.draw('pp-ns-l', (el) => { const k = ppNs(); el.textContent = k ? 'Nivel de servicio ' + (NS.din() ? 'en dinero ' : '') + NS.kTxt(k.u) + (NS.parcial(k.u) ? ' (parcial)' : '') : 'Nivel de servicio'; });
+  const ppNs = () => { if (!NS.ok()) return null; const s = PP.sel(); if (!s) return null; const u = s.k; const R = NS.D(ppUni()); return { u, v: NS.ns(R.filter((r) => r.k === u)) }; };
+  dash.draw('pp-ns-l', (el) => { const k = ppNs(); el.textContent = k ? 'Nivel de servicio ' + (NS.din(ppUni()) ? 'en dinero ' : 'en cantidad ') + NS.kTxt(k.u) + (NS.parcial(k.u) ? ' (parcial)' : '') : 'Nivel de servicio'; });
   dash.draw('pp-ns', (el) => { const k = ppNs(); el.textContent = k ? NS.pct(k.v) : '—'; });
   dash.draw('pp-ns-d', (el) => { const k = ppNs(); el.textContent = ''; el.className = 'dm-tile-d'; if (!k || k.v == null) return; const d = (k.v - PP.META_NS) * 100; el.classList.add(d >= 0 ? 'dm-up' : 'dm-down'); el.textContent = (d >= 0 ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(d)) + ' pp frente a la meta de ' + DM.f0.format(PP.META_NS * 100) + ' %'; });
   dash.draw('pp-dias-l', (el) => { const t = PP.inv(), s = PP.sel(); el.textContent = t && t.corte ? 'Días de inventario de la red (corte ' + DM.fDate(t.corte) + ')' : 'Días de inventario de la red' + (s ? ': sin cortes en ' + PP.mTxt(s.k) + ' (el histórico empieza el 27-oct-2026)' : ''); });
@@ -2189,17 +2196,21 @@ window.dash = (() => {
   dash.draw('pp-dias-d', (el) => { const t = PP.inv(); const k = t && t.corte && DM.kpis(t.rows); el.textContent = k ? DM.f0.format(k.crit) + ' puntos críticos (' + DM.f0.format(k.crita) + ' tipo A)' : ''; el.className = 'dm-tile-d'; });
 
   // Gráfico 2: nivel de servicio por mes del año actual, en dinero, con el % agotado apilado encima (suman 100 %).
+  // Unidad propia de la pestaña principal (independiente de la pestaña Nivel de servicio). Por defecto en dinero.
+  const ppUni = () => (dash.params().pp_uni === 'cant' ? 'cant' : 'dinero');
+  document.querySelectorAll('.pp-uni').forEach((x) => x.addEventListener('change', () => dash.setParams({ pp_uni: x.value === 'cant' ? 'cant' : null })));
+  dash.onData(() => document.querySelectorAll('.pp-uni').forEach((x) => { x.value = ppUni(); }));
+  dash.draw('pp-nsag-l1', (el) => { el.textContent = 'Nivel de servicio ' + (NS.din(ppUni()) ? 'en dinero' : 'en cantidad'); });
   dash.draw('pp-nsag', (el) => {
     if (!NS.ok()) { DM.fail(el, dash.data('ns').status); return; }
     el.replaceChildren();
-    const R = NS.D(), s = PP.sel(), y0 = s ? s.anio : NS.anios().slice(-1)[0];
+    const uni = ppUni(), R = NS.D(uni), s = PP.sel(), y0 = s ? s.anio : NS.anios().slice(-1)[0];
     const ks = [...new Set(R.filter((r) => r.anio === y0).map((r) => r.k))].sort();
     const bo = new Map(); if (AG.ok()) AG.D().forEach((r) => { if (r.mes.slice(0, 4) === y0) bo.set(r.mes, (bo.get(r.mes) || 0) + r.v); });
     // Venta del mes: archivo de venta efectiva (igual a la tabla del gerente en los meses que tienen las dos); si falta, la tabla del gerente.
-    // Siempre en dinero (el agotado solo existe en pesos), sin importar la Unidad elegida en la pestaña Nivel de servicio.
-    // Naranja = agotado ÷ (facturado + agotado), igual que la pestaña Agotados; azul = su complemento. Si falta el agotado del mes, se usa el NS en dinero del archivo.
-    const F = AG.F(), VP = new Map(); dash.data('ns').data.forEach((r) => { if (r.vp != null) { const k = String(r.anio) + String(r.mes).padStart(2, '0'); VP.set(k, (VP.get(k) || 0) + +r.vp); } });
-    const pts = ks.map((k) => { const ag = bo.has(k) ? AG.pctAg(bo.get(k), F.get(k)) : (F.has(k) && VP.get(k) ? 1 - F.get(k) / VP.get(k) : null); const nsd = F.has(k) && VP.get(k) ? F.get(k) / VP.get(k) : null; return { k, ns: ag != null ? 1 - ag : null, ag, nsd, deAg: bo.has(k) }; });
+    // Azul = nivel de servicio del archivo de NS en la unidad elegida (igual a la pestaña Nivel de servicio); naranja = 100 % − NS.
+    // En dinero, la naranja es el mismo % agotado de la pestaña Agotados (allí también es 100 % − NS en dinero).
+    const pts = ks.map((k) => { const ns = NS.ns(R.filter((r) => r.k === k)); return { k, ns, ag: ns != null ? Math.max(0, 1 - ns) : null, bo: bo.get(k) }; });
     const W = el.clientWidth, H = 320;
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Nivel de servicio y agotados por mes');
     const y = d3.scaleLinear([0, 1.08], [H - 30, 14]);
@@ -2216,7 +2227,7 @@ window.dash = (() => {
     g.selectAll('text.ag').data(pts.filter((p) => p.ns != null && p.ag != null)).join('text').attr('class', 'ag-var dm-halo' + (fitIn ? '' : ' dm-small')).attr('text-anchor', 'middle').attr('x', (p) => x(p.k) + x.bandwidth() / 2).attr('y', (p) => y(Math.min(1, p.ns + p.ag)) - 6).text((p) => DM.f1.format(p.ag * 100) + ' %');
     const tip = DM.tipFor(el);
     svg.append('g').selectAll('rect').data(pts).join('rect').attr('x', (p) => x(p.k)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
-      .on('mousemove', (ev, p) => DM.showTip(tip, el, x(p.k) + x.bandwidth() / 2, 40, [NS.kTxt(p.k) + (NS.parcial(p.k) ? ' (parcial)' : ''), 'Nivel de servicio en dinero (100 % − agotado): ' + NS.pct(p.ns), '% agotado: ' + (p.ag != null ? DM.f1.format(p.ag * 100) + ' %' : '—') + (p.deAg ? '' : ' (sin archivo de agotados: 100 % − NS)'), 'NS en dinero del archivo de nivel de servicio: ' + NS.pct(p.nsd)]))
+      .on('mousemove', (ev, p) => DM.showTip(tip, el, x(p.k) + x.bandwidth() / 2, 40, [NS.kTxt(p.k) + (NS.parcial(p.k) ? ' (parcial)' : ''), 'Nivel de servicio ' + (NS.din(uni) ? 'en dinero' : 'en cantidad') + ': ' + NS.pct(p.ns), '% agotado (100 % − NS): ' + (p.ag != null ? DM.f1.format(p.ag * 100) + ' %' : '—'), ...(p.bo != null ? ['Agotado del mes (archivo de agotados): $' + DM.f0.format(Math.round(p.bo / 1e6)) + ' mill.'] : [])]))
       .on('mouseleave', () => { tip.hidden = true; });
   });
 
@@ -2298,6 +2309,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 09:40 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 10:11 AM.</p>
 </body>
 </html>
