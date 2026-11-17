@@ -739,9 +739,8 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-card" id="ns-canal"><h2 class="dm-h2">Nivel de servicio por canal y año</h2>
 <div class="dm-chart" data-draw="ns-canal" data-source="ns ns_estado"></div></section>
 
-<section class="dm-card" id="ns-nofact"><h2 class="dm-h2" data-draw="ns-nofact-t" data-source="ns">Unidades pedidas no facturadas por canal</h2>
-<p class="dm-note"><span data-draw="ns-pend-def" data-source="ns">Pedido − facturado</span> en los años elegidos (sin filtro: todos). En naranja, el nivel de servicio del canal en ese periodo.</p>
-<div class="dm-chart" data-draw="ns-nofact" data-source="ns"></div></section>
+<section class="dm-card" id="ns-clientes"><h2 class="dm-h2">Nivel de servicio de los 10 clientes principales</h2>
+<div class="dm-chart" data-draw="ns-cli" data-source="ns"></div></section>
 </section>
 
 <section class="dm-main" id="gasto" role="tabpanel" hidden>
@@ -1773,7 +1772,7 @@ const MC = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct'
 const list = (v) => (Array.isArray(v) ? v : []);
 const ok = () => dash.data('ns').status === 'ok';
 const din = (u) => (u ? u === 'dinero' : dash.params().ns_uni === 'dinero') && ok() && dash.data('ns').data.some((r) => r.vp != null);
-const D = (u) => { if (!ok()) return []; const m = din(u); return dash.data('ns').data.map((r) => ({ anio: String(r.anio), mes: +r.mes, canal: String(r.canal), fact: m ? +r.vf || 0 : +r.fact, ped: m ? +r.vp || 0 : +r.ped, pend: m ? +r.vpend || 0 : +r.ped - +r.fact, k: String(r.anio) + String(r.mes).padStart(2, '0') })); };
+const D = (u) => { if (!ok()) return []; const m = din(u); return dash.data('ns').data.map((r) => ({ anio: String(r.anio), mes: +r.mes, canal: String(r.canal), cli: r.cli ? String(r.cli) : '', fact: m ? +r.vf || 0 : +r.fact, ped: m ? +r.vp || 0 : +r.ped, pend: m ? +r.vpend || 0 : +r.ped - +r.fact, k: String(r.anio) + String(r.mes).padStart(2, '0') })); };
 const cant = (v) => (din() ? (Math.abs(v) >= 1e9 ? '$' + DM.f1.format(v / 1e9) + ' mil mill.' : '$' + DM.f0.format(Math.round(v / 1e6)) + ' mill.') : DM.f0.format(v) + ' und');
 const eje = (v) => (din() ? '$' + DM.f0.format(Math.round(v / 1e6)) + ' M' : DM.f0.format(v));
 const est = () => { const d = dash.data('ns_estado'); if (d.status !== 'ok' || !d.data) return null; return Array.isArray(d.data) ? d.data[0] || null : d.data; };
@@ -1796,8 +1795,6 @@ return { META, MES, MC, list, ok, din, cant, eje, D, est, sel, anios, canales, p
 })();
 
 dash.draw('ns-def2', (el) => { el.textContent = NS.din() ? 'valor facturado ÷ valor pedido' : 'unidades facturadas ÷ unidades pedidas'; });
-dash.draw('ns-pend-def', (el) => { el.textContent = NS.din() ? 'Valor pendiente (Vlr_Pendiente del archivo)' : 'Unidades pendientes (pedido − facturado)'; });
-dash.draw('ns-nofact-t', (el) => { el.textContent = NS.din() ? 'Valor pedido no facturado por canal' : 'Unidades pedidas no facturadas por canal'; });
 document.querySelectorAll('.ns-uni').forEach((s) => s.addEventListener('change', () => dash.setParams({ ns_uni: s.value === 'dinero' ? 'dinero' : null })));
 dash.onData(() => { const v = dash.params().ns_uni === 'dinero' ? 'dinero' : 'cant'; document.querySelectorAll('.ns-uni').forEach((s) => { s.value = v; }); });
 dash.draw('ns-archivo', (el) => { const e = NS.est(); el.textContent = e ? e.archivo : '—'; });
@@ -1946,28 +1943,41 @@ svg.append('g').selectAll('rect').data(d3.range(1, 13)).join('rect').attr('x', (
 .on('mouseleave', () => { tip.hidden = true; });
 });
 
-dash.draw('ns-nofact', (el) => {
+const NS_STOP = new Set(['Y', 'DE', 'DEL', 'LA', 'LAS', 'LOS', 'EL', 'S', 'A', 'SA', 'SAS', 'LTDA', 'BIC', 'CIA', 'E', 'EN']);
+const nsCorto = (n) => { const w = String(n).replace(/[.,\-&]/g, ' ').split(/\s+/).filter((x) => x && !NS_STOP.has(x.toUpperCase())); let o = '';
+for (const x of w) { if (o && (o + ' ' + x).length > 24) break; o = o ? o + ' ' + x : x; } return o.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()); };
+dash.draw('ns-cli', (el) => {
 if (!NS.ok()) { DM.fail(el, dash.data('ns').status); return; }
 el.replaceChildren();
-const s = NS.sel(), R = NS.D().filter(NS.porAnio(s)).filter(NS.porCanal(s));
-const cs = d3.rollups(R, (v) => ({ nf: d3.sum(v, (r) => r.pend), ns: NS.ns(v) }), (r) => r.canal).map(([c, o]) => ({ c, ...o })).filter((o) => o.ns != null).sort((a, b) => b.nf - a.nf);
-if (!cs.length) return;
-const W = el.clientWidth, H = 300;
-const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', NS.din() ? 'Valor no facturado por canal' : 'Unidades no facturadas por canal');
-const y = d3.scaleLinear([0, (d3.max(cs, (o) => o.nf) || 1) * 1.25], [H - 40, 14]).nice();
-const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, NS.eje(v), 'dm-axis-t'))) + 10;
-const x = d3.scaleBand(cs.map((o) => o.c), [ml, W - 8]).padding(0.3);
-svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - 8)).tickFormat(NS.eje)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-const g = svg.append('g').attr('transform', `translate(0,${H - 40})`).call(d3.axisBottom(x).tickSize(0).tickPadding(6).tickFormat(NS.nom)).call(DM.cleanAxis);
-if (Math.max(...cs.map((o) => DM.textW(svg, NS.nom(o.c), 'dm-axis-t'))) + 6 > x.step()) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-30)');
-svg.append('g').selectAll('rect').data(cs).join('rect').attr('x', (o) => x(o.c)).attr('width', x.bandwidth()).attr('y', (o) => y(o.nf)).attr('height', (o) => y(0) - y(o.nf)).attr('rx', 3).style('fill', 'var(--dm-green)');
-if (x.bandwidth() > 34) {
-svg.append('g').selectAll('text').data(cs).join('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', (o) => x(o.c) + x.bandwidth() / 2).attr('y', (o) => y(o.nf) - 5).text((o) => (NS.din() ? NS.eje(o.nf) : DM.f0.format(o.nf)));
-svg.append('g').selectAll('text').data(cs).join('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', (o) => x(o.c) + x.bandwidth() / 2).attr('y', (o) => y(o.nf) - 21).text((o) => NS.pct(o.ns));
-}
+const s = NS.sel(), R = NS.D().filter(NS.porAnio(s)).filter(NS.porCanal(s)).filter((r) => r.cli), all = NS.anios();
+if (!R.length) { const p = document.createElement('p'); p.className = 'dm-note'; p.textContent = 'El archivo cargado no trae el detalle por cliente.'; el.append(p); return; }
+const ys = (s.anios.length ? [...s.anios].sort() : all).filter((yy) => R.some((r) => r.anio === yy));
+const tops = d3.rollups(R, (v) => d3.sum(v, (r) => r.ped), (r) => r.cli).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([c]) => c);
+const val = (c, yy) => NS.ns(R.filter((r) => r.cli === c && r.anio === yy));
+nsLeg(el, [...ys.map((yy) => [nsYearName(yy, R), NS.YCOL(yy, all)]), ['Meta 95 %', 'var(--cds-chart-status-critical)', true, true]]);
+const W = el.clientWidth, H = 380, mb = 74;
+const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Nivel de servicio de los 10 clientes principales');
+const vals = tops.flatMap((c) => ys.map((yy) => val(c, yy))).filter((v) => v != null);
+const y = d3.scaleLinear([Math.min(0.7, Math.floor((d3.min(vals) - 0.05) * 10) / 10), 1], [H - mb, 26]), ml = 46;
+const x0 = d3.scaleBand(tops, [ml, W - 8]).padding(0.2), x1 = d3.scaleBand(ys, [0, x0.bandwidth()]).padding(0.08);
+svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - 8)).tickFormat((v) => DM.f0.format(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 700));
+const g = svg.append('g').attr('transform', `translate(0,${H - mb})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat(nsCorto)).call(DM.cleanAxis);
+g.selectAll('text').style('font-weight', 800).style('font-size', '12px').style('fill', 'var(--color-fg)');
+if (Math.max(...tops.map((c) => DM.textW(svg, nsCorto(c), 'dm-val'))) + 6 > x0.step()) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-28)');
+nsMeta(svg, y, ml, W - 8);
+tops.forEach((c) => {
+const gg = svg.append('g').attr('transform', `translate(${x0(c)},0)`);
+const pts = ys.map((yy) => ({ yy, v: val(c, yy) })).filter((p) => p.v != null);
+gg.selectAll('rect').data(pts).join('rect').attr('x', (p) => x1(p.yy)).attr('width', x1.bandwidth()).attr('y', (p) => y(Math.max(p.v, y.domain()[0]))).attr('height', (p) => y(y.domain()[0]) - y(Math.max(p.v, y.domain()[0]))).attr('rx', 2).style('fill', (p) => NS.YCOL(p.yy, all));
+pts.forEach((p) => {
+const txt = DM.f1.format(p.v * 100) + ' %', tw = DM.textW(svg, txt, 'dm-val'), yv = y(Math.max(p.v, y.domain()[0])), alto = y(y.domain()[0]) - yv, dentro = alto > tw + 10, col = NS.YCOL(p.yy, all);
+gg.append('text').attr('text-anchor', dentro ? 'end' : 'start').attr('dominant-baseline', 'central').attr('transform', `translate(${x1(p.yy) + x1.bandwidth() / 2},${dentro ? yv + 6 : yv - 4}) rotate(-90)`)
+.style('font-weight', 700).style('font-size', x1.bandwidth() < 16 ? '9.5px' : '11px').style('fill', dentro && !String(col).includes('muted') ? '#FFFFFF' : 'var(--color-fg)').text(txt);
+});
+});
 const tip = DM.tipFor(el);
-svg.append('g').selectAll('rect.hit').data(cs).join('rect').attr('x', (o) => x(o.c)).attr('width', x.bandwidth()).attr('y', 0).attr('height', H - 40).attr('fill', 'transparent')
-.on('mousemove', (e, o) => DM.showTip(tip, el, x(o.c) + x.bandwidth() / 2, y(o.nf), [NS.nom(o.c), (NS.din() ? 'Valor no facturado: $' + DM.f0.format(Math.round(o.nf)) : 'No facturadas: ' + NS.cant(o.nf)), 'Nivel de servicio: ' + NS.pct(o.ns)]))
+svg.append('g').selectAll('rect.hit').data(tops).join('rect').attr('x', (c) => x0(c)).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - mb).attr('fill', 'transparent')
+.on('mousemove', (e, c) => { const rs = R.filter((r) => r.cli === c); DM.showTip(tip, el, x0(c) + x0.bandwidth() / 2, 30, [c, 'Pedido: ' + NS.cant(d3.sum(rs, (r) => r.ped)), ...ys.map((yy) => yy + ': ' + NS.pct(val(c, yy)))]); })
 .on('mouseleave', () => { tip.hidden = true; });
 });
 </script>
@@ -2277,6 +2287,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 01:39 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 02:05 PM.</p>
 </body>
 </html>
