@@ -1975,12 +1975,12 @@ nsLeg(el, [...ys.map((yy) => [nsYearName(yy, R), NS.YCOL(yy, all)]), ['Meta 95 %
 const W = el.clientWidth, rotar = tops.length > 4, H = rotar ? 430 : 360, mb = rotar ? 124 : 40;
 const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Nivel de servicio de los 10 clientes principales');
 const vals = tops.flatMap((c) => ys.map((yy) => val(c, yy))).filter((v) => v != null);
-const y = d3.scaleLinear([Math.min(0.7, Math.floor((d3.min(vals) - 0.05) * 10) / 10), 1], [H - mb, 26]), ml = 46;
+const y = d3.scaleLinear([0, 1], [H - mb, 26]), ml = 46;
 const x0 = d3.scaleBand(tops, [ml, W - 8]).padding(0.2), x1 = d3.scaleBand(ys, [0, x0.bandwidth()]).padding(0.08);
 svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - 8)).tickFormat((v) => DM.f0.format(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 700));
-const g = svg.append('g').attr('transform', `translate(0,${H - mb})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat((c) => nsCorto(c) + ' · ' + DM.f1.format((part.get(c) || 0) * 100) + ' %')).call(DM.cleanAxis);
+const g = svg.append('g').attr('transform', `translate(0,${H - mb})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat(nsCorto)).call(DM.cleanAxis);
 g.selectAll('text').style('font-weight', 800).style('font-size', '12px').style('fill', 'var(--color-fg)');
-if (rotar && Math.max(...tops.map((c) => DM.textW(svg, nsCorto(c) + ' · 00,0 %', 'dm-val'))) + 6 > x0.step()) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-28)');
+if (rotar && Math.max(...tops.map((c) => DM.textW(svg, nsCorto(c), 'dm-val'))) + 6 > x0.step()) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-28)');
 nsMeta(svg, y, ml, W - 8);
 tops.forEach((c) => {
 const gg = svg.append('g').attr('transform', `translate(${x0(c)},0)`);
@@ -2304,6 +2304,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 02:09 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 02:11 PM.</p>
 </body>
 </html>
