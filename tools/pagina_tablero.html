@@ -204,7 +204,9 @@ font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: no
 #fam-todas { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 .iv-todas-box { margin-top: 0; flex: 1 1 0; min-height: 16rem; max-height: none; }
 @media (max-width: 1000px) { .iv-todas-box { flex: none; max-height: 34rem; } }
-.iv-todas-box td { white-space: normal; } .iv-todas-box th { padding: 10px 6px; } .iv-todas-box td { padding: 8px 6px; }
+.iv-todas-box { overflow-x: hidden; } .iv-todas-box .lc-table { font-size: 12px; }
+.iv-todas-box td { white-space: normal; overflow-wrap: anywhere; padding: 7px 4px; } .iv-todas-box th { padding: 9px 4px; font-size: 11px; white-space: normal; }
+.iv-todas-box td.lc-n { white-space: nowrap; overflow-wrap: normal; } .iv-todas-box td:first-child, .iv-todas-box th:first-child { padding-left: 8px; }
 .iv-fam-grid { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 @media (max-width: 1000px) { .iv-fam-grid { grid-template-columns: 1fr; } }
 .iv-top { max-height: none; }
@@ -350,8 +352,8 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-card dm-card-o iv-fam" id="fam-todas">
 <div class="pp-fam-head"><span class="pp-fam-name">Todas las referencias</span><span class="pp-fam-badge" data-draw="iv-todas-n" data-source="puntos">—</span></div>
 <div class="lc-box iv-todas-box"><table class="lc-table" data-source="puntos">
-<colgroup><col style="width:5%"><col style="width:8%"><col><col style="width:6%"><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:9%"><col style="width:10%"></colgroup>
-<thead><tr><th></th><th>Ref</th><th>Producto</th><th class="lc-c">ABC</th><th class="lc-n" title="Ciudades críticas">Ciud. crít.</th><th class="lc-n">Días mín.</th><th class="lc-n">Días red</th><th class="lc-n">Inv+tr</th><th class="lc-n">Dem/día</th></tr></thead>
+<colgroup><col style="width:5%"><col style="width:8%"><col><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:10%"><col style="width:12%"></colgroup>
+<thead><tr><th></th><th>Ref</th><th>Producto</th><th class="lc-c">ABC</th><th class="lc-n" title="Ciudades críticas">Ciu. crít.</th><th class="lc-n">Días mín.</th><th class="lc-n">Días red</th><th class="lc-n">Inv+tr</th><th class="lc-n">Dem/día</th></tr></thead>
 <tbody data-draw="iv-todas"></tbody></table></div>
 </section>
 </div>
