@@ -199,7 +199,8 @@ font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: no
 .iv-leg { align-items: center; }
 .iv-leg-f { display: inline-flex; align-items: center; gap: 8px; font-size: 1.05rem; font-weight: 800; color: var(--color-fg); margin-right: 10px; }
 .iv-leg-sw { width: 20px; height: 20px; border-radius: 5px; display: inline-block; }
-.iv-todas-box { max-height: 40rem; margin-top: 0; }
+.iv-col { display: flex; flex-direction: column; gap: var(--cds-gap-lg); min-width: 0; }
+.iv-todas-box { max-height: 44rem; margin-top: 0; }
 .iv-todas-box td { white-space: normal; } .iv-todas-box th { padding: 10px 6px; } .iv-todas-box td { padding: 8px 6px; }
 .iv-fam-grid { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 @media (max-width: 1000px) { .iv-fam-grid { grid-template-columns: 1fr; } }
@@ -304,6 +305,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </div>
 
 <div class="iv-fam-grid">
+<div class="iv-col">
 <section class="dm-card iv-fam" id="fam-arepas">
 <div class="pp-fam-head"><span class="pp-fam-name">Arepas</span><span class="pp-fam-badge" data-draw="b-AREPAS" data-source="puntos">—</span></div>
 <div class="dm-chart dm-chart-s" data-draw="l-AREPAS" data-source="puntos"></div>
@@ -315,18 +317,6 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </table>
 </div>
 <p class="dm-note" data-empty="AREPAS" hidden>Sin casos críticos en este corte.</p>
-</section>
-<section class="dm-card iv-fam" id="fam-salsas">
-<div class="pp-fam-head"><span class="pp-fam-name">Salsas</span><span class="pp-fam-badge" data-draw="b-SALSAS" data-source="puntos">—</span></div>
-<div class="dm-chart dm-chart-s" data-draw="l-SALSAS" data-source="puntos"></div>
-<h3 class="dm-h2 iv-top-t">Top 11 referencias críticas <span class="iv-top-s">5 tipo A · 3 tipo B · 3 tipo C · menos días primero</span></h3>
-<div class="dm-tablebox iv-top">
-<table class="dm-table" data-source="puntos">
-<thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num">Ciudades críticas</th><th class="dm-num">Días (mín.)</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
-<tbody data-draw="t-SALSAS"></tbody>
-</table>
-</div>
-<p class="dm-note" data-empty="SALSAS" hidden>Sin casos críticos en este corte.</p>
 </section>
 <section class="dm-card iv-fam" id="fam-empanadas">
 <div class="pp-fam-head"><span class="pp-fam-name">Empanadas</span><span class="pp-fam-badge" data-draw="b-EMPANADAS" data-source="puntos">—</span></div>
@@ -340,14 +330,29 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </div>
 <p class="dm-note" data-empty="EMPANADAS" hidden>Sin casos críticos en este corte.</p>
 </section>
+</div>
+<div class="iv-col">
+<section class="dm-card iv-fam" id="fam-salsas">
+<div class="pp-fam-head"><span class="pp-fam-name">Salsas</span><span class="pp-fam-badge" data-draw="b-SALSAS" data-source="puntos">—</span></div>
+<div class="dm-chart dm-chart-s" data-draw="l-SALSAS" data-source="puntos"></div>
+<h3 class="dm-h2 iv-top-t">Top 11 referencias críticas <span class="iv-top-s">5 tipo A · 3 tipo B · 3 tipo C · menos días primero</span></h3>
+<div class="dm-tablebox iv-top">
+<table class="dm-table" data-source="puntos">
+<thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num">Ciudades críticas</th><th class="dm-num">Días (mín.)</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
+<tbody data-draw="t-SALSAS"></tbody>
+</table>
+</div>
+<p class="dm-note" data-empty="SALSAS" hidden>Sin casos críticos en este corte.</p>
+</section>
 <section class="dm-card dm-card-o iv-fam" id="fam-todas">
-<div class="pp-fam-head"><span class="pp-fam-name">Todas las referencias críticas</span><span class="pp-fam-badge" data-draw="iv-todas-n" data-source="puntos">—</span></div>
-<p class="dm-note">Arepas, salsas y empanadas juntas: tipo A primero, luego B y C; dentro de cada tipo, menos días primero. Con + se ven sus ciudades críticas.</p>
+<div class="pp-fam-head"><span class="pp-fam-name">Todas las referencias</span><span class="pp-fam-badge" data-draw="iv-todas-n" data-source="puntos">—</span></div>
+<p class="dm-note">Todas las referencias del corte (arepas, salsas y empanadas), críticas o no: tipo A primero, luego B y C; dentro de cada tipo, menos días primero. Días red = inventario + tránsito ÷ demanda de todas sus ciudades. Con + se ven sus ciudades.</p>
 <div class="lc-box iv-todas-box"><table class="lc-table" data-source="puntos">
-<colgroup><col style="width:6%"><col style="width:12%"><col style="width:8%"><col><col style="width:7%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"></colgroup>
-<thead><tr><th></th><th>Familia</th><th>Ref</th><th>Producto</th><th class="lc-c">ABC</th><th class="lc-n" title="Ciudades críticas">Ciud.</th><th class="lc-n">Días (mín.)</th><th class="lc-n">Inv+tr</th><th class="lc-n">Dem/día</th></tr></thead>
+<colgroup><col style="width:5%"><col style="width:10%"><col style="width:7%"><col><col style="width:6%"><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:9%"><col style="width:10%"></colgroup>
+<thead><tr><th></th><th>Familia</th><th>Ref</th><th>Producto</th><th class="lc-c">ABC</th><th class="lc-n" title="Ciudades críticas">Ciud. crít.</th><th class="lc-n">Días mín.</th><th class="lc-n">Días red</th><th class="lc-n">Inv+tr</th><th class="lc-n">Dem/día</th></tr></thead>
 <tbody data-draw="iv-todas"></tbody></table></div>
 </section>
+</div>
 </div>
 </section>
 
@@ -1004,28 +1009,31 @@ tb.append(ch);
 };
 dash.draw('t-' + fam, drawTop);
 });
-const ivTodas = () => { const t = DM.rowsCorte(); if (!t) return []; const ORD = { A: 0, B: 1, C: 2 };
-return d3.rollups(t.filter((r) => r.estado === 'CRITICO'), (v) => ({ fam: v[0].fam, ref: v[0].ref, desc: v[0].desc, abc: v[0].abc, n: v.length, dias: d3.min(v, (r) => r.dias), inv: d3.sum(v, (r) => r.inv), dem: d3.sum(v, (r) => r.dem),
-ciudades: v.slice().sort((a, b) => a.dias - b.dias || b.dem - a.dem) }), (r) => r.fam + '|' + r.ref).map(([, o]) => o)
-.sort((a, b) => (ORD[a.abc] ?? 3) - (ORD[b.abc] ?? 3) || a.dias - b.dias || b.dem - a.dem); };
-dash.draw('iv-todas-n', (el) => { const n = ivTodas().length; el.textContent = n + ' referencias'; });
+const ivTodas = () => { const t = DM.rowsCorte(); if (!t) return []; const ORD = { A: 0, B: 1, C: 2 }, INF = 1e9;
+return d3.rollups(t.filter((r) => r.estado), (v) => { const cd = v.filter((r) => r.dem > 0), dem = d3.sum(cd, (r) => r.dem);
+return { fam: v[0].fam, ref: v[0].ref, desc: v[0].desc, abc: v[0].abc, n: v.filter((r) => r.estado === 'CRITICO').length, dias: cd.length ? d3.min(cd, (r) => r.dias) : null,
+red: dem > 0 ? d3.sum(cd, (r) => r.inv) / dem : null, inv: d3.sum(v, (r) => r.inv), dem: d3.sum(v, (r) => r.dem),
+ciudades: v.slice().sort((a, b) => (a.dem > 0 ? a.dias : INF) - (b.dem > 0 ? b.dias : INF) || b.dem - a.dem) }; }, (r) => r.fam + '|' + r.ref).map(([, o]) => o)
+.sort((a, b) => (ORD[a.abc] ?? 3) - (ORD[b.abc] ?? 3) || (a.dias ?? INF) - (b.dias ?? INF) || b.dem - a.dem); };
+dash.draw('iv-todas-n', (el) => { const v = ivTodas(); el.textContent = v.length + ' referencias · ' + v.filter((r) => r.n > 0).length + ' con críticos'; });
+const dTxt = (d) => (d == null ? 'Sin dem.' : DM.f1.format(d)), dCls = (d) => 'lc-n' + (d != null && d < DM_LIM_CRIT ? ' dm-days' : '');
 const drawTodas = (tb) => {
 tb.replaceChildren(); let prev = null;
 ivTodas().forEach((r) => {
 const key = 'todas|' + r.fam + '|' + r.ref, open = window.IVopen.has(key);
 const tr = document.createElement('tr'); tr.className = 'lc-row';
-if (prev !== r.abc) { const g = document.createElement('tr'); g.className = 'lc-group'; const td = document.createElement('td'); td.colSpan = 9; td.textContent = 'TIPO ' + (r.abc || '—'); g.append(td); tb.append(g); prev = r.abc; }
+if (prev !== r.abc) { const g = document.createElement('tr'); g.className = 'lc-group'; const td = document.createElement('td'); td.colSpan = 10; td.textContent = 'TIPO ' + (r.abc || '—'); g.append(td); tb.append(g); prev = r.abc; }
 const c = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.append(td); return td; };
 const b = c('', 'lc-c'); const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'iv-exp'; btn.textContent = open ? '−' : '+';
 btn.setAttribute('aria-label', (open ? 'Ocultar' : 'Ver') + ' ciudades críticas de ' + r.ref); btn.setAttribute('aria-expanded', open ? 'true' : 'false');
 btn.addEventListener('click', () => { if (window.IVopen.has(key)) window.IVopen.delete(key); else window.IVopen.add(key); drawTodas(tb); }); b.append(btn);
 c(r.fam.charAt(0) + r.fam.slice(1).toLowerCase(), 'lc-city'); c(r.ref, 'lc-ref'); const d = c(r.desc); d.title = r.desc;
 const a = c('', 'lc-c'); const pill = document.createElement('span'); pill.className = 'dm-abc dm-abc-' + r.abc; pill.textContent = r.abc; a.append(pill);
-c(DM.f0.format(r.n), 'lc-n'); c(DM.f1.format(r.dias), 'lc-n dm-days'); c(DM.f0.format(r.inv), 'lc-n'); c(DM.f1.format(r.dem), 'lc-n');
+c(r.n ? DM.f0.format(r.n) : '—', 'lc-n'); c(dTxt(r.dias), dCls(r.dias)); c(dTxt(r.red), dCls(r.red)); c(DM.f0.format(r.inv), 'lc-n'); c(DM.f1.format(r.dem), 'lc-n');
 tb.append(tr);
 if (open) r.ciudades.forEach((x) => { const ch = document.createElement('tr'); ch.className = 'iv-child';
 const cc = (txt, cls, span) => { const td = document.createElement('td'); if (cls) td.className = cls; if (span) td.colSpan = span; td.textContent = txt; ch.append(td); };
-cc(''); cc(DM.NAME[x.ciudad] || x.ciudad, 'iv-city', 4); cc(''); cc(DM.f1.format(x.dias), 'lc-n dm-days'); cc(DM.f0.format(x.inv), 'lc-n'); cc(DM.f1.format(x.dem), 'lc-n'); tb.append(ch); });
+cc(''); cc(DM.NAME[x.ciudad] || x.ciudad, 'iv-city', 4); cc(x.estado === 'CRITICO' ? 'Sí' : '', 'lc-n dm-days'); const dd = x.dem > 0 ? x.dias : null; cc(dTxt(dd), dCls(dd)); cc(''); cc(DM.f0.format(x.inv), 'lc-n'); cc(DM.f1.format(x.dem), 'lc-n'); tb.append(ch); });
 });
 };
 dash.draw('iv-todas', drawTodas);
