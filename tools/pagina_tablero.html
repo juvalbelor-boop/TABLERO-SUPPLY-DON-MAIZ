@@ -583,8 +583,6 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <div class="dm-tile"><span class="dm-tile-l">Real</span><span class="dm-tile-v" data-draw="ok-real" data-source="produccion">—</span></div>
 <div class="dm-tile"><span class="dm-tile-l">Faltante</span><span class="dm-tile-v" data-draw="ok-falt" data-source="produccion">—</span></div>
 <div class="dm-tile"><span class="dm-tile-l">% Cumplimiento</span><span class="dm-tile-v" data-draw="ok-cump" data-source="produccion">—</span></div>
-<div class="dm-tile"><span class="dm-tile-l">Referencias que cumplen</span><span class="dm-tile-v" data-draw="ok-cumplen" data-source="produccion">—</span></div>
-<div class="dm-tile"><span class="dm-tile-l">Se hizo sin programar</span><span class="dm-tile-v" data-draw="ok-np" data-source="produccion">—</span></div>
 </div>
 
 <section class="dm-card" id="otif-velocimetros">
@@ -1383,8 +1381,6 @@ kpi('ok-real', () => DM.f0.format(otT().real));
 dash.draw('ok-prog-l', (el) => { el.textContent = 'Programado (' + (MO.sel('ot_').kg ? 'kilos' : 'paquetes') + ')'; });
 kpi('ok-falt', () => DM.f0.format(otT().falt));
 kpi('ok-cump', () => { const t = otT(); return t.prog ? MOG.pct(t.real / t.prog) : '—'; });
-kpi('ok-cumplen', () => { const t = otT(); return t.n ? t.nCumplen + ' de ' + t.n : '—'; });
-kpi('ok-np', () => DM.f0.format(otT().np));
 [['g-otif', 'otif', 'OTIF ponderado'], ['g-inf', 'inf', 'In Full ponderado'], ['g-ont', 'ont', 'On Time ponderado']].forEach(([n, k, lab]) => dash.draw(n, (el) => {
 if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
 const t = otT(); MOG.gauge(el, t[k], { tag: k === 'otif' ? 'promedio simple ' + MOG.pct(t.otifProm) : '', label: lab, limpio: true });
