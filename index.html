@@ -558,8 +558,9 @@ window.dash = (() => {
     </div>
     <div class="ag-fila-tabla">
       <section class="dm-card dm-card-o" id="agotados-top"><h2 class="dm-h2">Referencias con agotados</h2><p class="dm-note"><span data-draw="ag-top-n" data-source="agotados">Todas las referencias</span>, de mayor a menor agotado. Suma de los años y meses elegidos.</p>
-        <div class="dm-tablebox ag-tablebox"><table class="dm-table" data-source="agotados" data-row-key="ref">
-          <thead><tr><th>#</th><th data-field="ref">Ref</th><th data-field="desc">Producto</th><th data-field="seg">Segmento</th><th data-field="v" class="dm-num">Agotado ($)</th><th class="dm-num">% del total</th></tr></thead>
+        <div class="lc-box"><table class="lc-table" data-source="agotados">
+          <colgroup><col style="width:5%"><col style="width:8%"><col><col style="width:12%"><col style="width:15%"><col style="width:18%"></colgroup>
+          <thead><tr><th class="lc-c">#</th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Agotado ($)</th><th>% del total</th></tr></thead>
           <tbody data-draw="ag-top"></tbody></table></div></section>
       <section class="dm-card" id="agotados-ciudad"><h2 class="dm-h2">Valor agotado por ciudad</h2>
         <div class="dm-chart" data-draw="ag-ciudad" data-source="agotados agotados_estado"></div></section>
@@ -1785,10 +1786,16 @@ window.dash = (() => {
   dash.draw('ag-top', (tb) => {
     tb.replaceChildren(); if (!AG.ok()) return;
     const refs = agRefs(), tot = d3.sum(refs, (o) => o.v);
+    const mx = refs.length ? refs[0].v : 1;
     refs.forEach((o, i) => {
-      const tr = document.createElement('tr'); tr.dataset.key = o.ref;
-      const c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); };
-      c(String(i + 1)); c(o.ref); c(o.desc, 'dm-desc'); c(o.seg.charAt(0) + o.seg.slice(1).toLowerCase()); c(AGF.pesos(o.v), 'dm-num'); c(tot ? DM.f1.format(o.v / tot * 100) + ' %' : '—', 'dm-num'); tb.append(tr);
+      const tr = document.createElement('tr'); tr.className = 'lc-row'; tr.dataset.key = o.ref;
+      const c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); return td; };
+      c(String(i + 1), 'lc-c lc-ref'); c(o.ref, 'lc-ref'); const d = c(o.desc); d.title = o.desc; c(o.seg.charAt(0) + o.seg.slice(1).toLowerCase()); c(AGF.pesos(o.v), 'lc-n');
+      // % del total: etiqueta y barra (la barra es relativa a la referencia con más agotado)
+      const td = c(''); const w = document.createElement('div'); w.className = 'lc-days';
+      const pl = document.createElement('span'); pl.className = 'lc-pill' + (i >= 10 ? ' lc-warn' : ''); pl.textContent = tot ? DM.f1.format(o.v / tot * 100) + ' %' : '—';
+      const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, o.v / mx * 100) + '%'; f.style.background = i >= 10 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f);
+      w.append(pl, bar); td.append(w); tb.append(tr);
     });
   });
 </script>
@@ -2336,6 +2343,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 11:26 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 11:29 AM.</p>
 </body>
 </html>
