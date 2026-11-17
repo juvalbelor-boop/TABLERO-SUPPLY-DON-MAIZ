@@ -256,6 +256,11 @@ window.dash = (() => {
   .dm-fail-dot { width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
 
   .dm-tablebox { overflow: auto; max-height: 26rem; }
+  .ag-fila2 { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr)); margin-bottom: var(--cds-gap-md); }
+  .ag-fila-tabla { display: grid; gap: var(--cds-gap-md); grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 900px) { .ag-fila-tabla { grid-template-columns: 1fr; } }
+  .ag-tablebox { max-height: 34rem; }
+  .ag-tablebox thead th { position: sticky; top: 0; background: var(--color-bg, #fff); z-index: 1; }
   .dm { --iv-arepas: #0A0F9A; --iv-salsas: #F7941D; --iv-empanadas: #5E8C9A; }
   .lc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--cds-gap-lg); flex-wrap: wrap; }
   .lc-chips { display: flex; gap: var(--cds-gap-sm); flex-wrap: wrap; }
@@ -545,17 +550,19 @@ window.dash = (() => {
     <section class="dm-card" id="agotados-comparativo"><h2 class="dm-h2">Comparativo por mes: valor agotado ($)</h2>
       <div class="dm-chart" data-draw="ag-comp" data-source="agotados agotados_estado"></div></section>
 
-    <div class="dm-grid2">
-      <section class="dm-card" id="agotados-segmento"><h2 class="dm-h2">Valor agotado por segmento</h2>
-        <div class="dm-chart" data-draw="ag-seg" data-source="agotados agotados_estado"></div></section>
-      <section class="dm-card dm-card-o" id="agotados-ciudad"><h2 class="dm-h2">Valor agotado por ciudad</h2>
-        <div class="dm-chart" data-draw="ag-ciudad" data-source="agotados agotados_estado"></div></section>
+    <div class="ag-fila2">
       <section class="dm-card" id="agotados-canal"><h2 class="dm-h2">Valor agotado por canal</h2>
         <div class="dm-chart" data-draw="ag-canal" data-source="agotados agotados_estado"></div></section>
-      <section class="dm-card dm-card-o" id="agotados-top"><h2 class="dm-h2">Top 10 referencias con más agotados</h2><p class="dm-note">Suma de los años y meses elegidos.</p>
-        <div class="dm-tablebox"><table class="dm-table" data-source="agotados" data-row-key="ref">
-          <thead><tr><th>#</th><th data-field="ref">Ref</th><th data-field="desc">Producto</th><th data-field="seg">Segmento</th><th data-field="v" class="dm-num">Agotado ($)</th></tr></thead>
+      <section class="dm-card dm-card-o" id="agotados-segmento"><h2 class="dm-h2">Valor agotado por segmento</h2>
+        <div class="dm-chart" data-draw="ag-seg" data-source="agotados agotados_estado"></div></section>
+    </div>
+    <div class="ag-fila-tabla">
+      <section class="dm-card dm-card-o" id="agotados-top"><h2 class="dm-h2">Referencias con agotados</h2><p class="dm-note"><span data-draw="ag-top-n" data-source="agotados">Todas las referencias</span>, de mayor a menor agotado. Suma de los años y meses elegidos.</p>
+        <div class="dm-tablebox ag-tablebox"><table class="dm-table" data-source="agotados" data-row-key="ref">
+          <thead><tr><th>#</th><th data-field="ref">Ref</th><th data-field="desc">Producto</th><th data-field="seg">Segmento</th><th data-field="v" class="dm-num">Agotado ($)</th><th class="dm-num">% del total</th></tr></thead>
           <tbody data-draw="ag-top"></tbody></table></div></section>
+      <section class="dm-card" id="agotados-ciudad"><h2 class="dm-h2">Valor agotado por ciudad</h2>
+        <div class="dm-chart" data-draw="ag-ciudad" data-source="agotados agotados_estado"></div></section>
     </div>
     <p class="dm-note">En los gráficos por segmento, ciudad y canal, cada color es un año (leyenda arriba de cada gráfico). Los valores suman los meses elegidos en el filtro.</p>
   </section>
@@ -1720,24 +1727,38 @@ window.dash = (() => {
   const agGroupBars = (el, cats, ys, val, opt = {}) => {
     el.replaceChildren();
     if (!cats.length) return;
-    const W = el.clientWidth, H = opt.h || 270;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', opt.label || 'Backorder por año');
-    const vmax = d3.max(cats, (c) => d3.max(ys, (y) => val(c, y))) || 1;
-    const y = d3.scaleLinear([0, vmax * (opt.top || 1.18)], [H - 40, opt.ylab ? 40 : 16]).nice();
-    const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, AGF.mill(v), 'dm-axis-t'))) + 10;
-    const x0 = d3.scaleBand(cats.map((c) => c.k), [ml, W - 8]).padding(0.22), x1 = d3.scaleBand(ys, [0, x0.bandwidth()]).padding(0.08);
-    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - 8)).tickFormat(AGF.mill)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-    const g = svg.append('g').attr('transform', `translate(0,${H - 40})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(6).tickFormat((k) => cats.find((c) => c.k === k).label)).call(DM.cleanAxis);
-    if (Math.max(...cats.map((c) => DM.textW(svg, c.label, 'dm-axis-t'))) + 6 > x0.step()) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-30)');
+    const W = el.clientWidth, H = opt.h || 340;
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', opt.label || 'Valor agotado por año');
     const all = AG.anios(), tip = DM.tipFor(el);
-    // Leyenda de años arriba del gráfico (color de cada barra).
-    if (opt.ylab) { let lx = ml; ys.forEach((yy) => { const t = opt.ylab(yy); svg.append('rect').attr('x', lx).attr('y', 4).attr('width', 12).attr('height', 12).attr('rx', 2).style('fill', YCOL(yy, all)); svg.append('text').attr('class', 'dm-axis-t').attr('x', lx + 17).attr('y', 14).text(t); lx += 17 + DM.textW(svg, t, 'dm-axis-t') + 16; }); }
+    // Leyenda de años (mismo estilo que el comparativo por mes).
+    let lx = 0; ys.forEach((yy) => { const t = opt.ylab ? opt.ylab(yy) : yy; const g = svg.append('g').attr('transform', `translate(${lx},4)`); g.append('rect').attr('width', 16).attr('height', 16).attr('rx', 4).style('fill', YCOL(yy, all));
+      g.append('text').attr('x', 22).attr('y', 13).style('font-weight', 800).style('font-size', '13px').style('fill', 'var(--color-fg)').text(t); lx += 22 + DM.textW(svg, t, 'dm-val') + 22; });
+    if (lx + 170 < W) svg.append('text').attr('x', lx).attr('y', 17).style('font-size', '11.5px').style('fill', 'var(--color-fg-muted)').text('Valores en millones de $');
+    // Etiquetas del eje X en negrita; si no caben, inclinadas.
+    const lw = Math.max(...cats.map((c) => DM.textW(svg, c.label, 'dm-val'))), step0 = (W - 60) / cats.length, rot = lw + 8 > step0;
+    const mb = rot ? Math.min(90, lw * 0.6 + 22) : 30;
+    const vmax = d3.max(cats, (c) => d3.max(ys, (y) => val(c, y))) || 1;
+    const y = d3.scaleLinear([0, vmax * 1.1], [H - mb, 34]).nice();
+    const ml = Math.max(...y.ticks(4).map((v) => DM.textW(svg, AGF.mill(v), 'dm-val'))) + 12;
+    const x0 = d3.scaleBand(cats.map((c) => c.k), [ml, W - 4]).paddingInner(0.22).paddingOuter(0.05), x1 = d3.scaleBand(ys, [0, x0.bandwidth()]).padding(0.06);
+    svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - ml - 4)).tickFormat(AGF.mill)).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)'));
+    const gx = svg.append('g').attr('transform', `translate(0,${H - mb})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat((k) => cats.find((c) => c.k === k).label)).call(DM.cleanAxis)
+      .call((g) => g.selectAll('text').style('font-weight', 800).style('font-size', '13px').style('fill', 'var(--color-fg)'));
+    if (rot) gx.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.4em').attr('transform', 'rotate(-35)');
+    const bw = x1.bandwidth();
     cats.forEach((c) => {
       const gg = svg.append('g').attr('transform', `translate(${x0(c.k)},0)`);
-      gg.selectAll('rect').data(ys).join('rect').attr('x', (yy) => x1(yy)).attr('width', x1.bandwidth()).attr('y', (yy) => y(val(c, yy))).attr('height', (yy) => y(0) - y(val(c, yy))).attr('rx', 2).style('fill', (yy) => YCOL(yy, all));
-      if (opt.labels && x1.bandwidth() > 30) gg.selectAll('text.dm-val').data(ys).join('text').attr('class', 'dm-val').attr('text-anchor', 'middle').attr('x', (yy) => x1(yy) + x1.bandwidth() / 2).attr('y', (yy) => y(val(c, yy)) - 5).text((yy) => opt.labels(c, yy));
-      if (opt.labels2 && x1.bandwidth() > 30) gg.selectAll('text.ag-var').data(ys).join('text').attr('class', 'ag-var').attr('text-anchor', 'middle').attr('x', (yy) => x1(yy) + x1.bandwidth() / 2).attr('y', (yy) => y(val(c, yy)) - 21).text((yy) => opt.labels2(c, yy));
-      gg.append('rect').attr('x', 0).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - 40).attr('fill', 'transparent')
+      ys.forEach((yy) => {
+        const v = val(c, yy); if (!v) return;
+        const col = YCOL(yy, all), x = x1(yy);
+        gg.append('rect').attr('x', x).attr('width', bw).attr('y', y(v)).attr('height', y(0) - y(v)).attr('rx', 2).style('fill', col);
+        if (bw < 9) return;
+        const txt = v / 1e6 >= 10 ? DM.f0.format(v / 1e6) : DM.f1.format(v / 1e6), tw = DM.textW(svg, txt, 'dm-val'), alto = y(0) - y(v);
+        const dentro = alto > tw + 10, claro = col.includes('muted');
+        gg.append('text').attr('text-anchor', dentro ? 'end' : 'start').attr('dominant-baseline', 'central').attr('transform', `translate(${x + bw / 2},${dentro ? y(v) + 6 : y(v) - 4}) rotate(-90)`)
+          .style('font-weight', 700).style('font-size', bw < 16 ? '9.5px' : '11px').style('fill', dentro && !claro ? '#FFFFFF' : 'var(--color-fg)').text(txt);
+      });
+      gg.append('rect').attr('x', 0).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - mb).attr('fill', 'transparent')
         .on('mousemove', () => DM.showTip(tip, el, x0(c.k) + x0.bandwidth() / 2, 20, [c.label, ...ys.map((yy) => yy + ': ' + AGF.mill1(val(c, yy)))]))
         .on('mouseleave', () => { tip.hidden = true; });
     });
@@ -1750,21 +1771,24 @@ window.dash = (() => {
     cats = order ? cats.sort(order) : cats.sort((a, b) => b.tot - a.tot);
     const all = AG.anios(), ult = all[all.length - 1], mU = AG.rowsDim(s).filter(AG.enPeriodo(s)).filter((r) => r.mes.slice(0, 4) === ult).map((r) => +r.mes.slice(4)), u = mU.length ? Math.max(...mU) : 0;
     const ylab = (yy) => (!s.meses.length && yy === ult && u && u < 12 ? yy + ' (hasta ' + AG.MES[u - 1].toLowerCase() + ')' : yy);
-    agGroupBars(el, cats.slice(0, 9), ys, (c, y) => gr.get(c.k).get(y) || 0, { label: 'Backorder por ' + key, ylab });
+    agGroupBars(el, cats, ys, (c, y) => gr.get(c.k).get(y) || 0, { label: 'Valor agotado por ' + key, ylab, h: key === 'ciudad' ? 380 : 340 });
   };
   dash.draw('ag-ciudad', agDim('ciudad', (c) => DM.NAME[c] || c));
   dash.draw('ag-canal', agDim('canal', (c) => c.charAt(0) + c.slice(1).toLowerCase()));
   dash.draw('ag-seg', agDim('seg', (c) => c.charAt(0) + c.slice(1).toLowerCase()));
 
-  // Top 10 referencias con más backorder en la selección.
+  // Todas las referencias con agotado en la selección, de mayor a menor.
+  const agRefs = () => { const s = AG.sel(), m = new Map();
+    AG.rowsDim(s).filter(AG.enPeriodo(s)).forEach((r) => { const o = m.get(r.ref) || { ref: r.ref, desc: r.desc, seg: r.seg, v: 0 }; o.v += r.v; m.set(r.ref, o); });
+    return [...m.values()].filter((o) => o.v > 0.5).sort((a, b) => b.v - a.v); };
+  dash.draw('ag-top-n', (el) => { const n = AG.ok() ? agRefs().length : 0; el.textContent = n ? DM.f0.format(n) + ' referencias' : 'Todas las referencias'; });
   dash.draw('ag-top', (tb) => {
     tb.replaceChildren(); if (!AG.ok()) return;
-    const s = AG.sel(), m = new Map();
-    AG.rowsDim(s).filter(AG.enPeriodo(s)).forEach((r) => { const o = m.get(r.ref) || { ref: r.ref, desc: r.desc, seg: r.seg, v: 0 }; o.v += r.v; m.set(r.ref, o); });
-    [...m.values()].sort((a, b) => b.v - a.v).slice(0, 10).forEach((o, i) => {
+    const refs = agRefs(), tot = d3.sum(refs, (o) => o.v);
+    refs.forEach((o, i) => {
       const tr = document.createElement('tr'); tr.dataset.key = o.ref;
       const c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); };
-      c(String(i + 1)); c(o.ref); c(o.desc, 'dm-desc'); c(o.seg.charAt(0) + o.seg.slice(1).toLowerCase()); c(AGF.pesos(o.v), 'dm-num'); tr.append(); tb.append(tr);
+      c(String(i + 1)); c(o.ref); c(o.desc, 'dm-desc'); c(o.seg.charAt(0) + o.seg.slice(1).toLowerCase()); c(AGF.pesos(o.v), 'dm-num'); c(tot ? DM.f1.format(o.v / tot * 100) + ' %' : '—', 'dm-num'); tb.append(tr);
     });
   });
 </script>
@@ -2312,6 +2336,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 10:30 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 11:26 AM.</p>
 </body>
 </html>
