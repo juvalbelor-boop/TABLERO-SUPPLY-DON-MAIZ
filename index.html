@@ -737,7 +737,6 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <div class="dm-chart" data-draw="ns-anio" data-source="ns ns_estado"></div></section>
 
 <section class="dm-card" id="ns-canal"><h2 class="dm-h2">Nivel de servicio por canal y año</h2>
-<p class="dm-note">Cada barra es el nivel de servicio de un canal en un año: <span data-draw="ns-def2" data-source="ns">unidades facturadas ÷ unidades pedidas</span> de los meses elegidos (sin filtro de mes, todos los meses con datos). "Total" suma todos los canales elegidos. El número encima de cada barra es el % del año. Pasa el mouse para ver el detalle.</p>
 <div class="dm-chart" data-draw="ns-canal" data-source="ns ns_estado"></div></section>
 
 <section class="dm-card" id="ns-nofact"><h2 class="dm-h2" data-draw="ns-nofact-t" data-source="ns">Unidades pedidas no facturadas por canal</h2>
@@ -1898,7 +1897,7 @@ const ml = 46;
 const x0 = d3.scaleBand(cs, [ml, W - 8]).padding(0.2), x1 = d3.scaleBand(ys, [0, x0.bandwidth()]).padding(0.08);
 svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - 8)).tickFormat((v) => DM.f0.format(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
 const g = svg.append('g').attr('transform', `translate(0,${H - 44})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat((c) => (c === 'TOTAL' ? 'Total' : NS.nom(c)))).call(DM.cleanAxis);
-g.selectAll('text').filter((c) => c === 'TOTAL').style('font-weight', 700).style('fill', 'var(--color-fg)');
+g.selectAll('text').style('font-weight', 800).style('font-size', '12.5px').style('fill', 'var(--color-fg)');
 if (Math.max(...cs.map((c) => DM.textW(svg, NS.nom(c), 'dm-axis-t'))) + 6 > x0.step()) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-30)');
 nsMeta(svg, y, ml, W - 8);
 const w1 = DM.textW(svg, '100,0', 'dm-val'), w0 = DM.textW(svg, '100', 'dm-val');
@@ -1907,7 +1906,11 @@ cs.forEach((c) => {
 const gg = svg.append('g').attr('transform', `translate(${x0(c)},0)`);
 const pts = ys.map((yy) => ({ yy, v: val(c, yy) })).filter((p) => p.v != null);
 gg.selectAll('rect').data(pts).join('rect').attr('x', (p) => x1(p.yy)).attr('width', x1.bandwidth()).attr('y', (p) => y(p.v)).attr('height', (p) => y(y.domain()[0]) - y(p.v)).attr('rx', 2).style('fill', (p) => NS.YCOL(p.yy, all));
-if (lab) gg.selectAll('text').data(pts).join('text').attr('class', cls).attr('text-anchor', 'middle').attr('x', (p) => x1(p.yy) + x1.bandwidth() / 2).attr('y', (p) => y(p.v) - 5).text((p) => fmtV(p.v));
+if (lab) pts.forEach((p) => {
+const txt = DM.f1.format(p.v * 100) + ' %', tw = DM.textW(svg, txt, 'dm-val'), alto = y(y.domain()[0]) - y(p.v), dentro = alto > tw + 10, col = NS.YCOL(p.yy, all);
+gg.append('text').attr('text-anchor', dentro ? 'end' : 'start').attr('dominant-baseline', 'central').attr('transform', `translate(${x1(p.yy) + x1.bandwidth() / 2},${dentro ? y(p.v) + 6 : y(p.v) - 4}) rotate(-90)`)
+.style('font-weight', 700).style('font-size', x1.bandwidth() < 16 ? '9.5px' : '11px').style('fill', dentro && !String(col).includes('muted') ? '#FFFFFF' : 'var(--color-fg)').text(txt);
+});
 });
 const tip = DM.tipFor(el);
 svg.append('g').selectAll('rect.hit').data(cs).join('rect').attr('x', (c) => x0(c)).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - 44).attr('fill', 'transparent')
@@ -2274,6 +2277,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 01:34 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 01:39 PM.</p>
 </body>
 </html>
