@@ -98,6 +98,8 @@ box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-sm); display: flex
 .dm-grid2 { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr)); }
 .ns-cli-f { display: flex; gap: var(--cds-gap-md); flex-wrap: wrap; } .ns-cli-f .dm-ms-btn { min-width: 11rem; border: 2px solid var(--dm-green); border-radius: 8px; background: var(--color-panel, #fff); }
 .ns-cli-pop .dm-ms-list { max-height: 22rem; overflow: auto; min-width: 20rem; }
+.ns-cli-q { font: inherit; width: 100%; box-sizing: border-box; padding: 6px 10px; margin-bottom: 8px; border: 2px solid var(--dm-green); border-radius: 8px; }
+.dm-ms-opt[hidden] { display: none; }
 .dm-tiles.ns-tiles { grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); }
 @media (max-width: 800px) { .dm-tiles.ns-tiles { grid-template-columns: 1fr; } }
 .dm-tile.ns-acum { display: flex; flex-direction: row; gap: var(--cds-gap-md); align-items: center; flex-wrap: wrap; } .ns-acum > div:first-child { display: flex; flex-direction: column; flex: 1 1 13rem; }
@@ -671,7 +673,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <div class="dm-ms-pop" hidden><button class="dm-ms-all" type="button">Todos los canales</button><div class="dm-ms-list" data-draw="ms-nsc_canales" data-source="ns"></div></div></div>
 <div class="dm-field dm-ms" data-ms="nsc_clis"><span class="dm-flabel">Clientes</span>
 <button class="dm-ms-btn" type="button" aria-expanded="false" aria-label="Elegir clientes"><span data-draw="msl-nsc_clis" data-source="ns">—</span></button>
-<div class="dm-ms-pop ns-cli-pop" hidden><button class="dm-ms-all" type="button">Los 10 principales</button><div class="dm-ms-list" data-draw="ms-nsc_clis" data-source="ns"></div></div></div>
+<div class="dm-ms-pop ns-cli-pop" hidden><input class="ns-cli-q" type="search" placeholder="Buscar cliente…" aria-label="Buscar cliente por palabras clave"><button class="dm-ms-all" type="button">Top 10</button><div class="dm-ms-list" data-draw="ms-nsc_clis" data-source="ns"></div></div></div>
 </div></div>
 <div class="dm-chart" data-draw="ns-cli" data-source="ns"></div></section>
 </section>
@@ -1744,6 +1746,10 @@ if (all) all.addEventListener('click', () => dash.setParams({ [box.dataset.ms]: 
 document.addEventListener('click', nsClose);
 const nsOpts = { ns_anios: () => NS.anios().map((y) => [y, y]), ns_meses: () => NS.MES.map((m, i) => [String(i + 1), m]), ns_canales: () => NS.canales().map((c) => [c, NS.nom(c)]),
 nsc_canales: () => NS.canales().map((c) => [c, NS.nom(c)]), nsc_clis: () => nsCliRank().map((o) => [o.cli, o.cli + ' · ' + DM.f1.format(o.part * 100) + ' %']) };
+const nsSinTilde = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const nsCliFiltra = () => { const q = document.querySelector('.ns-cli-q'), ws = nsSinTilde(q ? q.value : '').split(/\s+/).filter(Boolean);
+document.querySelectorAll('[data-draw="ms-nsc_clis"] .dm-ms-opt').forEach((lab) => { const t = nsSinTilde(lab.textContent); lab.hidden = !ws.every((w) => t.includes(w)); }); };
+document.querySelectorAll('.ns-cli-q').forEach((q) => q.addEventListener('input', nsCliFiltra));
 const nsCliRows = () => { const s = NS.sel(), ch = NS.list(dash.params().nsc_canales).map(String); return NS.D().filter(NS.porAnio(s)).filter(NS.porCanal(s)).filter((r) => r.cli && (!ch.length || ch.includes(r.canal))); };
 const nsCliRank = () => { if (!NS.ok()) return []; const R = nsCliRows(), tot = d3.sum(R, (r) => r.fact) || 1;
 return d3.rollups(R, (v) => d3.sum(v, (r) => r.fact), (r) => r.cli).map(([cli, f]) => ({ cli, f, part: f / tot })).sort((a, b) => b.f - a.f); };
@@ -1757,10 +1763,11 @@ const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = v; 
 cb.addEventListener('change', () => { const cur = new Set(NS.list(dash.params()[key]).map(String)); if (cb.checked) cur.add(v); else cur.delete(v); dash.setParams({ [key]: [...cur] }); });
 const t = document.createElement('span'); t.textContent = label; lab.append(cb, t); el.append(lab);
 });
+if (key === 'nsc_clis') nsCliFiltra();
 });
 dash.draw('msl-' + key, (el) => {
 const picked = NS.list(dash.params()[key]);
-if (!picked.length) { el.textContent = key === 'nsc_clis' ? 'Los 10 principales' : 'Todos'; return; }
+if (!picked.length) { el.textContent = key === 'nsc_clis' ? 'Top 10' : 'Todos'; return; }
 const names = NS.ok() ? new Map(nsOpts[key]()) : new Map();
 el.textContent = picked.length <= 2 ? picked.map((v) => names.get(String(v)) || v).join(', ') : picked.length + ' seleccionados';
 });
