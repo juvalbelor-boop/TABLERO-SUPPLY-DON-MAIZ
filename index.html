@@ -1093,7 +1093,7 @@ red: dem > 0 ? d3.sum(cd, (r) => r.inv) / dem : null, inv: d3.sum(v, (r) => r.in
 ciudades: v.slice().sort((a, b) => (a.dem > 0 ? a.dias : INF) - (b.dem > 0 ? b.dias : INF) || b.dem - a.dem) }; }, (r) => r.fam + '|' + r.ref).map(([, o]) => o)
 .sort((a, b) => (ORD[a.abc] ?? 3) - (ORD[b.abc] ?? 3) || (a.dias ?? INF) - (b.dias ?? INF) || b.dem - a.dem); };
 dash.draw('iv-todas-n', (el) => { const v = ivTodas(); el.textContent = v.length + ' referencias · ' + v.filter((r) => r.n > 0).length + ' con críticos'; });
-const dTxt = (d) => (d == null ? 'Sin dem.' : DM.f1.format(d)), dCls = (d) => 'lc-n' + (d != null && d < DM_LIM_CRIT ? ' dm-days' : '');
+const dTxt = (d) => (d == null ? 'Sin dem.' : DM.f1.format(d)), dCls = (d) => 'lc-n' + (d != null && d < DM.LIM_CRIT ? ' dm-days' : '');
 const drawTodas = (tb) => {
 tb.replaceChildren(); let prev = null;
 ivTodas().forEach((r) => {
@@ -2266,6 +2266,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 12:56 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 12:58 PM.</p>
 </body>
 </html>
