@@ -544,7 +544,7 @@
     <section class="dm-card" id="mps-por-segmento"><h2 class="dm-h2">Cumplimiento programado por segmento</h2>
       <div class="dm-chart dm-chart-s" data-draw="mps-seg" data-source="produccion"></div></section>
     <section class="dm-card dm-card-o" id="mps-top">
-      <div class="lc-head"><div><h2 class="dm-h2">Referencias de la selección</h2><p class="dm-note"><span data-draw="mps-top-n" data-source="produccion">Todas las referencias</span> con programa en la semana, día, categoría y horno elegidos, de mayor a menor faltante. Verde: 95 % o más · ámbar: 85 a 95 % · rojo: menos de 85 %.</p></div></div>
+      <div class="lc-head"><div><h2 class="dm-h2">Referencias de la selección</h2><p class="dm-note"><span data-draw="mps-top-n" data-source="produccion">Todas las referencias</span> con programa en la semana, día, categoría y horno elegidos, de menor a mayor cumplimiento. Verde: 95 % o más · ámbar: 85 a 95 % · rojo: menos de 85 %.</p></div></div>
       <div class="lc-box">
         <table class="lc-table" data-source="produccion">
           <colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:15%"></colgroup>
@@ -613,7 +613,7 @@
         <div class="dm-chart" data-draw="ot-horno-cump" data-source="produccion"></div></section>
     </div>
     <section class="dm-card dm-card-o" id="otif-top">
-      <div class="lc-head"><div><h2 class="dm-h2">Referencias de la selección</h2><p class="dm-note"><span data-draw="ot-top-n" data-source="produccion">Todas las referencias</span> con programa en la semana, día, categoría y horno elegidos, de mayor a menor volumen no cumplido (programado × (1 − OTIF)). Verde: 95 % o más · ámbar: 50 a 95 % · rojo: menos de 50 %.</p></div></div>
+      <div class="lc-head"><div><h2 class="dm-h2">Referencias de la selección</h2><p class="dm-note"><span data-draw="ot-top-n" data-source="produccion">Todas las referencias</span> con programa en la semana, día, categoría y horno elegidos, de menor a mayor OTIF. Verde: 95 % o más · ámbar: 50 a 95 % · rojo: menos de 50 %.</p></div></div>
       <div class="lc-box">
         <table class="lc-table" data-source="produccion">
           <colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:15%"></colgroup>
@@ -1197,10 +1197,10 @@
     const porSeg = (s) => agrupa(rows(s), 'seg', SEGS);
     // Top 10 MPS: referencias con cumplimiento vs programado < 95 %, ordenadas por faltante (unidades).
     const topMps = (s) => agrupa(rows(s), 'ref').filter((o) => o.prog > 0)
-      .sort((a, b) => b.falt - a.falt || a.real / a.prog - b.real / b.prog).map((o) => ({ ...o, ...info(o.k) }));
+      .sort((a, b) => a.real / a.prog - b.real / b.prog || b.falt - a.falt).map((o) => ({ ...o, ...info(o.k) }));
     // Top 10 OTIF: referencias con OTIF ponderado < 95 %, ordenadas por unidades no cumplidas (programado × (1 - OTIF)).
     const topOtif = (s) => agrupa(rows(s), 'ref').filter((o) => o.prog > 0)
-      .map((o) => ({ ...o, perdidas: o.prog * (1 - o.otif) })).sort((a, b) => b.perdidas - a.perdidas || a.otif - b.otif).map((o) => ({ ...o, ...info(o.k) }));
+      .map((o) => ({ ...o, perdidas: o.prog * (1 - o.otif) })).sort((a, b) => a.otif - b.otif || b.perdidas - a.perdidas).map((o) => ({ ...o, ...info(o.k) }));
     const info = (ref) => { const r = P().find((x) => x.ref === ref) || M().find((x) => x.ref === ref) || {}; return { ref, desc: r.desc || '', seg: r.seg || '' }; };
     const tendencia = () => weeks().slice(0, 8).reverse().map((w) => {
       const t = tot(P().filter((r) => r.s === w)); const m = sum(M().filter((r) => r.s === w), (r) => r.mps);
