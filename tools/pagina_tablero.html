@@ -350,8 +350,8 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-card dm-card-o iv-fam" id="fam-todas">
 <div class="pp-fam-head"><span class="pp-fam-name">Todas las referencias</span><span class="pp-fam-badge" data-draw="iv-todas-n" data-source="puntos">—</span></div>
 <div class="lc-box iv-todas-box"><table class="lc-table" data-source="puntos">
-<colgroup><col style="width:5%"><col style="width:10%"><col style="width:7%"><col><col style="width:6%"><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:9%"><col style="width:10%"></colgroup>
-<thead><tr><th></th><th>Familia</th><th>Ref</th><th>Producto</th><th class="lc-c">ABC</th><th class="lc-n" title="Ciudades críticas">Ciud. crít.</th><th class="lc-n">Días mín.</th><th class="lc-n">Días red</th><th class="lc-n">Inv+tr</th><th class="lc-n">Dem/día</th></tr></thead>
+<colgroup><col style="width:5%"><col style="width:8%"><col><col style="width:6%"><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:9%"><col style="width:10%"></colgroup>
+<thead><tr><th></th><th>Ref</th><th>Producto</th><th class="lc-c">ABC</th><th class="lc-n" title="Ciudades críticas">Ciud. crít.</th><th class="lc-n">Días mín.</th><th class="lc-n">Días red</th><th class="lc-n">Inv+tr</th><th class="lc-n">Dem/día</th></tr></thead>
 <tbody data-draw="iv-todas"></tbody></table></div>
 </section>
 </div>
@@ -1024,18 +1024,18 @@ tb.replaceChildren(); let prev = null;
 ivTodas().forEach((r) => {
 const key = 'todas|' + r.fam + '|' + r.ref, open = window.IVopen.has(key);
 const tr = document.createElement('tr'); tr.className = 'lc-row';
-if (prev !== r.abc) { const g = document.createElement('tr'); g.className = 'lc-group'; const td = document.createElement('td'); td.colSpan = 10; td.textContent = 'TIPO ' + (r.abc || '—'); g.append(td); tb.append(g); prev = r.abc; }
+if (prev !== r.abc) { const g = document.createElement('tr'); g.className = 'lc-group'; const td = document.createElement('td'); td.colSpan = 9; td.textContent = 'TIPO ' + (r.abc || '—'); g.append(td); tb.append(g); prev = r.abc; }
 const c = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; tr.append(td); return td; };
 const b = c('', 'lc-c'); const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'iv-exp'; btn.textContent = open ? '−' : '+';
 btn.setAttribute('aria-label', (open ? 'Ocultar' : 'Ver') + ' ciudades críticas de ' + r.ref); btn.setAttribute('aria-expanded', open ? 'true' : 'false');
 btn.addEventListener('click', () => { if (window.IVopen.has(key)) window.IVopen.delete(key); else window.IVopen.add(key); drawTodas(tb); }); b.append(btn);
-c(r.fam.charAt(0) + r.fam.slice(1).toLowerCase(), 'lc-city'); c(r.ref, 'lc-ref'); const d = c(r.desc); d.title = r.desc;
+c(r.ref, 'lc-ref'); const d = c(r.desc); d.title = r.desc;
 const a = c('', 'lc-c'); const pill = document.createElement('span'); pill.className = 'dm-abc dm-abc-' + r.abc; pill.textContent = r.abc; a.append(pill);
 c(r.n ? DM.f0.format(r.n) : '—', 'lc-n'); c(dTxt(r.dias), dCls(r.dias)); c(dTxt(r.red), dCls(r.red)); c(DM.f0.format(r.inv), 'lc-n'); c(DM.f1.format(r.dem), 'lc-n');
 tb.append(tr);
 if (open) r.ciudades.forEach((x) => { const ch = document.createElement('tr'); ch.className = 'iv-child';
 const cc = (txt, cls, span) => { const td = document.createElement('td'); if (cls) td.className = cls; if (span) td.colSpan = span; td.textContent = txt; ch.append(td); };
-cc(''); cc(DM.NAME[x.ciudad] || x.ciudad, 'iv-city', 4); cc(x.estado === 'CRITICO' ? 'Sí' : '', 'lc-n dm-days'); const dd = x.dem > 0 ? x.dias : null; cc(dTxt(dd), dCls(dd)); cc(''); cc(DM.f0.format(x.inv), 'lc-n'); cc(DM.f1.format(x.dem), 'lc-n'); tb.append(ch); });
+cc(''); cc(DM.NAME[x.ciudad] || x.ciudad, 'iv-city', 3); cc(x.estado === 'CRITICO' ? 'Sí' : '', 'lc-n dm-days'); const dd = x.dem > 0 ? x.dias : null; cc(dTxt(dd), dCls(dd)); cc(''); cc(DM.f0.format(x.inv), 'lc-n'); cc(DM.f1.format(x.dem), 'lc-n'); tb.append(ch); });
 });
 };
 dash.draw('iv-todas', drawTodas);
