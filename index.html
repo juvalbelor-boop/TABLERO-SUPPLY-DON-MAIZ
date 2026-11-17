@@ -173,6 +173,8 @@ box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-sm); display: flex
 
 .dm-page { display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
 .dm-grid2 { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr)); }
+.ns-cli-f { display: flex; gap: var(--cds-gap-md); flex-wrap: wrap; } .ns-cli-f .dm-ms-btn { min-width: 11rem; border: 2px solid var(--dm-green); border-radius: 8px; background: var(--color-panel, #fff); }
+.ns-cli-pop .dm-ms-list { max-height: 22rem; overflow: auto; min-width: 20rem; }
 .dm-tiles.ns-tiles { grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); }
 @media (max-width: 800px) { .dm-tiles.ns-tiles { grid-template-columns: 1fr; } }
 .dm-tile.ns-acum { display: flex; flex-direction: row; gap: var(--cds-gap-md); align-items: center; flex-wrap: wrap; } .ns-acum > div:first-child { display: flex; flex-direction: column; flex: 1 1 13rem; }
@@ -739,7 +741,15 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-card" id="ns-canal"><h2 class="dm-h2">Nivel de servicio por canal y año</h2>
 <div class="dm-chart" data-draw="ns-canal" data-source="ns ns_estado"></div></section>
 
-<section class="dm-card" id="ns-clientes"><h2 class="dm-h2">Nivel de servicio de los 10 clientes principales</h2>
+<section class="dm-card" id="ns-clientes"><div class="pp-head"><h2 class="dm-h2" data-draw="ns-cli-t" data-source="ns">Nivel de servicio de los 10 clientes principales</h2>
+<div class="ns-cli-f">
+<div class="dm-field dm-ms" data-ms="nsc_canales"><span class="dm-flabel">Canal</span>
+<button class="dm-ms-btn" type="button" aria-expanded="false" aria-label="Elegir canales de la gráfica de clientes"><span data-draw="msl-nsc_canales" data-source="ns">—</span></button>
+<div class="dm-ms-pop" hidden><button class="dm-ms-all" type="button">Todos los canales</button><div class="dm-ms-list" data-draw="ms-nsc_canales" data-source="ns"></div></div></div>
+<div class="dm-field dm-ms" data-ms="nsc_clis"><span class="dm-flabel">Clientes</span>
+<button class="dm-ms-btn" type="button" aria-expanded="false" aria-label="Elegir clientes"><span data-draw="msl-nsc_clis" data-source="ns">—</span></button>
+<div class="dm-ms-pop ns-cli-pop" hidden><button class="dm-ms-all" type="button">Los 10 principales</button><div class="dm-ms-list" data-draw="ms-nsc_clis" data-source="ns"></div></div></div>
+</div></div>
 <div class="dm-chart" data-draw="ns-cli" data-source="ns"></div></section>
 </section>
 
@@ -1809,7 +1819,11 @@ pop.addEventListener('click', (e) => e.stopPropagation());
 if (all) all.addEventListener('click', () => dash.setParams({ [box.dataset.ms]: [] }));
 });
 document.addEventListener('click', nsClose);
-const nsOpts = { ns_anios: () => NS.anios().map((y) => [y, y]), ns_meses: () => NS.MES.map((m, i) => [String(i + 1), m]), ns_canales: () => NS.canales().map((c) => [c, NS.nom(c)]) };
+const nsOpts = { ns_anios: () => NS.anios().map((y) => [y, y]), ns_meses: () => NS.MES.map((m, i) => [String(i + 1), m]), ns_canales: () => NS.canales().map((c) => [c, NS.nom(c)]),
+nsc_canales: () => NS.canales().map((c) => [c, NS.nom(c)]), nsc_clis: () => nsCliRank().map((o) => [o.cli, o.cli + ' · ' + DM.f1.format(o.part * 100) + ' %']) };
+const nsCliRows = () => { const s = NS.sel(), ch = NS.list(dash.params().nsc_canales).map(String); return NS.D().filter(NS.porAnio(s)).filter(NS.porCanal(s)).filter((r) => r.cli && (!ch.length || ch.includes(r.canal))); };
+const nsCliRank = () => { if (!NS.ok()) return []; const R = nsCliRows(), tot = d3.sum(R, (r) => r.fact) || 1;
+return d3.rollups(R, (v) => d3.sum(v, (r) => r.fact), (r) => r.cli).map(([cli, f]) => ({ cli, f, part: f / tot })).sort((a, b) => b.f - a.f); };
 Object.keys(nsOpts).forEach((key) => {
 dash.draw('ms-' + key, (window.DMms = window.DMms || {})['ms-' + key] = (el) => {
 el.replaceChildren(); if (!NS.ok()) return;
@@ -1823,7 +1837,7 @@ const t = document.createElement('span'); t.textContent = label; lab.append(cb, 
 });
 dash.draw('msl-' + key, (el) => {
 const picked = NS.list(dash.params()[key]);
-if (!picked.length) { el.textContent = key === 'ns_anios' ? 'Todos' : 'Todos'; return; }
+if (!picked.length) { el.textContent = key === 'nsc_clis' ? 'Los 10 principales' : 'Todos'; return; }
 const names = NS.ok() ? new Map(nsOpts[key]()) : new Map();
 el.textContent = picked.length <= 2 ? picked.map((v) => names.get(String(v)) || v).join(', ') : picked.length + ' seleccionados';
 });
@@ -1946,24 +1960,27 @@ svg.append('g').selectAll('rect').data(d3.range(1, 13)).join('rect').attr('x', (
 const NS_STOP = new Set(['Y', 'DE', 'DEL', 'LA', 'LAS', 'LOS', 'EL', 'S', 'A', 'SA', 'SAS', 'LTDA', 'BIC', 'CIA', 'E', 'EN']);
 const nsCorto = (n) => { const w = String(n).replace(/[.,\-&]/g, ' ').split(/\s+/).filter((x) => x && !NS_STOP.has(x.toUpperCase())); let o = '';
 for (const x of w) { if (o && (o + ' ' + x).length > 24) break; o = o ? o + ' ' + x : x; } return o.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()); };
+dash.draw('ns-cli-t', (el) => { const n = NS.list(dash.params().nsc_clis).length; el.textContent = n ? 'Nivel de servicio de los clientes elegidos' : 'Nivel de servicio de los 10 clientes principales'; });
 dash.draw('ns-cli', (el) => {
 if (!NS.ok()) { DM.fail(el, dash.data('ns').status); return; }
 el.replaceChildren();
-const s = NS.sel(), R = NS.D().filter(NS.porAnio(s)).filter(NS.porCanal(s)).filter((r) => r.cli), all = NS.anios();
+const s = NS.sel(), R = nsCliRows(), all = NS.anios();
 if (!R.length) { const p = document.createElement('p'); p.className = 'dm-note'; p.textContent = 'El archivo cargado no trae el detalle por cliente.'; el.append(p); return; }
 const ys = (s.anios.length ? [...s.anios].sort() : all).filter((yy) => R.some((r) => r.anio === yy));
-const tops = d3.rollups(R, (v) => d3.sum(v, (r) => r.ped), (r) => r.cli).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([c]) => c);
+const rank = nsCliRank(), part = new Map(rank.map((o) => [o.cli, o.part])), elegidos = NS.list(dash.params().nsc_clis).map(String);
+const tops = elegidos.length ? rank.filter((o) => elegidos.includes(o.cli)).map((o) => o.cli) : rank.slice(0, 10).map((o) => o.cli);
+if (!tops.length) { const p = document.createElement('p'); p.className = 'dm-note'; p.textContent = 'Sin clientes con datos en esta selección.'; el.append(p); return; }
 const val = (c, yy) => NS.ns(R.filter((r) => r.cli === c && r.anio === yy));
 nsLeg(el, [...ys.map((yy) => [nsYearName(yy, R), NS.YCOL(yy, all)]), ['Meta 95 %', 'var(--cds-chart-status-critical)', true, true]]);
-const W = el.clientWidth, H = 380, mb = 74;
+const W = el.clientWidth, rotar = tops.length > 4, H = rotar ? 430 : 360, mb = rotar ? 124 : 40;
 const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Nivel de servicio de los 10 clientes principales');
 const vals = tops.flatMap((c) => ys.map((yy) => val(c, yy))).filter((v) => v != null);
 const y = d3.scaleLinear([Math.min(0.7, Math.floor((d3.min(vals) - 0.05) * 10) / 10), 1], [H - mb, 26]), ml = 46;
 const x0 = d3.scaleBand(tops, [ml, W - 8]).padding(0.2), x1 = d3.scaleBand(ys, [0, x0.bandwidth()]).padding(0.08);
 svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - 8)).tickFormat((v) => DM.f0.format(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 700));
-const g = svg.append('g').attr('transform', `translate(0,${H - mb})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat(nsCorto)).call(DM.cleanAxis);
+const g = svg.append('g').attr('transform', `translate(0,${H - mb})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat((c) => nsCorto(c) + ' · ' + DM.f1.format((part.get(c) || 0) * 100) + ' %')).call(DM.cleanAxis);
 g.selectAll('text').style('font-weight', 800).style('font-size', '12px').style('fill', 'var(--color-fg)');
-if (Math.max(...tops.map((c) => DM.textW(svg, nsCorto(c), 'dm-val'))) + 6 > x0.step()) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-28)');
+if (rotar && Math.max(...tops.map((c) => DM.textW(svg, nsCorto(c) + ' · 00,0 %', 'dm-val'))) + 6 > x0.step()) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-28)');
 nsMeta(svg, y, ml, W - 8);
 tops.forEach((c) => {
 const gg = svg.append('g').attr('transform', `translate(${x0(c)},0)`);
@@ -1977,7 +1994,7 @@ gg.append('text').attr('text-anchor', dentro ? 'end' : 'start').attr('dominant-b
 });
 const tip = DM.tipFor(el);
 svg.append('g').selectAll('rect.hit').data(tops).join('rect').attr('x', (c) => x0(c)).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - mb).attr('fill', 'transparent')
-.on('mousemove', (e, c) => { const rs = R.filter((r) => r.cli === c); DM.showTip(tip, el, x0(c) + x0.bandwidth() / 2, 30, [c, 'Pedido: ' + NS.cant(d3.sum(rs, (r) => r.ped)), ...ys.map((yy) => yy + ': ' + NS.pct(val(c, yy)))]); })
+.on('mousemove', (e, c) => { const rs = R.filter((r) => r.cli === c); DM.showTip(tip, el, x0(c) + x0.bandwidth() / 2, 30, [c, 'Participación en ventas: ' + DM.f1.format((part.get(c) || 0) * 100) + ' %', 'Facturado: ' + NS.cant(d3.sum(rs, (r) => r.fact)), 'Pedido: ' + NS.cant(d3.sum(rs, (r) => r.ped)), ...ys.map((yy) => yy + ': ' + NS.pct(val(c, yy)))]); })
 .on('mouseleave', () => { tip.hidden = true; });
 });
 </script>
@@ -2287,6 +2304,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 02:05 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 02:09 PM.</p>
 </body>
 </html>
