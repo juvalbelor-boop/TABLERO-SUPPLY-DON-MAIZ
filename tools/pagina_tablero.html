@@ -520,7 +520,6 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <div class="dm-tile"><span class="dm-tile-l">Programado</span><span class="dm-tile-v" data-draw="mk-prog" data-source="produccion">—</span></div>
 <div class="dm-tile"><span class="dm-tile-l">Real</span><span class="dm-tile-v" data-draw="mk-real" data-source="produccion">—</span></div>
 <div class="dm-tile dm-tile-bad"><span class="dm-tile-l">Faltante vs programado</span><span class="dm-tile-v" data-draw="mk-falt" data-source="produccion">—</span></div>
-<div class="dm-tile"><span class="dm-tile-l">Real no programado</span><span class="dm-tile-v" data-draw="mk-np" data-source="produccion">—</span></div>
 </div>
 
 <section class="dm-card" id="mps-velocimetros">
@@ -1331,7 +1330,6 @@ kpi('mk-mps', () => { const s = MO.sel('mps_'); return s.dia ? 'Solo semanal' : 
 kpi('mk-prog', () => DM.f0.format(mpsT().prog) + U());
 kpi('mk-real', () => DM.f0.format(mpsT().real) + U());
 kpi('mk-falt', () => DM.f0.format(mpsT().falt) + U());
-kpi('mk-np', () => DM.f0.format(mpsT().np) + U());
 dash.draw('g-mps', (el) => {
 if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
 const s = MO.sel('mps_'), m = MO.mpsTot(s), t = mpsT();
