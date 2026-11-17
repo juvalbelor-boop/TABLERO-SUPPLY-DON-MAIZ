@@ -315,11 +315,11 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <div class="dm">
 <nav class="dm-maintabs" role="tablist" aria-label="Pestañas principales">
 <button class="dm-main-tab" type="button" role="tab" data-main="supply" aria-selected="true">Tablero principal Supply</button>
+<button class="dm-main-tab" type="button" role="tab" data-main="ns" aria-selected="false">Nivel de servicio</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="inventarios" aria-selected="false">Inventarios</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="agotados" aria-selected="false">Agotados</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="mps" aria-selected="false">MPS</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="otif" aria-selected="false">OTIF</button>
-<button class="dm-main-tab" type="button" role="tab" data-main="ns" aria-selected="false">Nivel de servicio</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="gasto" aria-selected="false">Gasto logístico</button>
 </nav>
 
@@ -720,14 +720,11 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <label class="dm-field"><span class="dm-flabel">Unidad</span><select class="dm-select ns-uni" aria-label="Unidad del nivel de servicio">
 <option value="cant">Cantidad</option><option value="dinero">Dinero</option></select></label>
 </div>
-<p class="dm-note">Nivel de servicio = <span data-draw="ns-def" data-source="ns">unidades facturadas ÷ unidades pedidas</span>, sumando los canales y meses elegidos (ponderado, igual que la tabla dinámica del archivo). Meta: 97 %. Las tarjetas usan el filtro de canal; los gráficos, año, mes y canal. Archivo <b data-draw="ns-archivo" data-source="ns_estado">—</b>, datos hasta <b data-draw="ns-hasta" data-source="ns_estado">—</b>.</p>
 </div>
 
 <div class="dm-tiles" id="ns-indicadores">
 <div class="dm-tile"><span class="dm-tile-l" data-draw="nk-ult-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="nk-ult" data-source="ns ns_estado">—</span><span class="dm-tile-d" data-draw="nk-ult-d" data-source="ns ns_estado"></span></div>
 <div class="dm-tile"><span class="dm-tile-l" data-draw="nk-ytd-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="nk-ytd" data-source="ns ns_estado">—</span><span class="dm-tile-d" data-draw="nk-ytd-d" data-source="ns ns_estado"></span><span class="dm-tile-d" data-draw="nk-meta-d" data-source="ns ns_estado"></span></div>
-<div class="dm-tile"><span class="dm-tile-l" data-draw="nk-ant-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="nk-ant" data-source="ns ns_estado">—</span></div>
-<div class="dm-tile dm-tile-bad"><span class="dm-tile-l" data-draw="nk-nof-l" data-source="ns ns_estado">—</span><span class="dm-tile-v" data-draw="nk-nof" data-source="ns ns_estado">—</span></div>
 </div>
 
 <section class="dm-card dm-card-o" id="ns-anio"><h2 class="dm-h2">Comparativo por año</h2>
@@ -1794,7 +1791,6 @@ const YCOL = (y, ys) => { const i = ys.indexOf(y), n = ys.length; return i === n
 return { META, MES, MC, list, ok, din, cant, eje, D, est, sel, anios, canales, porCanal, porAnio, ns, parcial, meses, ultCerrado, kTxt, kCorto, pct, nom, col, YCOL };
 })();
 
-dash.draw('ns-def', (el) => { el.textContent = NS.din() ? 'valor facturado ÷ valor pedido (en pesos)' : 'unidades facturadas ÷ unidades pedidas'; });
 dash.draw('ns-def2', (el) => { el.textContent = NS.din() ? 'valor facturado ÷ valor pedido' : 'unidades facturadas ÷ unidades pedidas'; });
 dash.draw('ns-pend-def', (el) => { el.textContent = NS.din() ? 'Valor pendiente (Vlr_Pendiente del archivo)' : 'Unidades pendientes (pedido − facturado)'; });
 dash.draw('ns-nofact-t', (el) => { el.textContent = NS.din() ? 'Valor pedido no facturado por canal' : 'Unidades pedidas no facturadas por canal'; });
@@ -1833,7 +1829,7 @@ el.textContent = picked.length <= 2 ? picked.map((v) => names.get(String(v)) || 
 });
 
 const nsK = () => {
-const s = NS.sel(), R = NS.D().filter(NS.porCanal(s)), u = NS.ultCerrado();
+const s = NS.sel(), R = NS.D().filter(NS.porCanal(s)), u = NS.meses().slice(-1)[0];
 if (!u) return null;
 const y = u.slice(0, 4), m = +u.slice(4), ya = String(+y - 1), cur = NS.meses().find((k) => NS.parcial(k));
 const ytd = R.filter((r) => r.anio === y && r.mes <= m), ant = R.filter((r) => r.anio === ya && r.mes <= m);
@@ -1846,17 +1842,13 @@ const d = (b - a) * 100, up = d >= 0;
 el.classList.add(up ? 'dm-up' : 'dm-down');
 el.textContent = (up ? '▲ +' : '▼ −') + DM.f1.format(Math.abs(d)) + ' pp ' + txt;
 };
-dash.draw('nk-ult-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? 'Último mes cerrado (' + NS.kTxt(k.u) + ')' : 'Último mes cerrado'; });
+dash.draw('nk-ult-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? (NS.parcial(k.u) ? 'Mes en curso (' + NS.kTxt(k.u) + ', parcial)' : 'Último mes (' + NS.kTxt(k.u) + ')') : 'Último mes'; });
 dash.draw('nk-ult', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? NS.pct(NS.ns(k.R.filter((r) => r.k === k.u))) : '—'; });
 dash.draw('nk-ult-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } const ka = k.ya + k.u.slice(4); nsDelta(el, NS.ns(k.R.filter((r) => r.k === k.u)), NS.ns(k.R.filter((r) => r.k === ka)), 'vs ' + NS.kTxt(ka)); });
 dash.draw('nk-ytd-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? 'Acumulado ' + k.y + ' (' + k.rango + ')' : 'Acumulado del año'; });
 dash.draw('nk-ytd', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? NS.pct(NS.ns(k.ytd)) : '—'; });
-dash.draw('nk-ytd-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } nsDelta(el, NS.ns(k.ytd), NS.ns(k.ant), 'vs mismo periodo ' + k.ya); });
-dash.draw('nk-ant-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? 'Mismo periodo ' + k.ya + ' (' + k.rango + ')' : 'Mismo periodo año anterior'; });
-dash.draw('nk-ant', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? NS.pct(NS.ns(k.ant)) : '—'; });
-dash.draw('nk-meta-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } nsDelta(el, NS.ns(k.ytd), NS.META, 'frente a la meta de 97 %'); });
-dash.draw('nk-nof-l', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? (NS.din() ? 'Valor no facturado ' : 'Unidades no facturadas ') + k.y + ' (' + k.rango + ')' : 'Unidades no facturadas'; });
-dash.draw('nk-nof', (el) => { const k = NS.ok() && nsK(); el.textContent = k ? NS.cant(d3.sum(k.ytd, (r) => r.pend)) : '—'; });
+dash.draw('nk-ytd-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } nsDelta(el, NS.ns(k.ytd), NS.ns(k.ant), 'vs mismo periodo ' + k.ya + ' (' + NS.pct(NS.ns(k.ant)) + ')'); });
+dash.draw('nk-meta-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replaceChildren(); return; } nsDelta(el, NS.ns(k.ytd), 0.95, 'frente a la meta de 95 %'); });
 
 const nsMeta = (svg, y, x0, x1) => {
 svg.append('line').attr('x1', x0).attr('x2', x1).attr('y1', y(NS.META)).attr('y2', y(NS.META)).style('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5);
@@ -2263,6 +2255,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 01:21 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 01:27 PM.</p>
 </body>
 </html>
