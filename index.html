@@ -281,6 +281,7 @@ window.dash = (() => {
   .lc-days { display: flex; align-items: center; gap: 8px; }
   .lc-pill { min-width: 3.1rem; text-align: center; border-radius: 999px; padding: 2px 8px; font-weight: 800; font-size: 12px; color: #FFFFFF; background: var(--cds-chart-status-critical); }
   .lc-pill.lc-warn { background: var(--dm-orange-2); }
+  .lc-pill.lc-ok { background: var(--dm-ok); }
   .lc-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--color-border-line); overflow: hidden; }
   .lc-bar i { display: block; height: 100%; border-radius: 3px; }
   .iv-leg { align-items: center; }
@@ -575,6 +576,7 @@ window.dash = (() => {
           <option value="">Toda la semana</option><option>Domingo</option><option>Lunes</option><option>Martes</option><option>Miércoles</option><option>Jueves</option><option>Viernes</option><option>Sábado</option></select></label>
         <label class="dm-field"><span class="dm-flabel">Categoría</span><select class="dm-select mo-cat" data-pre="mps_" aria-label="Categoría">
           <option value="">Todas</option><option value="AREPAS">Arepas</option><option value="SALSAS">Salsas</option><option value="EMPANADAS">Empanadas</option><option value="OTROS">Otros</option></select></label>
+        <label class="dm-field"><span class="dm-flabel">Horno</span><select class="dm-select mo-horno" data-pre="mps_" data-draw="mps-hornos" data-source="produccion" aria-label="Horno"></select></label>
         <label class="dm-field"><span class="dm-flabel">Unidad</span><select class="dm-select mo-uni" data-pre="mps_" aria-label="Unidad de medida">
           <option value="und">Paquetes</option><option value="kg">Kilos</option></select></label>
       </div>
@@ -619,7 +621,7 @@ window.dash = (() => {
     <section class="dm-card" id="mps-por-segmento"><h2 class="dm-h2">Cumplimiento programado por segmento</h2>
       <div class="dm-chart dm-chart-s" data-draw="mps-seg" data-source="produccion"></div></section>
     <section class="dm-card dm-card-o" id="mps-top">
-      <div class="lc-head"><div><h2 class="dm-h2">Top 10 referencias por debajo del 95 %</h2><p class="dm-note">Cumplimiento vs programado menor a 95 %, de mayor a menor faltante.</p></div></div>
+      <div class="lc-head"><div><h2 class="dm-h2">Referencias de la selección</h2><p class="dm-note"><span data-draw="mps-top-n" data-source="produccion">Todas las referencias</span> con programa en la semana, día, categoría y horno elegidos, de mayor a menor faltante. Verde: 95 % o más · ámbar: 85 a 95 % · rojo: menos de 85 %.</p></div></div>
       <div class="lc-box">
         <table class="lc-table" data-source="produccion">
           <colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:15%"></colgroup>
@@ -638,6 +640,7 @@ window.dash = (() => {
           <option value="">Toda la semana</option><option>Domingo</option><option>Lunes</option><option>Martes</option><option>Miércoles</option><option>Jueves</option><option>Viernes</option><option>Sábado</option></select></label>
         <label class="dm-field"><span class="dm-flabel">Categoría</span><select class="dm-select mo-cat" data-pre="ot_" aria-label="Categoría">
           <option value="">Todas</option><option value="AREPAS">Arepas</option><option value="SALSAS">Salsas</option><option value="EMPANADAS">Empanadas</option><option value="OTROS">Otros</option></select></label>
+        <label class="dm-field"><span class="dm-flabel">Horno</span><select class="dm-select mo-horno" data-pre="ot_" data-draw="ot-hornos" data-source="produccion" aria-label="Horno"></select></label>
         <label class="dm-field"><span class="dm-flabel">Unidad</span><select class="dm-select mo-uni" data-pre="ot_" aria-label="Unidad de medida">
           <option value="und">Paquetes</option><option value="kg">Kilos</option></select></label>
       </div>
@@ -687,7 +690,7 @@ window.dash = (() => {
         <div class="dm-chart" data-draw="ot-horno-cump" data-source="produccion"></div></section>
     </div>
     <section class="dm-card dm-card-o" id="otif-top">
-      <div class="lc-head"><div><h2 class="dm-h2">Top 10 referencias con OTIF por debajo del 95 %</h2><p class="dm-note">De mayor a menor volumen no cumplido (programado × (1 − OTIF)).</p></div></div>
+      <div class="lc-head"><div><h2 class="dm-h2">Referencias de la selección</h2><p class="dm-note"><span data-draw="ot-top-n" data-source="produccion">Todas las referencias</span> con programa en la semana, día, categoría y horno elegidos, de mayor a menor volumen no cumplido (programado × (1 − OTIF)). Verde: 95 % o más · ámbar: 50 a 95 % · rojo: menos de 50 %.</p></div></div>
       <div class="lc-box">
         <table class="lc-table" data-source="produccion">
           <colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:15%"></colgroup>
@@ -1231,11 +1234,11 @@ window.dash = (() => {
     const sel = (pre) => {
       const p = dash.params(); const ws = weeks();
       const def = ws.find(cerrada) || ws[0];
-      return { w: ws.includes(p[pre + 'sem']) ? p[pre + 'sem'] : def, dia: p[pre + 'dia'] || '', cat: p[pre + 'cat'] || '', kg: (pre === 'mps_' || pre === 'ot_') && (p[pre + 'uni'] || 'und') === 'kg' };
+      return { w: ws.includes(p[pre + 'sem']) ? p[pre + 'sem'] : def, dia: p[pre + 'dia'] || '', cat: p[pre + 'cat'] || '', horno: p[pre + 'horno'] || '', kg: (pre === 'mps_' || pre === 'ot_') && (p[pre + 'uni'] || 'und') === 'kg' };
     };
     // En kilos se usan las columnas de kilos del Excel (programado kg = paquetes × kg por paquete; real kg = 'Cant. completa en KG' de Siesa).
     const enKg = (r) => ({ ...r, prog: r.progk, real: r.realk, falt: r.faltk });
-    const rows = (s, conDia = true) => P().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!conDia || !s.dia || r.dia === s.dia)).map((r) => (s.kg ? enKg(r) : r));
+    const rows = (s, conDia = true) => P().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!s.horno || r.horno === s.horno) && (!conDia || !s.dia || r.dia === s.dia)).map((r) => (s.kg ? enKg(r) : r));
     const tot = (rs) => {
       const pl = rs.filter((r) => r.tipo === 'plan'); const prog = sum(pl, (r) => r.prog);
       return {
@@ -1246,11 +1249,13 @@ window.dash = (() => {
       };
     };
     // MPS de la semana (el MPS es semanal: con un día elegido no aplica, como en el Excel).
-    const mpsTot = (s) => sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat)), (r) => (s.kg ? r.mpsk : r.mps));
+    // Con un horno elegido, el MPS es el de las referencias que ese horno tuvo programadas o produjo en la semana.
+    const refsH = (s) => (s.horno ? new Set(P().filter((r) => r.s === s.w && r.horno === s.horno).map((r) => r.ref)) : null);
+    const mpsTot = (s) => { const h = refsH(s); return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!h || h.has(r.ref))), (r) => (s.kg ? r.mpsk : r.mps)); };
     // Falta para MPS por SKU: suma de max(0, MPS del SKU - real del SKU en la semana).
     const faltaMps = (s) => {
-      const real = new Map(); P().filter((r) => r.s === s.w).forEach((r) => real.set(r.ref, (real.get(r.ref) || 0) + (s.kg ? r.realk : r.real)));
-      return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat)), (r) => Math.max(0, (s.kg ? r.mpsk : r.mps) - (real.get(r.ref) || 0)));
+      const real = new Map(), h = refsH(s); P().filter((r) => r.s === s.w && (!s.horno || r.horno === s.horno)).forEach((r) => real.set(r.ref, (real.get(r.ref) || 0) + (s.kg ? r.realk : r.real)));
+      return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!h || h.has(r.ref))), (r) => Math.max(0, (s.kg ? r.mpsk : r.mps) - (real.get(r.ref) || 0)));
     };
     // Normalmente el domingo es el día anterior al lunes de la semana; si la semana trae un domingo posterior (excepción del
     // domingo 8-nov-2026, que cuenta en la semana del 2-nov), ese domingo va al final de la semana.
@@ -1268,11 +1273,11 @@ window.dash = (() => {
     const porHorno = (s) => agrupa(rows(s), 'horno');
     const porSeg = (s) => agrupa(rows(s), 'seg', SEGS);
     // Top 10 MPS: referencias con cumplimiento vs programado < 95 %, ordenadas por faltante (unidades).
-    const topMps = (s) => agrupa(rows(s), 'ref').filter((o) => o.prog > 0 && o.real / o.prog < META && o.falt > 0)
-      .sort((a, b) => b.falt - a.falt).slice(0, 10).map((o) => ({ ...o, ...info(o.k) }));
+    const topMps = (s) => agrupa(rows(s), 'ref').filter((o) => o.prog > 0)
+      .sort((a, b) => b.falt - a.falt || a.real / a.prog - b.real / b.prog).map((o) => ({ ...o, ...info(o.k) }));
     // Top 10 OTIF: referencias con OTIF ponderado < 95 %, ordenadas por unidades no cumplidas (programado × (1 - OTIF)).
-    const topOtif = (s) => agrupa(rows(s), 'ref').filter((o) => o.prog > 0 && o.otif < META)
-      .map((o) => ({ ...o, perdidas: o.prog * (1 - o.otif) })).sort((a, b) => b.perdidas - a.perdidas).slice(0, 10).map((o) => ({ ...o, ...info(o.k) }));
+    const topOtif = (s) => agrupa(rows(s), 'ref').filter((o) => o.prog > 0)
+      .map((o) => ({ ...o, perdidas: o.prog * (1 - o.otif) })).sort((a, b) => b.perdidas - a.perdidas || a.otif - b.otif).map((o) => ({ ...o, ...info(o.k) }));
     const info = (ref) => { const r = P().find((x) => x.ref === ref) || M().find((x) => x.ref === ref) || {}; return { ref, desc: r.desc || '', seg: r.seg || '' }; };
     const tendencia = () => weeks().slice(0, 8).reverse().map((w) => {
       const t = tot(P().filter((r) => r.s === w)); const m = sum(M().filter((r) => r.s === w), (r) => r.mps);
@@ -1370,6 +1375,7 @@ window.dash = (() => {
   })();
 
   // Filtros de las pestañas MPS (prefijo mps_) y OTIF (prefijo ot_).
+  document.querySelectorAll('.mo-horno').forEach((s) => s.addEventListener('change', () => dash.setParams({ [s.dataset.pre + 'horno']: s.value || null })));
   document.querySelectorAll('.mo-dia, .mo-cat, .mo-uni').forEach((s) => s.addEventListener('change', () => dash.setParams({ [s.dataset.pre + (s.classList.contains('mo-dia') ? 'dia' : s.classList.contains('mo-cat') ? 'cat' : 'uni')]: s.value || null })));
   dash.onData(() => {
     const p = dash.params();
@@ -1387,6 +1393,12 @@ window.dash = (() => {
       el.replaceChildren(...MO.weeks().map((w) => new Option('Semana del ' + DM.fDay(w) + (MO.cerrada(w) ? '' : ' (abierta)'), w)));
       el.value = MO.sel(pre).w || ''; el.onchange = () => dash.setParams({ [pre + 'sem']: el.value || null });
     });
+    dash.draw(key + '-hornos', (el) => {
+      const hs = [...new Set(MO.ok() ? dash.data('produccion').data.map((r) => r.horno).filter(Boolean) : [])].sort((a, b) => String(a).localeCompare(String(b), 'es', { numeric: true }));
+      el.replaceChildren(new Option('Todos', ''), ...hs.map((h) => new Option(String(h).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()), h)));
+      el.value = MO.sel(pre).horno || '';
+    });
+    dash.draw(key + '-top-n', (el) => { const n = MO.ok() ? (pre === 'mps_' ? MO.topMps(MO.sel(pre)) : MO.topOtif(MO.sel(pre))).length : 0; el.textContent = n ? n + ' referencias' : 'Todas las referencias'; });
     dash.draw(key + '-rango', (el) => { const s = MO.sel(pre); const dt = s.w && MO.domTarde(s.w); el.textContent = s.w ? (dt ? DM.fDay(s.w) + ' al ' + DM.fDay(dt) : DM.fDay(MO.addDays(s.w, -1)) + ' al ' + DM.fDay(MO.addDays(s.w, 5))) : '—'; });
     dash.draw(key + '-estsem', (el) => { const s = MO.sel(pre); el.textContent = s.w ? (MO.cerrada(s.w) ? 'cerrada' : 'abierta') : '—'; });
     dash.draw(key + '-hoy', (el) => { const e = MO.est(); el.textContent = e ? DM.fDate(e.hoy) : '—'; });
@@ -1447,8 +1459,8 @@ window.dash = (() => {
       c(DM.f0.format(o.prog), 'lc-n'); c(DM.f0.format(o.real), 'lc-n'); c(DM.f0.format(o.falt), 'lc-n');
       // Cumplimiento: etiqueta y barra frente a la meta de 95 %
       const v = o.real / o.prog, td = c(''); const w = document.createElement('div'); w.className = 'lc-days';
-      const p = document.createElement('span'); p.className = 'lc-pill' + (v >= 0.85 ? ' lc-warn' : ''); p.textContent = MOG.pct(v);
-      const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, Math.min(100, v / 0.95 * 100)) + '%'; f.style.background = v >= 0.85 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f);
+      const p = document.createElement('span'); p.className = 'lc-pill' + (v >= 0.95 ? ' lc-ok' : v >= 0.85 ? ' lc-warn' : ''); p.textContent = MOG.pct(v);
+      const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, Math.min(100, v / 0.95 * 100)) + '%'; f.style.background = v >= 0.95 ? 'var(--dm-ok)' : v >= 0.85 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f);
       w.append(p, bar); td.append(w);
       tb.append(tr);
     });
@@ -1489,8 +1501,8 @@ window.dash = (() => {
       c(DM.f0.format(o.prog), 'lc-n'); c(DM.f0.format(o.realPlan), 'lc-n'); c(MOG.pct(o.inf), 'lc-n'); c(MOG.pct(o.ont), 'lc-n');
       // OTIF: etiqueta roja/naranja y barra frente a la meta de 95 %
       const td = c(''); const w = document.createElement('div'); w.className = 'lc-days';
-      const p = document.createElement('span'); p.className = 'lc-pill' + (o.otif >= 0.5 ? ' lc-warn' : ''); p.textContent = MOG.pct(o.otif);
-      const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, Math.min(100, o.otif / 0.95 * 100)) + '%'; f.style.background = o.otif >= 0.5 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f);
+      const p = document.createElement('span'); p.className = 'lc-pill' + (o.otif >= 0.95 ? ' lc-ok' : o.otif >= 0.5 ? ' lc-warn' : ''); p.textContent = MOG.pct(o.otif);
+      const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, Math.min(100, o.otif / 0.95 * 100)) + '%'; f.style.background = o.otif >= 0.95 ? 'var(--dm-ok)' : o.otif >= 0.5 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f);
       w.append(p, bar); td.append(w);
       tb.append(tr);
     });
@@ -2343,6 +2355,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 11:29 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 11:34 AM.</p>
 </body>
 </html>
