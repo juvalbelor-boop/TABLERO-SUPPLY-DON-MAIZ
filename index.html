@@ -568,7 +568,7 @@ window.dash = (() => {
         <label class="dm-field"><span class="dm-flabel">Categoría</span><select class="dm-select mo-cat" data-pre="mps_" aria-label="Categoría">
           <option value="">Todas</option><option value="AREPAS">Arepas</option><option value="SALSAS">Salsas</option><option value="EMPANADAS">Empanadas</option><option value="OTROS">Otros</option></select></label>
         <label class="dm-field"><span class="dm-flabel">Unidad</span><select class="dm-select mo-uni" data-pre="mps_" aria-label="Unidad de medida">
-          <option value="kg">Kilos</option><option value="und">Paquetes</option></select></label>
+          <option value="und">Paquetes</option><option value="kg">Kilos</option></select></label>
       </div>
       <p class="dm-note">Semana del <b data-draw="mps-rango" data-source="produccion mps mps_estado">—</b> (<b data-draw="mps-estsem" data-source="mps_estado">—</b>). Datos de tu Excel guardado el <b data-draw="mps-hoy" data-source="mps_estado">—</b>, con Siesa cargado hasta el <b data-draw="mps-siesa" data-source="mps_estado">—</b>.</p>
     </div>
@@ -630,14 +630,16 @@ window.dash = (() => {
           <option value="">Toda la semana</option><option>Domingo</option><option>Lunes</option><option>Martes</option><option>Miércoles</option><option>Jueves</option><option>Viernes</option><option>Sábado</option></select></label>
         <label class="dm-field"><span class="dm-flabel">Categoría</span><select class="dm-select mo-cat" data-pre="ot_" aria-label="Categoría">
           <option value="">Todas</option><option value="AREPAS">Arepas</option><option value="SALSAS">Salsas</option><option value="EMPANADAS">Empanadas</option><option value="OTROS">Otros</option></select></label>
+        <label class="dm-field"><span class="dm-flabel">Unidad</span><select class="dm-select mo-uni" data-pre="ot_" aria-label="Unidad de medida">
+          <option value="und">Paquetes</option><option value="kg">Kilos</option></select></label>
       </div>
       <p class="dm-note">Semana del <b data-draw="ot-rango" data-source="produccion mps mps_estado">—</b> (<b data-draw="ot-estsem" data-source="mps_estado">—</b>). Datos de tu Excel guardado el <b data-draw="ot-hoy" data-source="mps_estado">—</b>, con Siesa cargado hasta el <b data-draw="ot-siesa" data-source="mps_estado">—</b>.</p>
     </div>
 
     <p class="dm-note" data-draw="ot-excep" data-source="mps_estado" style="display:none"></p>
     <div class="dm-tiles" id="otif-indicadores">
-      <div class="dm-tile"><span class="dm-tile-l">Programado (paquetes)</span><span class="dm-tile-v" data-draw="ok-prog" data-source="produccion">—</span></div>
-      <div class="dm-tile"><span class="dm-tile-l">Real (de lo programado)</span><span class="dm-tile-v" data-draw="ok-real" data-source="produccion">—</span></div>
+      <div class="dm-tile"><span class="dm-tile-l" data-draw="ok-prog-l" data-source="produccion">Programado (paquetes)</span><span class="dm-tile-v" data-draw="ok-prog" data-source="produccion">—</span></div>
+      <div class="dm-tile"><span class="dm-tile-l">Real</span><span class="dm-tile-v" data-draw="ok-real" data-source="produccion">—</span></div>
       <div class="dm-tile"><span class="dm-tile-l">Faltante</span><span class="dm-tile-v" data-draw="ok-falt" data-source="produccion">—</span></div>
       <div class="dm-tile"><span class="dm-tile-l">% Cumplimiento</span><span class="dm-tile-v" data-draw="ok-cump" data-source="produccion">—</span></div>
       <div class="dm-tile"><span class="dm-tile-l">Referencias que cumplen</span><span class="dm-tile-v" data-draw="ok-cumplen" data-source="produccion">—</span></div>
@@ -673,7 +675,7 @@ window.dash = (() => {
       <section class="dm-card" id="otif-por-segmento"><h2 class="dm-h2">OTIF por segmento</h2>
         <div class="dm-chart dm-chart-s" data-draw="ot-seg" data-source="produccion"></div></section>
       <section class="dm-card dm-card-o" id="otif-cumpl-horno"><h2 class="dm-h2">Cumplimiento por horno</h2>
-        <p class="dm-note">Real de lo programado ÷ programado (sin lo que se hizo sin programar).</p>
+        <p class="dm-note">Real ÷ programado, igual que el Excel y la pestaña MPS (el real incluye lo que se hizo sin programar en ese horno).</p>
         <div class="dm-chart" data-draw="ot-horno-cump" data-source="produccion"></div></section>
     </div>
     <section class="dm-card dm-card-o" id="otif-top">
@@ -1221,7 +1223,7 @@ window.dash = (() => {
     const sel = (pre) => {
       const p = dash.params(); const ws = weeks();
       const def = ws.find(cerrada) || ws[0];
-      return { w: ws.includes(p[pre + 'sem']) ? p[pre + 'sem'] : def, dia: p[pre + 'dia'] || '', cat: p[pre + 'cat'] || '', kg: pre === 'mps_' && (p[pre + 'uni'] || 'kg') === 'kg' };
+      return { w: ws.includes(p[pre + 'sem']) ? p[pre + 'sem'] : def, dia: p[pre + 'dia'] || '', cat: p[pre + 'cat'] || '', kg: (pre === 'mps_' || pre === 'ot_') && (p[pre + 'uni'] || 'und') === 'kg' };
     };
     // En kilos se usan las columnas de kilos del Excel (programado kg = paquetes × kg por paquete; real kg = 'Cant. completa en KG' de Siesa).
     const enKg = (r) => ({ ...r, prog: r.progk, real: r.realk, falt: r.faltk });
@@ -1365,7 +1367,7 @@ window.dash = (() => {
     const p = dash.params();
     document.querySelectorAll('.mo-dia').forEach((s) => { s.value = p[s.dataset.pre + 'dia'] || ''; });
     document.querySelectorAll('.mo-cat').forEach((s) => { s.value = p[s.dataset.pre + 'cat'] || ''; });
-    document.querySelectorAll('.mo-uni').forEach((s) => { s.value = p[s.dataset.pre + 'uni'] || 'kg'; });
+    document.querySelectorAll('.mo-uni').forEach((s) => { s.value = p[s.dataset.pre + 'uni'] || 'und'; });
     if (window.DMmain !== 'mps' && window.DMmain !== 'otif') return;
     if (!MO.ok()) return;
     const s = MO.sel('mps_'), abierta = !MO.cerrada(s.w);
@@ -1448,9 +1450,10 @@ window.dash = (() => {
   const otT = () => (MO.ok() ? MO.tot(MO.rows(MO.sel('ot_'))) : null);
   // Mismos indicadores del Reporte diario del Excel OTIF.
   kpi('ok-prog', () => DM.f0.format(otT().prog));
-  kpi('ok-real', () => DM.f0.format(otT().realPlan));
+  kpi('ok-real', () => DM.f0.format(otT().real));
+  dash.draw('ok-prog-l', (el) => { el.textContent = 'Programado (' + (MO.sel('ot_').kg ? 'kilos' : 'paquetes') + ')'; });
   kpi('ok-falt', () => DM.f0.format(otT().falt));
-  kpi('ok-cump', () => { const t = otT(); return t.prog ? MOG.pct(t.realPlan / t.prog) : '—'; });
+  kpi('ok-cump', () => { const t = otT(); return t.prog ? MOG.pct(t.real / t.prog) : '—'; });
   kpi('ok-cumplen', () => { const t = otT(); return t.n ? t.nCumplen + ' de ' + t.n : '—'; });
   kpi('ok-np', () => DM.f0.format(otT().np));
   [['g-otif', 'otif', 'OTIF ponderado'], ['g-inf', 'inf', 'In Full ponderado'], ['g-ont', 'ont', 'On Time ponderado']].forEach(([n, k, lab]) => dash.draw(n, (el) => {
@@ -1458,11 +1461,11 @@ window.dash = (() => {
     const t = otT(); MOG.gauge(el, t[k], { tag: k === 'otif' ? 'promedio simple ' + MOG.pct(t.otifProm) : '', label: lab, limpio: true });
   }));
   dash.draw('ot-dia', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, diaItems('ot_', 'otif'), { sub: true, bold: true, h: 280, selected: MO.sel('ot_').dia || null, label: 'OTIF por día' }); });
-  dash.draw('ot-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('ot_')), 'otif').map((d) => { const o = MO.porHorno(MO.sel('ot_')).find((x) => x.k === d.k); return { ...d, label: String(d.k).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()), sub: o && o.prog ? 'cumpl.\n' + MOG.pct(o.realPlan / o.prog) : '' }; }), { sub: true, bold: true, h: 292, mb: 52, label: 'OTIF por horno' }); });
+  dash.draw('ot-horno', (el) => { if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; } MOG.bars(el, grpItems(MO.porHorno(MO.sel('ot_')), 'otif').map((d) => { const o = MO.porHorno(MO.sel('ot_')).find((x) => x.k === d.k); return { ...d, label: String(d.k).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase()), sub: o && o.prog ? 'cumpl.\n' + MOG.pct(o.real / o.prog) : '' }; }), { sub: true, bold: true, h: 292, mb: 52, label: 'OTIF por horno' }); });
   dash.draw('ot-horno-cump', (el) => {
     if (!MO.ok()) { DM.fail(el, dash.data('produccion').status); return; }
     const items = MO.porHorno(MO.sel('ot_')).filter((o) => o.prog > 0).map((o) => { const lab = String(o.k).replace(/^(Línea|Laminadora)\s+/i, '').replace(/^\w/, (c) => c.toUpperCase());
-      return { k: o.k, label: lab, v: o.realPlan / o.prog, tip: [lab, 'Programado: ' + DM.f0.format(o.prog), 'Real de lo programado: ' + DM.f0.format(o.realPlan), 'Faltante: ' + DM.f0.format(o.falt), 'Cumplimiento: ' + MOG.pct(o.realPlan / o.prog)] }; });
+      return { k: o.k, label: lab, v: o.real / o.prog, tip: [lab, 'Programado: ' + DM.f0.format(o.prog), 'Real: ' + DM.f0.format(o.real) + (o.np ? ' (incluye ' + DM.f0.format(o.np) + ' sin programar)' : ''), 'Faltante: ' + DM.f0.format(o.falt), 'Cumplimiento: ' + MOG.pct(o.real / o.prog)] }; });
     MOG.bars(el, items, { bold: true, h: 260, label: 'Cumplimiento por horno' });
   });
   dash.draw('ot-seg', (el) => {
@@ -2309,6 +2312,6 @@ window.dash = (() => {
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 10:11 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 17/11/2026 10:17 AM.</p>
 </body>
 </html>
