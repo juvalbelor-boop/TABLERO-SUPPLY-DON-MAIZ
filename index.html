@@ -658,6 +658,8 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <label class="dm-field"><span class="dm-flabel">Categoría</span><select class="dm-select mo-cat" data-pre="ot_" aria-label="Categoría">
 <option value="">Todas</option><option value="AREPAS">Arepas</option><option value="SALSAS">Salsas</option><option value="EMPANADAS">Empanadas</option><option value="OTROS">Otros</option></select></label>
 <label class="dm-field"><span class="dm-flabel">Horno</span><select class="dm-select mo-horno" data-pre="ot_" data-draw="ot-hornos" data-source="produccion" aria-label="Horno"></select></label>
+<label class="dm-field"><span class="dm-flabel">Mercado</span><select class="dm-select mo-ori" data-pre="ot_" aria-label="Nacional o exportaciones">
+<option value="">Todos</option><option value="nal">Nacional</option><option value="exp">Exportaciones</option></select></label>
 <label class="dm-field"><span class="dm-flabel">Unidad</span><select class="dm-select mo-uni" data-pre="ot_" aria-label="Unidad de medida">
 <option value="und">Paquetes</option><option value="kg">Kilos</option></select></label>
 </div>
@@ -704,7 +706,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <div class="dm-chart" data-draw="ot-horno-cump" data-source="produccion"></div></section>
 </div>
 <section class="dm-card dm-card-o" id="otif-top">
-<div class="lc-head"><div><h2 class="dm-h2">Referencias de la selección</h2><p class="dm-note"><span data-draw="ot-top-n" data-source="produccion">Todas las referencias</span> con programa en la semana, día, categoría y horno elegidos, de menor a mayor OTIF. Verde: 95 % o más · ámbar: 50 a 95 % · rojo: menos de 50 %.</p></div></div>
+<div class="lc-head"><div><h2 class="dm-h2">Referencias de la selección</h2><p class="dm-note"><span data-draw="ot-top-n" data-source="produccion">Todas las referencias</span> con programa en la semana, día, categoría, horno y mercado elegidos, de menor a mayor OTIF. Verde: 95 % o más · ámbar: 50 a 95 % · rojo: menos de 50 %.</p></div></div>
 <div class="lc-box">
 <table class="lc-table" data-source="produccion">
 <colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:10%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:15%"></colgroup>
@@ -1249,10 +1251,11 @@ return [...s].sort().reverse();
 const sel = (pre) => {
 const p = dash.params(); const ws = weeks();
 const def = ws.find(cerrada) || ws[0];
-return { w: ws.includes(p[pre + 'sem']) ? p[pre + 'sem'] : def, dia: p[pre + 'dia'] || '', cat: p[pre + 'cat'] || '', horno: p[pre + 'horno'] || '', kg: (pre === 'mps_' || pre === 'ot_') && (p[pre + 'uni'] || 'und') === 'kg' };
+return { w: ws.includes(p[pre + 'sem']) ? p[pre + 'sem'] : def, dia: p[pre + 'dia'] || '', cat: p[pre + 'cat'] || '', horno: p[pre + 'horno'] || '', ori: pre === 'ot_' ? p[pre + 'ori'] || '' : '', kg: (pre === 'mps_' || pre === 'ot_') && (p[pre + 'uni'] || 'und') === 'kg' };
 };
 const enKg = (r) => ({ ...r, prog: r.progk, real: r.realk, falt: r.faltk });
-const rows = (s, conDia = true) => P().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!s.horno || r.horno === s.horno) && (!conDia || !s.dia || r.dia === s.dia)).map((r) => (s.kg ? enKg(r) : r));
+const esExp = (ref) => /^[A-Za-z]/.test(String(ref || '').trim());
+const rows = (s, conDia = true) => P().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!s.horno || r.horno === s.horno) && (!s.ori || (esExp(r.ref) ? 'exp' : 'nal') === s.ori) && (!conDia || !s.dia || r.dia === s.dia)).map((r) => (s.kg ? enKg(r) : r));
 const tot = (rs) => {
 const pl = rs.filter((r) => r.tipo === 'plan'); const prog = sum(pl, (r) => r.prog);
 return {
@@ -1377,12 +1380,13 @@ return { pct, color, gauge, bars, hbars, cap };
 })();
 
 document.querySelectorAll('.mo-horno').forEach((s) => s.addEventListener('change', () => dash.setParams({ [s.dataset.pre + 'horno']: s.value || null })));
-document.querySelectorAll('.mo-dia, .mo-cat, .mo-uni').forEach((s) => s.addEventListener('change', () => dash.setParams({ [s.dataset.pre + (s.classList.contains('mo-dia') ? 'dia' : s.classList.contains('mo-cat') ? 'cat' : 'uni')]: s.value || null })));
+document.querySelectorAll('.mo-dia, .mo-cat, .mo-uni, .mo-ori').forEach((s) => s.addEventListener('change', () => dash.setParams({ [s.dataset.pre + (s.classList.contains('mo-dia') ? 'dia' : s.classList.contains('mo-cat') ? 'cat' : s.classList.contains('mo-ori') ? 'ori' : 'uni')]: s.value || null })));
 dash.onData(() => {
 const p = dash.params();
 document.querySelectorAll('.mo-dia').forEach((s) => { s.value = p[s.dataset.pre + 'dia'] || ''; });
 document.querySelectorAll('.mo-cat').forEach((s) => { s.value = p[s.dataset.pre + 'cat'] || ''; });
 document.querySelectorAll('.mo-uni').forEach((s) => { s.value = p[s.dataset.pre + 'uni'] || 'und'; });
+document.querySelectorAll('.mo-ori').forEach((s) => { s.value = p[s.dataset.pre + 'ori'] || ''; });
 if (window.DMmain !== 'mps' && window.DMmain !== 'otif') return;
 if (!MO.ok()) return;
 const s = MO.sel('mps_'), abierta = !MO.cerrada(s.w);
@@ -2311,6 +2315,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 19/11/2026 02:08 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 19/11/2026 03:06 PM.</p>
 </body>
 </html>
