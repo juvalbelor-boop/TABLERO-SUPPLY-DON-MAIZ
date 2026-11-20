@@ -4,8 +4,9 @@ Ordenes_Exportacion (hoja Ordenes de Exportaciones), con los valores que dejó c
 Uso: python -I extraer_exportaciones.py OTIF_Don_Maiz.xlsx CARPETA_SALIDA [exportaciones_publicado.json]
 Genera exportaciones.json: filas tipo 'ped' (una por referencia del pedido) y tipo 'op' (una por orden de producción).
 Si se da el JSON publicado, conserva los pedidos anteriores (otra fecha de despacho o cliente) y las OP que ya no vienen: histórico.
-Valida, fila por fila, que lo que el tablero recalcula sea igual a lo que muestra el Excel:
-  Producido = suma de 'Cantidad completa' de las OP '1. Item OP' de la referencia; % completo = MIN(1, producido ÷ pedido);
+Producido = el de la hoja Exportaciones (desde el 20-nov-2026 el usuario puede corregirlo a mano cuando Siesa no ha cerrado la OP).
+Si no coincide con la suma de 'Cantidad completa' de las OP '1. Item OP' de la referencia, se avisa (diferencias_op), sin bloquear.
+Valida, fila por fila, que lo que el tablero recalcula sea igual a lo que muestra el Excel: % completo = MIN(1, producido ÷ pedido);
   Falta = MAX(0, pedido - producido); Falta después de programado = MAX(0, falta - programado pendiente); Estado (con la fecha
   de guardado del Excel como hoy) y la fila TOTAL. Si algo no cuadra, sale con 'NO PUBLICAR'."""
 import sys, os, json, datetime as dt, openpyxl
@@ -41,14 +42,17 @@ for r in filas:
 ws, h, filas = tabla('Pedidos_Exportacion')
 icli, iref, ides, iped, idesp, iprod, ipct, ifal, iprog, ifd, iest = (col(h, 'CLIENTE'), col(h, 'REFERENCIA'), col(h, 'DESCRIP'), col(h, 'PEDIDO'), col(h, 'DESPACHO'),
     col(h, 'PRODUCIDO'), col(h, '%COMPLETO'), h.index('Falta'), col(h, 'PROGRAMADOPENDIENTE'), col(h, 'FALTADESPU'), col(h, 'ESTADO'))
-peds = []
+peds = []; avisos = []
 for r in filas:
     if r[iref] is None: continue
     ref = str(r[iref]).strip(); ped = num(r[iped]); desp = fecha(r[idesp])
-    prod = sum(o['comp'] for o in ops if o['ref'] == ref and o['reg'] == '1. Item OP')
+    prod_op = sum(o['comp'] for o in ops if o['ref'] == ref and o['reg'] == '1. Item OP')
+    if not isinstance(r[iprod], (int, float)): err.append(f'{ref}: producido vacío o no numérico en el Excel'); continue
+    prod = float(r[iprod])
+    if abs(prod - prod_op) > 1e-6: avisos.append(dict(ref=ref, excel=prod, ops=prod_op))
     pct = min(1, prod / ped) if ped else None; falta = max(0, ped - prod); prog = num(r[iprog]); fd = max(0, falta - prog)
     estado = 'COMPLETO' if falta == 0 else 'NO CUMPLIÓ' if desp and hoy > desp else 'CUBIERTO CON LO PROGRAMADO' if fd == 0 else 'FALTA PROGRAMAR'
-    for nom, mio, xl_ in [('producido', prod, r[iprod]), ('% completo', pct, r[ipct]), ('falta', falta, r[ifal]), ('falta después de programado', fd, r[ifd])]:
+    for nom, mio, xl_ in [('% completo', pct, r[ipct]), ('falta', falta, r[ifal]), ('falta después de programado', fd, r[ifd])]:
         if xl_ is None or mio is None or abs(mio - num(xl_)) > 1e-6: err.append(f'{ref}: {nom} {mio} ≠ Excel {xl_}')
     if estado != str(r[iest]).strip(): err.append(f'{ref}: estado {estado} ≠ Excel {r[iest]}')
     peds.append(dict(tipo='ped', cli=str(r[icli] or '').strip(), ref=ref, desc=str(r[ides] or '').strip(), ped=ped, desp=desp.isoformat() if desp else None,
@@ -70,5 +74,5 @@ rows = peds + ops + viejos
 os.makedirs(out, exist_ok=True)
 json.dump(rows, open(os.path.join(out, 'exportaciones.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
 print(json.dumps(dict(guardado=hoy.isoformat(), pedidos=sorted({f"{c} {d}" for c, d in claves}), refs=len(peds), ops=len(ops), historico=len(viejos),
-                      pedido=sum(p['ped'] for p in peds), producido=sum(p['prod'] for p in peds), validacion='OK' if not err else 'ERROR'), ensure_ascii=False, indent=1))
+                      pedido=sum(p['ped'] for p in peds), producido=sum(p['prod'] for p in peds), diferencias_op=avisos, validacion='OK' if not err else 'ERROR'), ensure_ascii=False, indent=1))
 if err: print('\n'.join(err)); sys.exit('NO PUBLICAR: las cifras no cuadran con el Excel')
