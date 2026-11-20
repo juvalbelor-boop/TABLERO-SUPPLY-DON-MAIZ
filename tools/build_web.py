@@ -9,7 +9,7 @@ que replica el del tablero (datos, cálculos, filtros y dibujos), así se ve igu
 import sys, os, re, json, shutil, datetime as dt
 page_path, data_dir, out = sys.argv[1:4]
 OPCIONALES = ['ventas']
-DATASETS = ['inventario', 'produccion', 'mps', 'mps_estado', 'agotados', 'agotados_estado', 'venta_mensual', 'ns', 'ns_estado', 'gasto', 'gasto_estado', 'presupuesto', 'presupuesto_estado', 'ventas', 'ventas_estado']
+DATASETS = ['inventario', 'produccion', 'mps', 'mps_estado', 'agotados', 'agotados_estado', 'venta_mensual', 'ns', 'ns_estado', 'gasto', 'gasto_estado', 'presupuesto', 'presupuesto_estado', 'ventas', 'ventas_estado', 'exportaciones']
 PARAMS0 = {'bods': [], 'cat': 'Nacional', 'ciudades': [], 'corte': None, 'segs': []}
 page = open(page_path, encoding='utf-8').read()
 page = page.replace('<meta name="dash-one-writer">', '')
@@ -18,6 +18,11 @@ fonts = {'400': 'fonts/poppins-400.woff', '500': 'fonts/poppins-500.woff', '600 
 def font_sub(m):
     w = m.group(1); return m.group(0).replace(m.group(2), fonts.get(w, fonts['400']))
 page = re.sub(r"font-weight: ([0-9 ]+); font-display: swap; src: url\((/_blob/[0-9a-f]+)\)", font_sub, page)
+# logo: de /_blob/<id> a img/logo.png (copia en tools/img/logo.png)
+LOGO = '/_blob/6201bc4d63608ecfbb47a80062f9178d'
+if LOGO in page:
+    page = page.replace(LOGO, 'img/logo.png'); os.makedirs(os.path.join(out, 'img'), exist_ok=True)
+    shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'img', 'logo.png'), os.path.join(out, 'img', 'logo.png'))
 if '/_blob/' in page: sys.exit('La página aún referencia /_blob/: revisar')
 missing = [d for d in DATASETS if not os.path.exists(os.path.join(data_dir, d + '.json'))]
 if missing: sys.exit('Faltan datos: ' + ', '.join(missing))
