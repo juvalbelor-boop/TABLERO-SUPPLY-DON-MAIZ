@@ -25,16 +25,7 @@ background: var(--dm-orange); border-radius: 999px; padding: 2px var(--cds-pad-s
 .dm-tab { font: inherit; font-size: var(--cds-font-size-body); font-weight: 700; padding: var(--cds-pad-sm) var(--cds-pad-lg); cursor: pointer;
 border: 2px solid var(--dm-green); border-radius: var(--cds-radius); background: var(--color-panel); color: var(--dm-green); }
 .dm-tab[aria-selected="true"] { background: var(--dm-green); color: var(--dm-on-band); }
-.ot-st { font: inherit; font-size: var(--cds-font-size-body); font-weight: 700; padding: var(--cds-pad-sm) var(--cds-pad-lg); cursor: pointer;
-border: 2px solid var(--dm-green); border-radius: var(--cds-radius); background: var(--color-panel); color: var(--dm-green); }
-.ot-st[aria-selected="true"] { background: var(--dm-green); color: var(--dm-on-band); }
-.ot-vista { display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
-.ex-gauges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cds-gap-lg); align-items: center; }
-.ex-est { display: inline-block; border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 11px; color: #FFFFFF; background: var(--cds-chart-status-critical); white-space: nowrap; }
-.ex-est.ex-ok { background: var(--dm-ok); } .ex-est.ex-cub { background: var(--dm-green); } .ex-est.ex-falta { background: var(--dm-orange-2); }
-.ex-leg { display: flex; gap: var(--cds-gap-lg); flex-wrap: wrap; font-size: 13px; font-weight: 700; margin: 0 0 var(--cds-gap-sm); }
-.ex-leg i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
-.dm-tab:focus-visible, .ot-st:focus-visible, .dm-select:focus-visible { outline: 3px solid var(--dm-orange-2); outline-offset: 2px; }
+.dm-tab:focus-visible, .dm-select:focus-visible { outline: 3px solid var(--dm-orange-2); outline-offset: 2px; }
 
 .dm-band { background: var(--dm-green); color: var(--dm-on-band); border-radius: var(--cds-radius);
 border-bottom: 6px solid var(--dm-orange); padding: var(--cds-pad-lg); display: flex; flex-wrap: wrap;
@@ -527,6 +518,8 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <label class="dm-field"><span class="dm-flabel">Categoría</span><select class="dm-select mo-cat" data-pre="mps_" aria-label="Categoría">
 <option value="">Todas</option><option value="AREPAS">Arepas</option><option value="SALSAS">Salsas</option><option value="EMPANADAS">Empanadas</option><option value="OTROS">Otros</option></select></label>
 <label class="dm-field"><span class="dm-flabel">Horno</span><select class="dm-select mo-horno" data-pre="mps_" data-draw="mps-hornos" data-source="produccion" aria-label="Horno"></select></label>
+<label class="dm-field"><span class="dm-flabel">Mercado</span><select class="dm-select mo-ori" data-pre="mps_" aria-label="Nacional o exportaciones">
+<option value="nal">Nacional</option><option value="exp">Exportaciones</option><option value="todos">Todos</option></select></label>
 <label class="dm-field"><span class="dm-flabel">Unidad</span><select class="dm-select mo-uni" data-pre="mps_" aria-label="Unidad de medida">
 <option value="und">Paquetes</option><option value="kg">Kilos</option></select></label>
 </div>
@@ -582,11 +575,6 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </section>
 
 <section class="dm-main" id="otif" role="tabpanel" hidden>
-<nav class="dm-tabs" role="tablist" aria-label="Subpestañas de OTIF">
-<button class="ot-st" type="button" role="tab" data-vista="" aria-selected="true">OTIF diario</button>
-<button class="ot-st" type="button" role="tab" data-vista="exp" aria-selected="false">Exportaciones</button>
-</nav>
-<div class="ot-vista" data-vista="">
 <div class="dm-strip mo-bar">
 <div class="dm-filters">
 <label class="dm-field"><span class="dm-flabel">Semana</span><select class="dm-select" data-draw="ot-sem" data-source="produccion mps mps_estado" aria-label="Semana de OTIF"></select></label>
@@ -652,53 +640,6 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </table>
 </div>
 </section>
-</div>
-<div class="ot-vista" data-vista="exp" hidden>
-<div class="dm-strip mo-bar">
-<div class="dm-filters">
-<label class="dm-field"><span class="dm-flabel">Pedido</span><select class="dm-select" data-draw="ex-ped" data-source="exportaciones" aria-label="Pedido de exportación"></select></label>
-</div>
-<p class="dm-note">Despacho el <b data-draw="ex-desp" data-source="exportaciones">—</b> (<b data-draw="ex-faltan" data-source="exportaciones">—</b>). Se mide por pedido contra la fecha de despacho, no por día. Datos de tu Excel guardado el <b data-draw="ex-guard" data-source="exportaciones">—</b>.</p>
-</div>
-<div class="dm-tiles">
-<div class="dm-tile"><span class="dm-tile-l">Pedido (paquetes)</span><span class="dm-tile-v" data-draw="ex-t-ped" data-source="exportaciones">—</span></div>
-<div class="dm-tile"><span class="dm-tile-l">Producido</span><span class="dm-tile-v" data-draw="ex-t-prod" data-source="exportaciones">—</span></div>
-<div class="dm-tile"><span class="dm-tile-l">Falta</span><span class="dm-tile-v" data-draw="ex-t-falta" data-source="exportaciones">—</span></div>
-<div class="dm-tile"><span class="dm-tile-l">Referencias completas</span><span class="dm-tile-v" data-draw="ex-t-comp" data-source="exportaciones">—</span></div>
-</div>
-<section class="dm-card">
-<h2 class="dm-h2">Avance y OTIF del pedido</h2>
-<div class="ex-gauges">
-<div class="mo-gauge"><h3 class="mo-gauge-t">Avance del pedido</h3><div class="mo-gauge-box" data-draw="ex-g-av" data-source="exportaciones"></div></div>
-<div class="mo-gauge"><h3 class="mo-gauge-t">OTIF del pedido</h3><div class="mo-gauge-box" data-draw="ex-g-otif" data-source="exportaciones"></div></div>
-</div>
-</section>
-<section class="dm-card dm-card-o">
-<h2 class="dm-h2">Avance por referencia</h2>
-<div class="ex-leg"><span><i style="background:var(--dm-green)"></i>Producido</span><span><i style="background:var(--dm-orange-2)"></i>Programado pendiente</span></div>
-<div class="dm-chart" data-draw="ex-bars" data-source="exportaciones"></div>
-</section>
-<section class="dm-card">
-<div class="lc-head"><div><h2 class="dm-h2">Seguimiento del pedido</h2></div></div>
-<div class="lc-box">
-<table class="lc-table">
-<colgroup><col style="width:7%"><col><col style="width:9%"><col style="width:9%"><col style="width:15%"><col style="width:10%"><col style="width:11%"><col style="width:17%"></colgroup>
-<thead><tr><th>Ref</th><th>Producto</th><th class="lc-n">Pedido</th><th class="lc-n">Producido</th><th>Avance</th><th class="lc-n">Prog. pendiente</th><th class="lc-n">Falta tras prog.</th><th>Estado</th></tr></thead>
-<tbody data-draw="ex-tabla" data-source="exportaciones"></tbody>
-</table>
-</div>
-</section>
-<section class="dm-card dm-card-o">
-<div class="lc-head"><div><h2 class="dm-h2">Órdenes de producción</h2></div></div>
-<div class="lc-box">
-<table class="lc-table">
-<colgroup><col style="width:17%"><col style="width:10%"><col style="width:8%"><col><col style="width:12%"><col style="width:10%"><col style="width:10%"></colgroup>
-<thead><tr><th>OP</th><th>Fecha</th><th>Ref</th><th>Producto</th><th>Estado OP</th><th class="lc-n">Ordenada</th><th class="lc-n">Completa</th></tr></thead>
-<tbody data-draw="ex-ops" data-source="exportaciones"></tbody>
-</table>
-</div>
-</section>
-</div>
 </section>
 
 <section class="dm-main" id="ns" role="tabpanel" hidden>
@@ -864,7 +805,8 @@ return { dias: d3.sum(v, (r) => r.inv) / d3.sum(v, (r) => r.dem), dias_a: demA >
 }, (r) => r.ciudad).map(([ciudad, o]) => ({ ciudad, ...o })).sort((a, b) => byOrder(a.ciudad, b.ciudad));
 const top10 = (rows, fam) => rows.filter((r) => r.fam === fam && r.estado === 'CRITICO')
 .sort((a, b) => a.abc.localeCompare(b.abc) || a.dias - b.dias || b.dem - a.dem).slice(0, 10);
-return { LIM_CRIT, LIM_SOB, DIAS_MES, NAME, f0, f1, fc, fd, fDate, fDay, cortes, sel, byOrder, fail, tipFor, showTip, textW, cleanAxis, cityAxis, drawCityAxis, estados, colorE, puntos, rowsCorte, kpis, byCiudad, famCity, top10 };
+const canal = (c) => (String(c ?? '').trim().toUpperCase() === 'TAT' ? 'DISTRIBUIDORES' : String(c ?? ''));
+return { canal, LIM_CRIT, LIM_SOB, DIAS_MES, NAME, f0, f1, fc, fd, fDate, fDay, cortes, sel, byOrder, fail, tipFor, showTip, textW, cleanAxis, cityAxis, drawCityAxis, estados, colorE, puntos, rowsCorte, kpis, byCiudad, famCity, top10 };
 })();
 </script>
 
@@ -1235,7 +1177,7 @@ return [...s].sort().reverse();
 const sel = (pre) => {
 const p = dash.params(); const ws = weeks();
 const def = ws.find(cerrada) || ws[0];
-return { w: ws.includes(p[pre + 'sem']) ? p[pre + 'sem'] : def, dia: p[pre + 'dia'] || '', cat: p[pre + 'cat'] || '', horno: p[pre + 'horno'] || '', ori: pre === 'ot_' ? ((p[pre + 'ori'] || 'nal') === 'todos' ? '' : p[pre + 'ori'] || 'nal') : '', kg: (pre === 'mps_' || pre === 'ot_') && (p[pre + 'uni'] || 'und') === 'kg' };
+return { w: ws.includes(p[pre + 'sem']) ? p[pre + 'sem'] : def, dia: p[pre + 'dia'] || '', cat: p[pre + 'cat'] || '', horno: p[pre + 'horno'] || '', ori: (p[pre + 'ori'] || 'nal') === 'todos' ? '' : p[pre + 'ori'] || 'nal', kg: (pre === 'mps_' || pre === 'ot_') && (p[pre + 'uni'] || 'und') === 'kg' };
 };
 const enKg = (r) => ({ ...r, prog: r.progk, real: r.realk, falt: r.faltk });
 const esExp = (ref) => /^[A-Za-z]/.test(String(ref || '').trim());
@@ -1250,10 +1192,11 @@ otifProm: pl.length ? sum(pl, (r) => r.otif) / pl.length : null, cumplen: pl.len
 };
 };
 const refsH = (s) => (s.horno ? new Set(P().filter((r) => r.s === s.w && r.horno === s.horno).map((r) => r.ref)) : null);
-const mpsTot = (s) => { const h = refsH(s); return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!h || h.has(r.ref))), (r) => (s.kg ? r.mpsk : r.mps)); };
+const okOri = (s, ref) => !s.ori || (esExp(ref) ? 'exp' : 'nal') === s.ori;
+const mpsTot = (s) => { const h = refsH(s); return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!h || h.has(r.ref)) && okOri(s, r.ref)), (r) => (s.kg ? r.mpsk : r.mps)); };
 const faltaMps = (s) => {
-const real = new Map(), h = refsH(s); P().filter((r) => r.s === s.w && (!s.horno || r.horno === s.horno)).forEach((r) => real.set(r.ref, (real.get(r.ref) || 0) + (s.kg ? r.realk : r.real)));
-return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!h || h.has(r.ref))), (r) => Math.max(0, (s.kg ? r.mpsk : r.mps) - (real.get(r.ref) || 0)));
+const real = new Map(), h = refsH(s); P().filter((r) => r.s === s.w && (!s.horno || r.horno === s.horno) && okOri(s, r.ref)).forEach((r) => real.set(r.ref, (real.get(r.ref) || 0) + (s.kg ? r.realk : r.real)));
+return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!h || h.has(r.ref)) && okOri(s, r.ref)), (r) => Math.max(0, (s.kg ? r.mpsk : r.mps) - (real.get(r.ref) || 0)));
 };
 const domTarde = (w) => { const d = addDays(w, 6); return P().some((r) => r.s === w && r.f === d) ? d : null; };
 const porDia = (s) => { const dt = domTarde(s.w); const out = DIAS.map((dia, i) => {
@@ -1371,7 +1314,6 @@ document.querySelectorAll('.mo-dia').forEach((s) => { s.value = p[s.dataset.pre 
 document.querySelectorAll('.mo-cat').forEach((s) => { s.value = p[s.dataset.pre + 'cat'] || ''; });
 document.querySelectorAll('.mo-uni').forEach((s) => { s.value = p[s.dataset.pre + 'uni'] || 'und'; });
 document.querySelectorAll('.mo-ori').forEach((s) => { s.value = p[s.dataset.pre + 'ori'] || 'nal'; });
-exVista(p.ot_vista || '');
 if (window.DMmain !== 'mps' && window.DMmain !== 'otif') return;
 if (!MO.ok()) return;
 const s = MO.sel('mps_'), abierta = !MO.cerrada(s.w);
@@ -1491,113 +1433,12 @@ tb.append(tr);
 </script>
 
 <script>
-window.exVista = (v) => {
-document.querySelectorAll('.ot-st').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.vista === v)));
-document.querySelectorAll('.ot-vista').forEach((d) => { d.hidden = d.dataset.vista !== v; });
-};
-document.querySelectorAll('.ot-st').forEach((b) => b.addEventListener('click', () => { exVista(b.dataset.vista); dash.setParams({ ot_vista: b.dataset.vista || null }); }));
-window.EX = (() => {
-const D = () => { const d = dash.data('exportaciones'); return d.status === 'ok' && Array.isArray(d.data) ? d.data : null; };
-const ok = () => !!D();
-const hoy = () => new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10);
-const key = (r) => r.cli + '|' + r.desp;
-const pedidos = () => [...new Set((D() || []).filter((r) => r.tipo === 'ped').map(key))].sort((a, b) => b.split('|')[1].localeCompare(a.split('|')[1]));
-const sel = () => { const ps = pedidos(), p = dash.params().ex_ped; return ps.includes(p) ? p : ps[0] || null; };
-const rows = () => { const k = sel(); return (D() || []).filter((r) => r.tipo === 'ped' && key(r) === k); };
-const opsDe = (k) => {
-const [cli, desp] = k.split('|'); const ant = pedidos().map((x) => x.split('|')).filter(([c, d]) => c === cli && d < desp).map(([, d]) => d).sort().pop() || '';
-const refs = new Set(rows().map((r) => r.ref));
-return (D() || []).filter((o) => o.tipo === 'op' && refs.has(o.ref) && (!ant || o.f > ant));
-};
-const estado = (r) => { const falta = Math.max(0, r.ped - r.prod), fd = Math.max(0, falta - r.prog);
-return falta === 0 ? 'COMPLETO' : hoy() > r.desp ? 'NO CUMPLIÓ' : fd === 0 ? 'CUBIERTO CON LO PROGRAMADO' : 'FALTA PROGRAMAR'; };
-const tot = () => {
-const rs = rows(); if (!rs.length) return null; const k = sel(), desp = rs[0].desp, ops = opsDe(k);
-const ped = rs.reduce((s, r) => s + r.ped, 0), prod = rs.reduce((s, r) => s + r.prod, 0);
-const medido = hoy() > desp;
-let inf = 0, otif = 0, ont = 0;
-rs.forEach((r) => {
-const i = r.ped ? Math.min(1, r.prod / r.ped) : 0;
-const aTiempo = Math.min(r.prod, ops.filter((o) => o.ref === r.ref && o.reg === '1. Item OP' && o.f && o.f <= desp).reduce((s, o) => s + o.comp, 0));
-const t = r.ped && aTiempo >= r.ped ? 1 : 0;
-inf += i * r.ped; ont += t * r.ped; otif += i * t * r.ped;
-});
-return { ped, prod, falta: rs.reduce((s, r) => s + Math.max(0, r.ped - r.prod), 0), avance: ped ? prod / ped : null, completas: rs.filter((r) => r.prod >= r.ped).length, n: rs.length,
-desp, cli: rs[0].cli, guardado: rs[0].guardado, medido, inf: ped ? inf / ped : null, ont: ped ? ont / ped : null, otif: ped ? otif / ped : null };
-};
-return { ok, pedidos, sel, rows, opsDe, estado, tot, hoy };
-})();
-const exFail = (el) => { if (!EX.ok()) { DM.fail(el, dash.data('exportaciones').status); return true; } return false; };
-const exNum = (v) => DM.f0.format(Math.round(v));
-dash.draw('ex-ped', (el) => {
-el.replaceChildren(...EX.pedidos().map((k) => { const [c, d] = k.split('|'); return new Option(c + ' · despacho ' + DM.fDate(d), k); }));
-el.value = EX.sel() || ''; el.onchange = () => dash.setParams({ ex_ped: el.value || null });
-});
-dash.draw('ex-desp', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? DM.fDate(t.desp) : '—'; });
-dash.draw('ex-faltan', (el) => { const t = EX.ok() && EX.tot(); if (!t) { el.textContent = '—'; return; }
-const d = Math.round((Date.parse(t.desp) - Date.parse(EX.hoy())) / 864e5); el.textContent = d > 1 ? 'faltan ' + d + ' días' : d === 1 ? 'falta 1 día' : d === 0 ? 'es hoy' : 'ya pasó'; });
-dash.draw('ex-guard', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t && t.guardado ? DM.fDate(t.guardado) : '—'; });
-dash.draw('ex-t-ped', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? exNum(t.ped) : '—'; });
-dash.draw('ex-t-prod', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? exNum(t.prod) : '—'; });
-dash.draw('ex-t-falta', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? exNum(t.falta) : '—'; });
-dash.draw('ex-t-comp', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? t.completas + ' de ' + t.n : '—'; });
-dash.draw('ex-g-av', (el) => { if (exFail(el)) return; const t = EX.tot(); MOG.gauge(el, t ? t.avance : null, { tag: 'Producido ÷ pedido', label: 'Avance del pedido', limpio: true }); });
-dash.draw('ex-g-otif', (el) => { if (exFail(el)) return; const t = EX.tot();
-if (!t || !t.medido) { MOG.gauge(el, null, { na: true, tag: t ? 'Se mide desde el ' + DM.fDay(t.desp) : '', label: 'OTIF del pedido', limpio: true }); return; }
-MOG.gauge(el, t.otif, { tag: 'In Full ' + MOG.pct(t.inf) + ' · On Time ' + MOG.pct(t.ont), label: 'OTIF del pedido', limpio: true }); });
-dash.draw('ex-bars', (el) => {
-if (exFail(el)) return; el.replaceChildren();
-const items = EX.rows().map((r) => ({ k: r.ref, label: r.ref, p: r.ped ? Math.min(r.prod, r.ped) / r.ped : 0, g: r.ped ? Math.min(r.prog, Math.max(0, r.ped - r.prod)) / r.ped : 0, r }))
-.sort((a, b) => a.p - b.p || a.k.localeCompare(b.k));
-if (!items.length) return;
-const W = el.clientWidth || 600, H = items.length * 34 + 40;
-const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Avance por referencia');
-const ml = Math.max(...items.map((d) => DM.textW(svg, d.label, 'dm-axis-t'))) + 12, mr = DM.textW(svg, '100 % + 100 % prog.', 'dm-val') + 14;
-const x = d3.scaleLinear([0, 1], [ml, W - mr]), y = d3.scaleBand(items.map((d) => d.k), [8, H - 28]).padding(0.25);
-svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x).ticks(5).tickSize(-(H - 36)).tickFormat((v) => Math.round(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(6)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
-svg.selectAll('g .tick text').style('font-weight', 700).style('fill', 'var(--color-fg)');
-svg.append('line').attr('class', 'dm-ref').attr('x1', x(1)).attr('x2', x(1)).attr('y1', 8).attr('y2', H - 28);
-const g = svg.append('g');
-g.selectAll('rect.p').data(items).join('rect').attr('x', ml).attr('width', (d) => Math.max(1, x(d.p) - ml)).attr('y', (d) => y(d.k)).attr('height', y.bandwidth()).attr('rx', 3).style('fill', (d) => (d.p >= 1 ? 'var(--dm-ok)' : 'var(--dm-green)'));
-g.selectAll('rect.g').data(items.filter((d) => d.g > 0)).join('rect').attr('x', (d) => x(d.p)).attr('width', (d) => Math.max(1, x(d.p + d.g) - x(d.p))).attr('y', (d) => y(d.k)).attr('height', y.bandwidth()).attr('rx', 3).style('fill', 'var(--dm-orange-2)');
-svg.append('g').selectAll('text').data(items).join('text').attr('class', 'dm-val').attr('x', (d) => x(d.p + d.g) + 5).attr('y', (d) => y(d.k) + y.bandwidth() / 2 + 4)
-.text((d) => MOG.pct(d.p) + (d.g > 0 ? ' + ' + MOG.pct(d.g) + ' prog.' : ''));
-const tip = DM.tipFor(el);
-svg.append('g').selectAll('rect').data(items).join('rect').attr('x', 0).attr('width', W).attr('y', (d) => y(d.k)).attr('height', y.bandwidth()).attr('fill', 'transparent')
-.on('mousemove', (e, d) => DM.showTip(tip, el, x(d.p), y(d.k), [d.r.ref + ' · ' + d.r.desc, 'Pedido: ' + exNum(d.r.ped), 'Producido: ' + exNum(d.r.prod) + ' (' + MOG.pct(d.p) + ')', 'Programado pendiente: ' + exNum(d.r.prog)]))
-.on('mouseleave', () => { tip.hidden = true; });
-});
-const exTd = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; return td; };
-dash.draw('ex-tabla', (tb) => {
-tb.replaceChildren(); if (!EX.ok()) return;
-EX.rows().slice().sort((a, b) => a.prod / a.ped - b.prod / b.ped).forEach((r) => {
-const tr = document.createElement('tr'); tr.className = 'lc-row'; const v = r.ped ? Math.min(1, r.prod / r.ped) : 0;
-const av = document.createElement('td'); const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:8px';
-const p = document.createElement('span'); p.className = 'lc-pill' + (v >= 1 ? ' lc-ok' : v >= 0.5 ? ' lc-warn' : ''); p.textContent = MOG.pct(v);
-const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, v * 100) + '%'; f.style.background = v >= 1 ? 'var(--dm-ok)' : v >= 0.5 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f); w.append(p, bar); av.append(w);
-const e = EX.estado(r); const es = document.createElement('td'); const s = document.createElement('span');
-s.className = 'ex-est' + (e === 'COMPLETO' ? ' ex-ok' : e === 'CUBIERTO CON LO PROGRAMADO' ? ' ex-cub' : e === 'FALTA PROGRAMAR' ? ' ex-falta' : ''); s.textContent = e.charAt(0) + e.slice(1).toLowerCase(); s.title = e; es.append(s);
-const prod = exTd(r.desc); prod.title = r.desc;
-tr.append(exTd(r.ref, 'lc-ref'), prod, exTd(exNum(r.ped), 'lc-n'), exTd(exNum(r.prod), 'lc-n'), av, exTd(exNum(r.prog), 'lc-n'), exTd(exNum(Math.max(0, r.ped - r.prod - r.prog)), 'lc-n'), es);
-tb.append(tr);
-});
-});
-dash.draw('ex-ops', (tb) => {
-tb.replaceChildren(); if (!EX.ok() || !EX.sel()) return;
-EX.opsDe(EX.sel()).slice().sort((a, b) => (b.f || '').localeCompare(a.f || '') || a.op.localeCompare(b.op)).forEach((o) => {
-const tr = document.createElement('tr'); tr.className = 'lc-row'; const d = exTd(o.desc); d.title = o.desc;
-tr.append(exTd(o.op), exTd(o.f ? DM.fDay(o.f) : '—'), exTd(o.ref, 'lc-ref'), d, exTd(o.est.replace(/^\d+\.\s*/, '')), exTd(exNum(o.ord), 'lc-n'), exTd(exNum(o.comp), 'lc-n'));
-tb.append(tr);
-});
-});
-</script>
-<script>
 window.AG = (() => {
 const MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MESL = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const ok = () => ['agotados', 'agotados_estado', 'ventas'].every((id) => dash.data(id).status === 'ok');
-const D = () => (dash.data('agotados').status === 'ok' ? dash.data('agotados').data : []);
+let agRaw = null, agNorm = [];
+const D = () => { const d = dash.data('agotados'); if (d.status !== 'ok') return []; if (d.data !== agRaw) { agRaw = d.data; agNorm = d.data.map((r) => (DM.canal(r.canal) === r.canal ? r : { ...r, canal: DM.canal(r.canal) })); } return agNorm; };
 const est = () => { const d = dash.data('agotados_estado'); return d.status === 'ok' ? d.data[0] : null; };
 const V = () => { const m = new Map(); if (dash.data('ventas').status === 'ok') dash.data('ventas').data.forEach((r) => m.set(String(r.mes), (m.get(String(r.mes)) || 0) + +r.venta)); return m; };
 const F = () => { const m = new Map(); const d = dash.data('ns'); if (d.status === 'ok') d.data.forEach((r) => { if (r.vf != null) { const k = String(r.anio) + String(r.mes).padStart(2, '0'); m.set(k, (m.get(k) || 0) + +r.vf); } }); return m; };
@@ -1875,7 +1716,7 @@ const MC = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct'
 const list = (v) => (Array.isArray(v) ? v : []);
 const ok = () => dash.data('ns').status === 'ok';
 const din = (u) => (u ? u === 'dinero' : dash.params().ns_uni === 'dinero') && ok() && dash.data('ns').data.some((r) => r.vp != null);
-const D = (u) => { if (!ok()) return []; const m = din(u); return dash.data('ns').data.map((r) => ({ anio: String(r.anio), mes: +r.mes, canal: String(r.canal), cli: r.cli ? String(r.cli) : '', fact: m ? +r.vf || 0 : +r.fact, ped: m ? +r.vp || 0 : +r.ped, pend: m ? +r.vpend || 0 : +r.ped - +r.fact, k: String(r.anio) + String(r.mes).padStart(2, '0') })); };
+const D = (u) => { if (!ok()) return []; const m = din(u); return dash.data('ns').data.map((r) => ({ anio: String(r.anio), mes: +r.mes, canal: DM.canal(r.canal), cli: r.cli ? String(r.cli) : '', fact: m ? +r.vf || 0 : +r.fact, ped: m ? +r.vp || 0 : +r.ped, pend: m ? +r.vpend || 0 : +r.ped - +r.fact, k: String(r.anio) + String(r.mes).padStart(2, '0') })); };
 const cant = (v) => (din() ? (Math.abs(v) >= 1e9 ? '$' + DM.f1.format(v / 1e9) + ' mil mill.' : '$' + DM.f0.format(Math.round(v / 1e6)) + ' mill.') : DM.f0.format(v) + ' und');
 const eje = (v) => (din() ? '$' + DM.f0.format(Math.round(v / 1e6)) + ' M' : DM.f0.format(v));
 const est = () => { const d = dash.data('ns_estado'); if (d.status !== 'ok' || !d.data) return null; return Array.isArray(d.data) ? d.data[0] || null : d.data; };
@@ -1980,7 +1821,7 @@ dash.draw('nk-meta-d', (el) => { const k = NS.ok() && nsK(); if (!k) { el.replac
 const nsMeta = (svg, y, x0, x1) => {
 svg.append('line').attr('x1', x0).attr('x2', x1).attr('y1', y(NS.META)).attr('y2', y(NS.META)).style('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5);
 };
-const nsY = (vals, H, top) => { const mn = d3.min(vals.filter((v) => v != null)); return d3.scaleLinear([Math.min(0.8, Math.floor(((mn ?? 0.8) - 0.02) * 20) / 20), 1.005], [H - 34, top]); };
+const nsY = (vals, H, top) => { const mn = d3.min(vals.filter((v) => v != null)); return d3.scaleLinear([0, 1.005], [H - 34, top]); };
 
 const nsLeg = (el, items) => {
 const leg = document.createElement('div'); leg.className = 'dm-legend';
@@ -2001,7 +1842,7 @@ nsLeg(el, [...ys.map((yy) => [nsYearName(yy, R), NS.YCOL(yy, all)]), ['Meta 95 %
 const W = el.clientWidth, H = 340;
 const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Nivel de servicio por canal y año');
 const vals = cs.flatMap((c) => ys.map((yy) => val(c, yy))).filter((v) => v != null);
-const y = d3.scaleLinear([Math.min(0.7, Math.floor((d3.min(vals) - 0.05) * 10) / 10), 1], [H - 44, 26]);
+const y = d3.scaleLinear([0, 1], [H - 44, 26]);
 const ml = 46;
 const x0 = d3.scaleBand(cs, [ml, W - 8]).padding(0.2), x1 = d3.scaleBand(ys, [0, x0.bandwidth()]).padding(0.08);
 svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - 8)).tickFormat((v) => DM.f0.format(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
@@ -2047,7 +1888,7 @@ svg.append('path').datum(sr.pts).attr('fill', 'none').style('stroke', c).attr('s
 svg.append('g').selectAll('circle').data(sr.pts.filter((p) => p.v != null)).join('circle').attr('cx', (p) => x(p.m)).attr('cy', (p) => y(p.v)).attr('r', last ? 3.5 : 2.5).style('fill', c);
 const otros = (p) => series.filter((o) => o !== sr).map((o) => o.pts[p.m - 1].v).filter((v) => v != null);
 const arriba = (p) => otros(p).every((v) => v <= p.v);
-if (last && x.step() > 30) svg.append('g').selectAll('text').data(sr.pts.filter((p) => p.v != null)).join('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', (p) => x(p.m)).attr('y', (p) => (arriba(p) ? y(p.v) - 9 : y(p.v) + 17)).text((p) => DM.f1.format(p.v * 100) + ' %' + (NS.parcial(p.k) ? '*' : ''));
+if (last && x.step() > 30) svg.append('g').selectAll('text').data(sr.pts.filter((p) => p.v != null)).join('text').attr('class', 'dm-val dm-halo').attr('text-anchor', (p, i) => (i === 0 ? 'start' : 'middle')).attr('x', (p, i) => x(p.m) - (i === 0 ? 4 : 0)).attr('y', (p) => (arriba(p) ? y(p.v) - 9 : y(p.v) + 17)).text((p) => DM.f1.format(p.v * 100) + ' %' + (NS.parcial(p.k) ? '*' : ''));
 });
 const tip = DM.tipFor(el);
 svg.append('g').selectAll('rect').data(d3.range(1, 13)).join('rect').attr('x', (m) => x(m) - x.step() / 2).attr('width', x.step()).attr('y', 0).attr('height', H - 34).attr('fill', 'transparent')
