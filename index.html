@@ -148,6 +148,12 @@ box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-sm); display: flex
 @media (max-width: 700px) { .ag-var { position: static; margin-top: var(--cds-gap-sm); } }
 .mo-bar .dm-flabel { color: var(--dm-green-dk); }
 .mo-gauges { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--cds-gap-md); align-items: center; }
+#otif.ot-modo-exp [data-draw=ot-excep] { display: none !important; }
+.dm-select:disabled { opacity: .45; cursor: not-allowed; }
+.ex-est { display: inline-block; border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 11px; color: #FFFFFF; background: var(--cds-chart-status-critical); white-space: nowrap; }
+.ex-est.ex-ok { background: var(--dm-ok); } .ex-est.ex-cub { background: var(--dm-green); } .ex-est.ex-falta { background: var(--dm-orange-2); }
+.ex-leg { display: flex; gap: var(--cds-gap-lg); flex-wrap: wrap; font-size: 13px; font-weight: 700; margin: 0 0 var(--cds-gap-sm); }
+.ex-leg i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .ot-gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: var(--cds-gap-lg); align-items: center; }
 @media (max-width: 900px) { .ot-gauges { grid-template-columns: 1fr 1fr; } }
 .ot-rangos table { border-collapse: separate; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; border: 1px solid var(--cds-border); border-radius: 8px; overflow: hidden; }
@@ -665,10 +671,13 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <label class="dm-field"><span class="dm-flabel">Unidad</span><select class="dm-select mo-uni" data-pre="ot_" aria-label="Unidad de medida">
 <option value="und">Paquetes</option><option value="kg">Kilos</option></select></label>
 </div>
-<p class="dm-note">Semana del <b data-draw="ot-rango" data-source="produccion mps mps_estado">—</b> (<b data-draw="ot-estsem" data-source="mps_estado">—</b>). Datos de tu Excel guardado el <b data-draw="ot-hoy" data-source="mps_estado">—</b>, con Siesa cargado hasta el <b data-draw="ot-siesa" data-source="mps_estado">—</b>.</p>
+<p class="dm-note ot-nal">Semana del <b data-draw="ot-rango" data-source="produccion mps mps_estado">—</b> (<b data-draw="ot-estsem" data-source="mps_estado">—</b>). Datos de tu Excel guardado el <b data-draw="ot-hoy" data-source="mps_estado">—</b>, con Siesa cargado hasta el <b data-draw="ot-siesa" data-source="mps_estado">—</b>.</p>
+<p class="dm-note ot-exp" style="display:none">Exportaciones se mide por pedido, sin semana ni día: <b data-draw="ex-cli" data-source="exportaciones">—</b> · despacho el <b data-draw="ex-desp" data-source="exportaciones">—</b> (<b data-draw="ex-faltan" data-source="exportaciones">—</b>). Datos de la pestaña Exportaciones de tu Excel guardado el <b data-draw="ex-guard" data-source="exportaciones">—</b>.
+<select class="dm-select" data-draw="ex-ped" data-source="exportaciones" aria-label="Pedido de exportación" style="margin-left:8px"></select></p>
 </div>
 
 <p class="dm-note" data-draw="ot-excep" data-source="mps_estado" style="display:none"></p>
+<div class="ot-nal-blk" style="display:contents">
 <div class="dm-tiles" id="otif-indicadores">
 <div class="dm-tile"><span class="dm-tile-l" data-draw="ok-prog-l" data-source="produccion">Programado (paquetes)</span><span class="dm-tile-v" data-draw="ok-prog" data-source="produccion">—</span></div>
 <div class="dm-tile"><span class="dm-tile-l">Real</span><span class="dm-tile-v" data-draw="ok-real" data-source="produccion">—</span></div>
@@ -717,6 +726,39 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </table>
 </div>
 </section>
+</div>
+<div class="ot-exp-blk" style="display:none">
+<div class="dm-tiles">
+<div class="dm-tile"><span class="dm-tile-l">Pedido (paquetes)</span><span class="dm-tile-v" data-draw="ex-t-ped" data-source="exportaciones">—</span></div>
+<div class="dm-tile"><span class="dm-tile-l">Producido</span><span class="dm-tile-v" data-draw="ex-t-prod" data-source="exportaciones">—</span></div>
+<div class="dm-tile"><span class="dm-tile-l">Falta</span><span class="dm-tile-v" data-draw="ex-t-falta" data-source="exportaciones">—</span></div>
+<div class="dm-tile"><span class="dm-tile-l">% Cumplimiento</span><span class="dm-tile-v" data-draw="ex-t-cump" data-source="exportaciones">—</span></div>
+</div>
+<section class="dm-card">
+<h2 class="dm-h2">OTIF del pedido</h2>
+<p class="dm-note">In Full = producido ÷ pedido (máx. 100 % por referencia). On Time = la referencia quedó completa con órdenes hasta la fecha de despacho. OTIF = In Full × On Time, ponderado por lo pedido; se mide desde el despacho.</p>
+<div class="ot-gauges">
+<div class="mo-gauge"><h3 class="mo-gauge-t">OTIF</h3><div class="mo-gauge-box" data-draw="ex-g-otif" data-source="exportaciones"></div></div>
+<div class="mo-gauge"><h3 class="mo-gauge-t">In Full</h3><div class="mo-gauge-box" data-draw="ex-g-inf" data-source="exportaciones"></div></div>
+<div class="mo-gauge"><h3 class="mo-gauge-t">On Time</h3><div class="mo-gauge-box" data-draw="ex-g-ont" data-source="exportaciones"></div></div>
+</div>
+</section>
+<section class="dm-card dm-card-o">
+<h2 class="dm-h2">Cumplimiento por referencia</h2>
+<div class="ex-leg"><span><i style="background:var(--dm-green)"></i>Producido</span><span><i style="background:var(--dm-orange-2)"></i>Programado pendiente</span></div>
+<div class="dm-chart" data-draw="ex-bars" data-source="exportaciones"></div>
+</section>
+<section class="dm-card">
+<div class="lc-head"><div><h2 class="dm-h2">Referencias del pedido</h2></div></div>
+<div class="lc-box">
+<table class="lc-table">
+<colgroup><col style="width:7%"><col><col style="width:9%"><col style="width:9%"><col style="width:15%"><col style="width:10%"><col style="width:11%"><col style="width:17%"></colgroup>
+<thead><tr><th>Ref</th><th>Producto</th><th class="lc-n">Pedido</th><th class="lc-n">Producido</th><th>Cumplimiento</th><th class="lc-n">Prog. pendiente</th><th class="lc-n">Falta tras prog.</th><th>Estado</th></tr></thead>
+<tbody data-draw="ex-tabla" data-source="exportaciones"></tbody>
+</table>
+</div>
+</section>
+</div>
 </section>
 
 <section class="dm-main" id="ns" role="tabpanel" hidden>
@@ -1391,6 +1433,7 @@ document.querySelectorAll('.mo-dia').forEach((s) => { s.value = p[s.dataset.pre 
 document.querySelectorAll('.mo-cat').forEach((s) => { s.value = p[s.dataset.pre + 'cat'] || ''; });
 document.querySelectorAll('.mo-uni').forEach((s) => { s.value = p[s.dataset.pre + 'uni'] || 'und'; });
 document.querySelectorAll('.mo-ori').forEach((s) => { s.value = p[s.dataset.pre + 'ori'] || 'nal'; });
+otModo(p.ot_ori);
 if (window.DMmain !== 'mps' && window.DMmain !== 'otif') return;
 if (!MO.ok()) return;
 const s = MO.sel('mps_'), abierta = !MO.cerrada(s.w);
@@ -1509,6 +1552,106 @@ tb.append(tr);
 });
 </script>
 
+<script>
+window.otModo = (ori) => {
+const exp = ori === 'exp';
+document.getElementById('otif').classList.toggle('ot-modo-exp', exp);
+document.querySelectorAll('#otif .ot-nal').forEach((e) => { e.style.display = exp ? 'none' : ''; });
+document.querySelectorAll('#otif .ot-exp').forEach((e) => { e.style.display = exp ? '' : 'none'; });
+document.querySelectorAll('#otif .ot-nal-blk').forEach((e) => { e.style.display = exp ? 'none' : 'contents'; });
+document.querySelectorAll('#otif .ot-exp-blk').forEach((e) => { e.style.display = exp ? 'contents' : 'none'; });
+document.querySelectorAll('#otif [data-draw=ot-sem], #otif .mo-dia, #otif .mo-cat, #otif .mo-horno, #otif .mo-uni').forEach((s) => { s.disabled = exp; s.title = exp ? 'Exportaciones se mide por pedido' : ''; });
+};
+document.querySelector('#otif .mo-ori').addEventListener('change', (e) => otModo(e.target.value), true);
+window.EX = (() => {
+const D = () => { const d = dash.data('exportaciones'); return d.status === 'ok' && Array.isArray(d.data) ? d.data : null; };
+const ok = () => !!D();
+const hoy = () => new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10);
+const key = (r) => r.cli + '|' + r.desp;
+const pedidos = () => [...new Set((D() || []).filter((r) => r.tipo === 'ped').map(key))].sort((a, b) => b.split('|')[1].localeCompare(a.split('|')[1]));
+const sel = () => { const ps = pedidos(), p = dash.params().ex_ped; return ps.includes(p) ? p : ps[0] || null; };
+const rows = () => { const k = sel(); return (D() || []).filter((r) => r.tipo === 'ped' && key(r) === k); };
+const opsDe = (k) => {
+const [cli, desp] = k.split('|'); const ant = pedidos().map((x) => x.split('|')).filter(([c, d]) => c === cli && d < desp).map(([, d]) => d).sort().pop() || '';
+const refs = new Set(rows().map((r) => r.ref));
+return (D() || []).filter((o) => o.tipo === 'op' && refs.has(o.ref) && (!ant || o.f > ant));
+};
+const estado = (r) => { const falta = Math.max(0, r.ped - r.prod), fd = Math.max(0, falta - r.prog);
+return falta === 0 ? 'COMPLETO' : hoy() > r.desp ? 'NO CUMPLIÓ' : fd === 0 ? 'CUBIERTO CON LO PROGRAMADO' : 'FALTA PROGRAMAR'; };
+const tot = () => {
+const rs = rows(); if (!rs.length) return null; const k = sel(), desp = rs[0].desp, ops = opsDe(k);
+const ped = rs.reduce((s, r) => s + r.ped, 0), prod = rs.reduce((s, r) => s + r.prod, 0);
+const medido = hoy() > desp;
+let inf = 0, otif = 0, ont = 0;
+rs.forEach((r) => {
+const i = r.ped ? Math.min(1, r.prod / r.ped) : 0;
+const aTiempo = Math.min(r.prod, ops.filter((o) => o.ref === r.ref && o.reg === '1. Item OP' && o.f && o.f <= desp).reduce((s, o) => s + o.comp, 0));
+const t = r.ped && aTiempo >= r.ped ? 1 : 0;
+inf += i * r.ped; ont += t * r.ped; otif += i * t * r.ped;
+});
+return { ped, prod, falta: rs.reduce((s, r) => s + Math.max(0, r.ped - r.prod), 0), avance: ped ? prod / ped : null, completas: rs.filter((r) => r.prod >= r.ped).length, n: rs.length,
+desp, cli: rs[0].cli, guardado: rs[0].guardado, medido, inf: ped ? inf / ped : null, ont: ped ? ont / ped : null, otif: ped ? otif / ped : null };
+};
+return { ok, pedidos, sel, rows, opsDe, estado, tot, hoy };
+})();
+const exFail = (el) => { if (!EX.ok()) { DM.fail(el, dash.data('exportaciones').status); return true; } return false; };
+const exNum = (v) => DM.f0.format(Math.round(v));
+dash.draw('ex-ped', (el) => {
+el.replaceChildren(...EX.pedidos().map((k) => { const [c, d] = k.split('|'); return new Option(c + ' · despacho ' + DM.fDate(d), k); }));
+el.style.display = EX.pedidos().length > 1 ? '' : 'none'; el.value = EX.sel() || ''; el.onchange = () => dash.setParams({ ex_ped: el.value || null });
+});
+dash.draw('ex-desp', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? DM.fDate(t.desp) : '—'; });
+dash.draw('ex-faltan', (el) => { const t = EX.ok() && EX.tot(); if (!t) { el.textContent = '—'; return; }
+const d = Math.round((Date.parse(t.desp) - Date.parse(EX.hoy())) / 864e5); el.textContent = d > 1 ? 'faltan ' + d + ' días' : d === 1 ? 'falta 1 día' : d === 0 ? 'es hoy' : 'ya pasó'; });
+dash.draw('ex-guard', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t && t.guardado ? DM.fDate(t.guardado) : '—'; });
+dash.draw('ex-t-ped', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? exNum(t.ped) : '—'; });
+dash.draw('ex-t-prod', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? exNum(t.prod) : '—'; });
+dash.draw('ex-t-falta', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? exNum(t.falta) : '—'; });
+dash.draw('ex-t-cump', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t && t.avance != null ? MOG.pct(t.avance) : '—'; });
+dash.draw('ex-cli', (el) => { const t = EX.ok() && EX.tot(); el.textContent = t ? t.cli + ' · ' + t.completas + ' de ' + t.n + ' referencias completas' : '—'; });
+const exNa = (el, t, label) => MOG.gauge(el, null, { na: true, tag: t ? 'Se mide desde el ' + DM.fDay(t.desp) : '', label, limpio: true });
+dash.draw('ex-g-otif', (el) => { if (exFail(el)) return; const t = EX.tot(); if (!t || !t.medido) return exNa(el, t, 'OTIF'); MOG.gauge(el, t.otif, { tag: 'Pedido completo a tiempo', label: 'OTIF', limpio: true }); });
+dash.draw('ex-g-inf', (el) => { if (exFail(el)) return; const t = EX.tot(); MOG.gauge(el, t ? t.inf : null, { tag: t && !t.medido ? 'Avance a hoy' : 'Producido ÷ pedido', label: 'In Full', limpio: true }); });
+dash.draw('ex-g-ont', (el) => { if (exFail(el)) return; const t = EX.tot(); if (!t || !t.medido) return exNa(el, t, 'On Time'); MOG.gauge(el, t.ont, { tag: 'Completo hasta el despacho', label: 'On Time', limpio: true }); });
+dash.draw('ex-bars', (el) => {
+if (exFail(el)) return; el.replaceChildren();
+const items = EX.rows().map((r) => ({ k: r.ref, label: r.ref, p: r.ped ? Math.min(r.prod, r.ped) / r.ped : 0, g: r.ped ? Math.min(r.prog, Math.max(0, r.ped - r.prod)) / r.ped : 0, r }))
+.sort((a, b) => a.p - b.p || a.k.localeCompare(b.k));
+if (!items.length) return;
+const W = el.clientWidth || 600, H = items.length * 34 + 40;
+const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Avance por referencia');
+const ml = Math.max(...items.map((d) => DM.textW(svg, d.label, 'dm-axis-t'))) + 12, mr = DM.textW(svg, '100 % + 100 % prog.', 'dm-val') + 14;
+const x = d3.scaleLinear([0, 1], [ml, W - mr]), y = d3.scaleBand(items.map((d) => d.k), [8, H - 28]).padding(0.25);
+svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x).ticks(5).tickSize(-(H - 36)).tickFormat((v) => Math.round(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
+svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(6)).call(DM.cleanAxis).call((g) => g.select('.domain').remove());
+svg.selectAll('g .tick text').style('font-weight', 700).style('fill', 'var(--color-fg)');
+svg.append('line').attr('class', 'dm-ref').attr('x1', x(1)).attr('x2', x(1)).attr('y1', 8).attr('y2', H - 28);
+const g = svg.append('g');
+g.selectAll('rect.p').data(items).join('rect').attr('x', ml).attr('width', (d) => Math.max(1, x(d.p) - ml)).attr('y', (d) => y(d.k)).attr('height', y.bandwidth()).attr('rx', 3).style('fill', (d) => (d.p >= 1 ? 'var(--dm-ok)' : 'var(--dm-green)'));
+g.selectAll('rect.g').data(items.filter((d) => d.g > 0)).join('rect').attr('x', (d) => x(d.p)).attr('width', (d) => Math.max(1, x(d.p + d.g) - x(d.p))).attr('y', (d) => y(d.k)).attr('height', y.bandwidth()).attr('rx', 3).style('fill', 'var(--dm-orange-2)');
+svg.append('g').selectAll('text').data(items).join('text').attr('class', 'dm-val').attr('x', (d) => x(d.p + d.g) + 5).attr('y', (d) => y(d.k) + y.bandwidth() / 2 + 4)
+.text((d) => MOG.pct(d.p) + (d.g > 0 ? ' + ' + MOG.pct(d.g) + ' prog.' : ''));
+const tip = DM.tipFor(el);
+svg.append('g').selectAll('rect').data(items).join('rect').attr('x', 0).attr('width', W).attr('y', (d) => y(d.k)).attr('height', y.bandwidth()).attr('fill', 'transparent')
+.on('mousemove', (e, d) => DM.showTip(tip, el, x(d.p), y(d.k), [d.r.ref + ' · ' + d.r.desc, 'Pedido: ' + exNum(d.r.ped), 'Producido: ' + exNum(d.r.prod) + ' (' + MOG.pct(d.p) + ')', 'Programado pendiente: ' + exNum(d.r.prog)]))
+.on('mouseleave', () => { tip.hidden = true; });
+});
+const exTd = (txt, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = txt; return td; };
+dash.draw('ex-tabla', (tb) => {
+tb.replaceChildren(); if (!EX.ok()) return;
+EX.rows().slice().sort((a, b) => a.prod / a.ped - b.prod / b.ped).forEach((r) => {
+const tr = document.createElement('tr'); tr.className = 'lc-row'; const v = r.ped ? Math.min(1, r.prod / r.ped) : 0;
+const av = document.createElement('td'); const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:8px';
+const p = document.createElement('span'); p.className = 'lc-pill' + (v >= 1 ? ' lc-ok' : v >= 0.5 ? ' lc-warn' : ''); p.textContent = MOG.pct(v);
+const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, v * 100) + '%'; f.style.background = v >= 1 ? 'var(--dm-ok)' : v >= 0.5 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f); w.append(p, bar); av.append(w);
+const e = EX.estado(r); const es = document.createElement('td'); const s = document.createElement('span');
+s.className = 'ex-est' + (e === 'COMPLETO' ? ' ex-ok' : e === 'CUBIERTO CON LO PROGRAMADO' ? ' ex-cub' : e === 'FALTA PROGRAMAR' ? ' ex-falta' : ''); s.textContent = e.charAt(0) + e.slice(1).toLowerCase(); s.title = e; es.append(s);
+const prod = exTd(r.desc); prod.title = r.desc;
+tr.append(exTd(r.ref, 'lc-ref'), prod, exTd(exNum(r.ped), 'lc-n'), exTd(exNum(r.prod), 'lc-n'), av, exTd(exNum(r.prog), 'lc-n'), exTd(exNum(Math.max(0, r.ped - r.prod - r.prog)), 'lc-n'), es);
+tb.append(tr);
+});
+});
+</script>
 <script>
 window.AG = (() => {
 const MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -2320,6 +2463,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 20/11/2026 10:56 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 20/11/2026 11:04 AM.</p>
 </body>
 </html>
