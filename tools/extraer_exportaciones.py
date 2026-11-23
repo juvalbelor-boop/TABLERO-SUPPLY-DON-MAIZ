@@ -52,11 +52,13 @@ for r in filas:
     if abs(prod - prod_op) > 1e-6: avisos.append(dict(ref=ref, excel=prod, ops=prod_op))
     pct = min(1, prod / ped) if ped else None; falta = max(0, ped - prod); prog = num(r[iprog]); fd = max(0, falta - prog)
     estado = 'COMPLETO' if falta == 0 else 'NO CUMPLIÓ' if desp and hoy > desp else 'CUBIERTO CON LO PROGRAMADO' if fd == 0 else 'FALTA PROGRAMAR'
-    for nom, mio, xl_ in [('% completo', pct, r[ipct]), ('falta', falta, r[ifal]), ('falta después de programado', fd, r[ifd])]:
-        if xl_ is None or mio is None or abs(mio - num(xl_)) > 1e-6: err.append(f'{ref}: {nom} {mio} ≠ Excel {xl_}')
-    if estado != str(r[iest]).strip(): err.append(f'{ref}: estado {estado} ≠ Excel {r[iest]}')
+    # Desde el 23-nov-2026 manda la pestaña Exportaciones tal como la deja el usuario (puede tener valores pegados):
+    # falta, falta después de programado y estado se toman del Excel. Solo se avisa si no son coherentes; bloquea si falta ≠ pedido − producido.
+    if abs(falta - num(r[ifal])) > 1e-6: err.append(f'{ref}: falta Excel {r[ifal]} ≠ pedido − producido {falta}')
+    if abs(fd - num(r[ifd])) > 1e-6: avisos.append(dict(ref=ref, aviso=f'falta después de programado {r[ifd]} en el Excel; con sus números daría {fd}'))
+    if estado != str(r[iest]).strip(): avisos.append(dict(ref=ref, aviso=f'estado {r[iest]} en el Excel; con sus números daría {estado}'))
     peds.append(dict(tipo='ped', cli=str(r[icli] or '').strip(), ref=ref, desc=str(r[ides] or '').strip(), ped=ped, desp=desp.isoformat() if desp else None,
-                     prod=prod, prog=prog, estado_xl=str(r[iest]).strip(), guardado=hoy.isoformat()))
+                     prod=prod, prog=prog, fd=num(r[ifd]), estado_xl=str(r[iest]).strip(), guardado=hoy.isoformat()))
 # Fila TOTAL (debajo de la tabla)
 tot = None
 for row in ws.iter_rows(values_only=True):
@@ -64,8 +66,10 @@ for row in ws.iter_rows(values_only=True):
 if tot is None: err.append('No encontré la fila TOTAL de Exportaciones')
 else:
     for nom, i, mio in [('pedido', iped, sum(p['ped'] for p in peds)), ('producido', iprod, sum(p['prod'] for p in peds)),
-                        ('falta', ifal, sum(max(0, p['ped'] - p['prod']) for p in peds)), ('programado pendiente', iprog, sum(p['prog'] for p in peds))]:
+                        ('falta', ifal, sum(max(0, p['ped'] - p['prod']) for p in peds))]:
         if abs(mio - num(tot[i])) > 1e-6: err.append(f'TOTAL {nom} {mio} ≠ Excel {tot[i]}')
+    for nom, i, mio in [('programado pendiente', iprog, sum(p['prog'] for p in peds)), ('falta después de programado', ifd, sum(p['fd'] for p in peds))]:
+        if abs(mio - num(tot[i])) > 1e-6: avisos.append(dict(ref='TOTAL', aviso=f'{nom} {tot[i]} en el Excel; la suma de las filas da {mio}'))
 if not peds: err.append('La tabla de pedidos está vacía')
 # Histórico: pedidos de otros despachos/clientes y OP que ya no vienen en el Excel
 claves = {(p['cli'], p['desp']) for p in peds}; ids = {o['op'] for o in ops}

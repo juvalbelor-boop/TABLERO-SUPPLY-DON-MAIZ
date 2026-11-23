@@ -1499,7 +1499,7 @@ const [cli, desp] = k.split('|'); const ant = pedidos().map((x) => x.split('|'))
 const refs = new Set(rows().map((r) => r.ref));
 return (D() || []).filter((o) => o.tipo === 'op' && refs.has(o.ref) && (!ant || o.f > ant));
 };
-const estado = (r) => { const falta = Math.max(0, r.ped - r.prod), fd = Math.max(0, falta - r.prog);
+const estado = (r) => { if (r.estado_xl) return String(r.estado_xl).toUpperCase(); const falta = Math.max(0, r.ped - r.prod), fd = Math.max(0, falta - r.prog);
 return falta === 0 ? 'COMPLETO' : hoy() > r.desp ? 'NO CUMPLIÓ' : fd === 0 ? 'CUBIERTO CON LO PROGRAMADO' : 'FALTA PROGRAMAR'; };
 const tot = () => {
 const rs = rows(); if (!rs.length) return null; const k = sel(), desp = rs[0].desp, ops = opsDe(k);
@@ -1570,7 +1570,7 @@ const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = 
 const e = EX.estado(r); const es = document.createElement('td'); const s = document.createElement('span');
 s.className = 'ex-est' + (e === 'COMPLETO' ? ' ex-ok' : e === 'CUBIERTO CON LO PROGRAMADO' ? ' ex-cub' : e === 'FALTA PROGRAMAR' ? ' ex-falta' : ''); s.textContent = e.charAt(0) + e.slice(1).toLowerCase(); s.title = e; es.append(s);
 const prod = exTd(r.desc); prod.title = r.desc;
-tr.append(exTd(r.ref, 'lc-ref'), prod, exTd(exNum(r.ped), 'lc-n'), exTd(exNum(r.prod), 'lc-n'), av, exTd(exNum(r.prog), 'lc-n'), exTd(exNum(Math.max(0, r.ped - r.prod - r.prog)), 'lc-n'), es);
+tr.append(exTd(r.ref, 'lc-ref'), prod, exTd(exNum(r.ped), 'lc-n'), exTd(exNum(r.prod), 'lc-n'), av, exTd(exNum(r.prog), 'lc-n'), exTd(exNum(r.fd != null ? r.fd : Math.max(0, r.ped - r.prod - r.prog)), 'lc-n'), es);
 tb.append(tr);
 });
 });
