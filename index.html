@@ -27,7 +27,7 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); fon
 <script>
 // Motor mínimo que replica el del tablero en Claude: datos (data/*.json), cálculos, filtros y dibujos marcados con data-draw.
 window.dash = (() => {
-  const DS = ["inventario", "produccion", "mps", "mps_estado", "agotados", "agotados_estado", "venta_mensual", "ns", "ns_estado", "gasto", "gasto_estado", "presupuesto", "presupuesto_estado", "ventas", "ventas_estado", "exportaciones"], data = {}, calcs = {}, draws = {}, onDatas = [], cache = {};
+  const DS = ["inventario", "produccion", "mps", "mps_estado", "agotados", "agotados_estado", "venta_mensual", "ns", "ns_estado", "gasto", "gasto_estado", "presupuesto", "presupuesto_estado", "ventas", "ventas_estado", "exportaciones", "ns_ref"], data = {}, calcs = {}, draws = {}, onDatas = [], cache = {};
   let params = {"bods": [], "cat": "Nacional", "ciudades": [], "corte": null, "segs": []}, loaded = false, queued = false;
   const ok = (rows) => ({ status: 'ok', data: rows, columns: rows && rows[0] ? Object.keys(rows[0]) : [], meta: [], refreshing: false });
   const api = {
@@ -2500,6 +2500,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 24/11/2026 01:54 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 24/11/2026 03:17 PM.</p>
 </body>
 </html>
