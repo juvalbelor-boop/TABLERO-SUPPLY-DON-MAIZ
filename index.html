@@ -99,10 +99,10 @@ border: 0; border-radius: var(--cds-radius) var(--cds-radius) 0 0; background: t
 display: flex; flex-direction: column; gap: var(--cds-gap-sm); align-items: flex-start; }
 .dm-wip-badge { font-size: var(--cds-font-size-caption); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--dm-on-band);
 background: var(--dm-orange); border-radius: 999px; padding: 2px var(--cds-pad-sm); }
-.dm-tab { font: inherit; font-size: var(--cds-font-size-body); font-weight: 700; padding: var(--cds-pad-sm) var(--cds-pad-lg); cursor: pointer;
+.dm-tab, .pr-tab { font: inherit; font-size: var(--cds-font-size-body); font-weight: 700; padding: var(--cds-pad-sm) var(--cds-pad-lg); cursor: pointer;
 border: 2px solid var(--dm-green); border-radius: var(--cds-radius); background: var(--color-panel); color: var(--dm-green); }
-.dm-tab[aria-selected="true"] { background: var(--dm-green); color: var(--dm-on-band); }
-.dm-tab:focus-visible, .dm-select:focus-visible { outline: 3px solid var(--dm-orange-2); outline-offset: 2px; }
+.dm-tab[aria-selected="true"], .pr-tab[aria-selected="true"] { background: var(--dm-green); color: var(--dm-on-band); }
+.dm-tab:focus-visible, .pr-tab:focus-visible, .dm-select:focus-visible { outline: 3px solid var(--dm-orange-2); outline-offset: 2px; }
 
 .dm-band { background: var(--dm-green); color: var(--dm-on-band); border-radius: var(--cds-radius);
 border-bottom: 6px solid var(--dm-orange); padding: var(--cds-pad-lg); display: flex; flex-wrap: wrap;
@@ -334,8 +334,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <button class="dm-main-tab" type="button" role="tab" data-main="ns" aria-selected="false">Nivel de servicio</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="inventarios" aria-selected="false">Inventarios</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="agotados" aria-selected="false">Agotados</button>
-<button class="dm-main-tab" type="button" role="tab" data-main="mps" aria-selected="false">MPS</button>
-<button class="dm-main-tab" type="button" role="tab" data-main="otif" aria-selected="false">OTIF</button>
+<button class="dm-main-tab" type="button" role="tab" data-main="produccion" aria-selected="false">Producción</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="gasto" aria-selected="false">Gasto logístico</button>
 </nav>
 
@@ -593,6 +592,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <p class="dm-note">En los gráficos por segmento, ciudad y canal, cada color es un año (leyenda arriba de cada gráfico). Los valores suman los meses elegidos en el filtro.</p>
 </section>
 <section class="dm-main" id="mps" role="tabpanel" hidden>
+<nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Producción"><button class="pr-tab" type="button" role="tab" data-sub="mps" aria-selected="false">MPS</button><button class="pr-tab" type="button" role="tab" data-sub="otif" aria-selected="false">OTIF</button></nav>
 <div class="dm-strip mo-bar">
 <div class="dm-filters">
 <label class="dm-field"><span class="dm-flabel">Semana</span><select class="dm-select" data-draw="mps-sem" data-source="produccion mps mps_estado" aria-label="Semana del MPS"></select></label>
@@ -658,6 +658,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </section>
 
 <section class="dm-main" id="otif" role="tabpanel" hidden>
+<nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Producción"><button class="pr-tab" type="button" role="tab" data-sub="mps" aria-selected="false">MPS</button><button class="pr-tab" type="button" role="tab" data-sub="otif" aria-selected="false">OTIF</button></nav>
 <div class="dm-strip mo-bar">
 <div class="dm-filters">
 <label class="dm-field"><span class="dm-flabel">Semana</span><select class="dm-select" data-draw="ot-sem" data-source="produccion mps mps_estado" aria-label="Semana de OTIF"></select></label>
@@ -941,20 +942,22 @@ return { canal, LIM_CRIT, LIM_SOB, DIAS_MES, NAME, f0, f1, fc, fd, fDate, fDay, 
 <script>
 const SUBS = ['general', 'resumen'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'gasto'];
 const h0 = location.hash.slice(1);
-window.DMmain = SUBS.includes(h0) ? 'inventarios' : MAINS.includes(h0) ? h0 : 'supply';
+window.DMmain = SUBS.includes(h0) ? 'inventarios' : h0 === 'produccion' ? 'mps' : MAINS.includes(h0) ? h0 : 'supply';
 window.DMtab = SUBS.includes(h0) ? h0 : 'general';
 const applyTab = () => {
 const inv = window.DMmain === 'inventarios';
-document.querySelectorAll('.dm-main-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.main === window.DMmain)));
+document.querySelectorAll('.dm-main-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.main === window.DMmain || (b.dataset.main === 'produccion' && (window.DMmain === 'mps' || window.DMmain === 'otif')))));
+document.querySelectorAll('.pr-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.sub === window.DMmain)));
 document.querySelectorAll('.dm-main').forEach((p) => { p.hidden = p.id !== window.DMmain; });
 document.querySelectorAll('.dm-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === window.DMtab)));
 document.querySelectorAll('.dm-page').forEach((p) => { p.hidden = !inv || p.id !== window.DMtab; });
 document.querySelectorAll('.dm-band .dm-filters, .dm-band .dm-take').forEach((el) => { el.hidden = !inv; });
 };
 document.querySelectorAll('.dm-main-tab').forEach((b) => b.addEventListener('click', () => {
-window.DMmain = b.dataset.main; applyTab(); dash.setLink(window.DMmain === 'inventarios' ? window.DMtab : window.DMmain);
+window.DMmain = b.dataset.main === 'produccion' ? (window.DMprod || 'mps') : b.dataset.main; applyTab(); dash.setLink(window.DMmain === 'inventarios' ? window.DMtab : window.DMmain);
 }));
 document.querySelectorAll('.dm-tab').forEach((b) => b.addEventListener('click', () => { window.DMtab = b.dataset.tab; applyTab(); dash.setLink(b.dataset.tab); }));
+document.querySelectorAll('.pr-tab').forEach((b) => b.addEventListener('click', () => { window.DMmain = window.DMprod = b.dataset.sub; applyTab(); dash.setLink(b.dataset.sub); }));
 document.querySelectorAll('.dm-catsel').forEach((s) => s.addEventListener('change', () => dash.setParams({ cat: s.value })));
 dash.onData(() => {
 applyTab();
@@ -2515,6 +2518,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 24/11/2026 03:23 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 24/11/2026 03:28 PM.</p>
 </body>
 </html>
