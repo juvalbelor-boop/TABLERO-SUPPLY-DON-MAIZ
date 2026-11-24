@@ -798,7 +798,16 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <button class="dm-ms-btn" type="button" aria-expanded="false" aria-label="Elegir clientes"><span data-draw="msl-nsc_clis" data-source="ns">—</span></button>
 <div class="dm-ms-pop ns-cli-pop" hidden><input class="ns-cli-q" type="search" placeholder="Buscar cliente…" aria-label="Buscar cliente por palabras clave"><button class="dm-ms-all" type="button">Top 10</button><div class="dm-ms-list" data-draw="ms-nsc_clis" data-source="ns"></div></div></div>
 </div></div>
-<div class="dm-chart" data-draw="ns-cli" data-source="ns"></div></section>
+<div class="dm-chart" data-draw="ns-cli" data-source="ns"></div>
+<div class="lc-head" style="margin-top:var(--cds-gap-lg)"><div><h2 class="dm-h2" data-draw="ns-falt-t" data-source="ns agotados">¿Qué faltó para llegar al 100 %?</h2>
+<p class="dm-note" data-draw="ns-falt-n" data-source="ns agotados">—</p></div></div>
+<div class="lc-box">
+<table class="lc-table">
+<colgroup><col style="width:13%"><col style="width:16%"><col style="width:7%"><col><col style="width:12%"><col style="width:17%"></colgroup>
+<thead><tr><th>Canal</th><th>Cliente</th><th>Ref</th><th>Producto</th><th class="lc-n">Faltante</th><th>% del faltante</th></tr></thead>
+<tbody data-draw="ns-falt" data-source="ns agotados"></tbody>
+</table>
+</div></section>
 </section>
 
 <section class="dm-main" id="gasto" role="tabpanel" hidden>
@@ -1317,7 +1326,7 @@ const faltaMps = (s) => {
 const real = new Map(), h = refsH(s); P().filter((r) => r.s === s.w && (!s.horno || r.horno === s.horno) && okOri(s, r.ref)).forEach((r) => real.set(r.ref, (real.get(r.ref) || 0) + (s.kg ? r.realk : r.real)));
 return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!h || h.has(r.ref)) && okOri(s, r.ref)), (r) => Math.max(0, (s.kg ? r.mpsk : r.mps) - (real.get(r.ref) || 0)));
 };
-const domTarde = (w) => addDays(w, 6);
+const domTarde = (w) => { const d = addDays(w, 6); return P().some((r) => r.s === w && r.f === d) ? d : null; };
 const porDia = (s) => { const dt = domTarde(s.w); const out = DIAS.map((dia, i) => {
 const f = i === 0 && dt ? dt : addDays(s.w, i - 1); const t = tot(rows({ ...s, dia: '' }, false).filter((r) => r.f === f));
 const e = est(); const estado = e && f >= e.hoy ? 'Sin reporte aún' : !t.prog && !t.real ? 'Sin producción' : t.real >= t.prog ? 'Cumplió' : 'No cumplió';
@@ -2120,6 +2129,38 @@ const NS_STOP = new Set(['Y', 'DE', 'DEL', 'LA', 'LAS', 'LOS', 'EL', 'S', 'A', '
 const nsCorto = (n) => { const w = String(n).replace(/[.,\-&]/g, ' ').split(/\s+/).filter((x) => x && !NS_STOP.has(x.toUpperCase())); let o = '';
 for (const x of w) { if (o && (o + ' ' + x).length > 24) break; o = o ? o + ' ' + x : x; } return o.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()); };
 dash.draw('ns-cli-t', (el) => { const n = NS.list(dash.params().nsc_clis).length; el.textContent = n ? 'Nivel de servicio de los clientes elegidos' : 'Nivel de servicio de los 10 clientes principales'; });
+
+const nsFalt = () => {
+const ag = dash.data('agotados'); if (!NS.ok() || ag.status !== 'ok') return null;
+const s = NS.sel(), anios = s.anios.length ? s.anios.map(String) : [NS.anios().slice(-1)[0]].map(String), ch = NS.list(dash.params().nsc_canales).map(String), m = new Map();
+ag.data.forEach((r) => {
+const yy = String(r.mes).slice(0, 4), mm = +String(r.mes).slice(4), c = DM.canal(r.canal).toUpperCase();
+if (!anios.includes(yy) || (s.meses.length && !s.meses.includes(mm)) || (s.canales.length && !s.canales.includes(c)) || (ch.length && !ch.includes(c))) return;
+const k = c + '|' + r.ref, o = m.get(k) || { canal: c, ref: String(r.ref), desc: r.desc, v: 0 }; o.v += +r.v || 0; m.set(k, o);
+});
+const rows = [...m.values()].filter((o) => o.v > 0.5).sort((a, b) => b.v - a.v);
+return { anios, rows, tot: d3.sum(rows, (o) => o.v) };
+};
+const nsMill = (v) => '$' + DM.f1.format(v / 1e6) + ' M';
+dash.draw('ns-falt-t', (el) => { const f = nsFalt(); el.textContent = '¿Qué faltó para llegar al 100 %?' + (f ? ' · ' + f.anios.join(', ') : ''); });
+dash.draw('ns-falt-n', (el) => {
+const f = nsFalt(); if (!f) { el.textContent = 'Sin datos de agotados.'; return; }
+const cl = NS.list(dash.params().nsc_clis).length;
+el.textContent = 'Faltante total ' + nsMill(f.tot) + ' en ' + f.rows.length + ' referencias, de mayor a menor. Valor agotado en pesos del archivo de agotados, por canal y referencia.' +
+(cl ? ' Ese archivo no trae el cliente: el detalle de los clientes elegidos aparece cuando subas NS_referencias.xlsx.' : ' El detalle por cliente aparece cuando subas NS_referencias.xlsx.');
+});
+dash.draw('ns-falt', (tb) => {
+tb.replaceChildren(); const f = nsFalt(); if (!f) return;
+const td = (txt, cls) => { const e = document.createElement('td'); if (cls) e.className = cls; e.textContent = txt; return e; };
+f.rows.slice(0, 150).forEach((o) => {
+const tr = document.createElement('tr'); tr.className = 'lc-row'; const sh = f.tot ? o.v / f.tot : 0;
+const pc = document.createElement('td'); const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:8px';
+const pill = document.createElement('span'); pill.className = 'lc-pill'; pill.textContent = DM.f1.format(sh * 100) + ' %';
+const bar = document.createElement('span'); bar.className = 'lc-bar'; const i = document.createElement('i'); i.style.width = Math.max(2, (sh / (f.rows[0].v / f.tot)) * 100) + '%'; i.style.background = 'var(--dm-green)'; bar.append(i); w.append(pill, bar); pc.append(w);
+const d = td(o.desc); d.title = o.desc;
+tr.append(td(NS.nom(o.canal)), td('Todos', 'lc-muted'), td(o.ref, 'lc-ref'), d, td(nsMill(o.v), 'lc-n'), pc); tb.append(tr);
+});
+});
 dash.draw('ns-cli', (el) => {
 if (!NS.ok()) { DM.fail(el, dash.data('ns').status); return; }
 el.replaceChildren();
@@ -2463,6 +2504,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 24/11/2026 12:40 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 24/11/2026 01:43 PM.</p>
 </body>
 </html>
