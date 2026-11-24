@@ -2066,22 +2066,18 @@ return { anios, rows, tot: d3.sum(rows, (o) => o.v) };
 };
 const nsMill = (v) => '$' + DM.f1.format(v / 1e6) + ' M';
 dash.draw('ns-falt-t', (el) => { const f = nsFalt(); el.textContent = '¿Qué faltó para llegar al 100 %?' + (f ? ' · ' + f.anios.join(', ') : ''); });
-dash.draw('ns-falt-n', (el) => {
-const f = nsFalt(); if (!f) { el.textContent = 'Sin datos de agotados.'; return; }
-const cl = NS.list(dash.params().nsc_clis).length;
-el.textContent = 'Faltante total ' + nsMill(f.tot) + ' en ' + f.rows.length + ' referencias, de mayor a menor. Valor agotado en pesos del archivo de agotados, por canal y referencia.' +
-(cl ? ' Ese archivo no trae el cliente: el detalle de los clientes elegidos aparece cuando subas NS_referencias.xlsx.' : ' El detalle por cliente aparece cuando subas NS_referencias.xlsx.');
-});
+dash.draw('ns-falt-n', (el) => { el.textContent = ''; el.hidden = true; });
 dash.draw('ns-falt', (tb) => {
 tb.replaceChildren(); const f = nsFalt(); if (!f) return;
 const td = (txt, cls) => { const e = document.createElement('td'); if (cls) e.className = cls; e.textContent = txt; return e; };
 f.rows.slice(0, 150).forEach((o) => {
 const tr = document.createElement('tr'); tr.className = 'lc-row'; const sh = f.tot ? o.v / f.tot : 0;
 const pc = document.createElement('td'); const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:8px';
-const pill = document.createElement('span'); pill.className = 'lc-pill'; pill.textContent = DM.f1.format(sh * 100) + ' %';
+const pill = document.createElement('span'); pill.className = 'lc-pill' + (sh >= 0.04 ? '' : sh >= 0.02 ? ' lc-warn' : ' lc-ok'); pill.textContent = DM.f1.format(sh * 100) + ' %';
 w.append(pill); pc.append(w);
 const d = td(o.desc); d.title = o.desc;
-tr.append(td(NS.nom(o.canal)), td('Todos', 'lc-muted'), td(o.ref, 'lc-ref'), d, td(nsMill(o.v), 'lc-n'), pc); tb.append(tr);
+const can = td(NS.nom(o.canal)); can.style.fontWeight = '700'; const fal = td(nsMill(o.v), 'lc-n'); fal.style.fontWeight = '800';
+      tr.append(can, td('Todos'), td(o.ref, 'lc-ref'), d, fal, pc); tb.append(tr);
 });
 });
 dash.draw('ns-cli', (el) => {
