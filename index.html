@@ -1317,7 +1317,7 @@ const faltaMps = (s) => {
 const real = new Map(), h = refsH(s); P().filter((r) => r.s === s.w && (!s.horno || r.horno === s.horno) && okOri(s, r.ref)).forEach((r) => real.set(r.ref, (real.get(r.ref) || 0) + (s.kg ? r.realk : r.real)));
 return sum(M().filter((r) => r.s === s.w && (!s.cat || r.cat === s.cat) && (!h || h.has(r.ref)) && okOri(s, r.ref)), (r) => Math.max(0, (s.kg ? r.mpsk : r.mps) - (real.get(r.ref) || 0)));
 };
-const domTarde = (w) => { const d = addDays(w, 6); return P().some((r) => r.s === w && r.f === d) ? d : null; };
+const domTarde = (w) => addDays(w, 6);
 const porDia = (s) => { const dt = domTarde(s.w); const out = DIAS.map((dia, i) => {
 const f = i === 0 && dt ? dt : addDays(s.w, i - 1); const t = tot(rows({ ...s, dia: '' }, false).filter((r) => r.f === f));
 const e = est(); const estado = e && f >= e.hoy ? 'Sin reporte aún' : !t.prog && !t.real ? 'Sin producción' : t.real >= t.prog ? 'Cumplió' : 'No cumplió';
@@ -2463,6 +2463,6 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 24/11/2026 10:18 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 24/11/2026 11:02 AM.</p>
 </body>
 </html>
