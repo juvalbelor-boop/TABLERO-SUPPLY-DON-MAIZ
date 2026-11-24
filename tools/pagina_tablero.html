@@ -185,7 +185,7 @@ font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: no
 
 .dm-tablebox { overflow: auto; max-height: 26rem; }
 .ag-fila2 { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr)); margin-bottom: var(--cds-gap-md); }
-.ag-fila-tabla { display: grid; gap: var(--cds-gap-md); grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
+.ag-fila-tabla { display: grid; gap: var(--cds-gap-md); grid-template-columns: minmax(0, 1fr); align-items: start; }
 @media (max-width: 900px) { .ag-fila-tabla { grid-template-columns: 1fr; } }
 .ag-tablebox { max-height: 34rem; }
 .ag-tablebox thead th { position: sticky; top: 0; background: var(--color-bg, #fff); z-index: 1; }
@@ -505,13 +505,13 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <div class="dm-chart" data-draw="ag-seg" data-source="agotados agotados_estado"></div></section>
 </div>
 <div class="ag-fila-tabla">
+<section class="dm-card" id="agotados-ciudad"><h2 class="dm-h2">Valor agotado por ciudad</h2>
+<div class="dm-chart" data-draw="ag-ciudad" data-source="agotados agotados_estado"></div></section>
 <section class="dm-card dm-card-o" id="agotados-top"><h2 class="dm-h2">Referencias con agotados</h2><p class="dm-note"><span data-draw="ag-top-n" data-source="agotados">Todas las referencias</span>, de mayor a menor agotado. Suma de los años y meses elegidos.</p>
 <div class="lc-box"><table class="lc-table" data-source="agotados">
 <colgroup><col style="width:5%"><col style="width:8%"><col><col style="width:12%"><col style="width:15%"><col style="width:18%"></colgroup>
 <thead><tr><th class="lc-c">#</th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Agotado ($)</th><th>% del total</th></tr></thead>
 <tbody data-draw="ag-top"></tbody></table></div></section>
-<section class="dm-card" id="agotados-ciudad"><h2 class="dm-h2">Valor agotado por ciudad</h2>
-<div class="dm-chart" data-draw="ag-ciudad" data-source="agotados agotados_estado"></div></section>
 </div>
 <p class="dm-note">En los gráficos por segmento, ciudad y canal, cada color es un año (leyenda arriba de cada gráfico). Los valores suman los meses elegidos en el filtro.</p>
 </section>
