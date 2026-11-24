@@ -2079,7 +2079,7 @@ f.rows.slice(0, 150).forEach((o) => {
 const tr = document.createElement('tr'); tr.className = 'lc-row'; const sh = f.tot ? o.v / f.tot : 0;
 const pc = document.createElement('td'); const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:8px';
 const pill = document.createElement('span'); pill.className = 'lc-pill'; pill.textContent = DM.f1.format(sh * 100) + ' %';
-const bar = document.createElement('span'); bar.className = 'lc-bar'; const i = document.createElement('i'); i.style.width = Math.max(2, (sh / (f.rows[0].v / f.tot)) * 100) + '%'; i.style.background = 'var(--dm-green)'; bar.append(i); w.append(pill, bar); pc.append(w);
+w.append(pill); pc.append(w);
 const d = td(o.desc); d.title = o.desc;
 tr.append(td(NS.nom(o.canal)), td('Todos', 'lc-muted'), td(o.ref, 'lc-ref'), d, td(nsMill(o.v), 'lc-n'), pc); tb.append(tr);
 });
