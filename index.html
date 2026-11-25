@@ -288,11 +288,19 @@ font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: no
 .lc-pill.lc-warn { background: var(--dm-orange-2); }
 .lc-pill.lc-ok { background: var(--dm-ok); }
 .lc-head .dm-select { border-color: var(--dm-green); }
-#ns-agotados .lc-box { max-height: 44rem; } #ns-agotados .lc-table { font-size: 14px; }
-#ns-agotados col:nth-child(1) { width: 4%; } #ns-agotados col:nth-child(2) { width: 7%; } #ns-agotados col:nth-child(4) { width: 11%; } #ns-agotados col:nth-child(5) { width: 15%; } #ns-agotados col:nth-child(6) { width: 23%; }
-#ns-agotados .lc-table thead th { padding: 8px 12px; font-size: 13px; } #ns-agotados .lc-table td { padding: 5px 12px; } #ns-agotados .lc-table td.lc-n { font-weight: 700; }
-#ns-agotados .lc-pill { font-size: 12.5px; padding: 1px 8px; min-width: 3.4rem; } #ns-agotados .lc-bar { height: 7px; }
-#ns-agotados tfoot td { position: sticky; bottom: 0; z-index: 1; background: #E4E6F6; font-weight: 800; font-size: 14.5px; color: var(--dm-green-dk); border-top: 2px solid var(--dm-green); padding: 8px 12px; }
+:is(#ns-agotados, #agotados-top) .lc-box { max-height: 44rem; }
+:is(#ns-agotados, #agotados-top) .lc-table { font-size: 14px; }
+:is(#ns-agotados, #agotados-top) col:nth-child(1) { width: 4%; }
+:is(#ns-agotados, #agotados-top) col:nth-child(2) { width: 7%; }
+:is(#ns-agotados, #agotados-top) col:nth-child(4) { width: 11%; }
+:is(#ns-agotados, #agotados-top) col:nth-child(5) { width: 15%; }
+:is(#ns-agotados, #agotados-top) col:nth-child(6) { width: 23%; }
+:is(#ns-agotados, #agotados-top) .lc-table thead th { padding: 8px 12px; font-size: 13px; }
+:is(#ns-agotados, #agotados-top) .lc-table td { padding: 5px 12px; }
+:is(#ns-agotados, #agotados-top) .lc-table td.lc-n { font-weight: 700; }
+:is(#ns-agotados, #agotados-top) .lc-pill { font-size: 12.5px; padding: 1px 8px; min-width: 3.4rem; }
+:is(#ns-agotados, #agotados-top) .lc-bar { height: 7px; }
+:is(#ns-agotados, #agotados-top) tfoot td { position: sticky; bottom: 0; z-index: 1; background: #E4E6F6; font-weight: 800; font-size: 14.5px; color: var(--dm-green-dk); border-top: 2px solid var(--dm-green); padding: 8px 12px; }
 .al-sem { display: inline-block; border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 11px; color: #FFFFFF; white-space: nowrap; }
 .al-cavas { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 900px) { .al-cavas { grid-template-columns: 1fr; } }
@@ -599,7 +607,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <div class="lc-box"><table class="lc-table" data-source="agotados">
 <colgroup><col style="width:5%"><col style="width:8%"><col><col style="width:12%"><col style="width:15%"><col style="width:18%"></colgroup>
 <thead><tr><th class="lc-c">#</th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Agotado ($)</th><th>% del total</th></tr></thead>
-<tbody data-draw="ag-top"></tbody></table></div></section>
+<tbody data-draw="ag-top"></tbody><tfoot data-draw="ag-top-tot" data-source="agotados"></tfoot></table></div></section>
 </div>
 <p class="dm-note">En los gráficos por segmento, ciudad y canal, cada color es un año (leyenda arriba de cada gráfico). Los valores suman los meses elegidos en el filtro.</p>
 </section>
@@ -1980,6 +1988,11 @@ const agRefs = () => { const s = AG.sel(), m = new Map();
 AG.rowsDim(s).filter(AG.enPeriodo(s)).forEach((r) => { const o = m.get(r.ref) || { ref: r.ref, desc: r.desc, seg: r.seg, v: 0 }; o.v += r.v; m.set(r.ref, o); });
 return [...m.values()].filter((o) => o.v > 0.5).sort((a, b) => b.v - a.v); };
 dash.draw('ag-top-n', (el) => { const n = AG.ok() ? agRefs().length : 0; el.textContent = n ? DM.f0.format(n) + ' referencias' : 'Todas las referencias'; });
+dash.draw('ag-top-tot', (tf) => {
+tf.replaceChildren(); if (!AG.ok()) return; const refs = agRefs(); if (!refs.length) return;
+const tr = document.createElement('tr'), c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); };
+c(''); c(''); c('Total · ' + DM.f0.format(refs.length) + ' referencias'); c(''); c(AGF.pesos(d3.sum(refs, (o) => o.v)), 'lc-n'); c('100 %'); tf.append(tr);
+});
 dash.draw('ag-top', (tb) => {
 tb.replaceChildren(); if (!AG.ok()) return;
 const refs = agRefs(), tot = d3.sum(refs, (o) => o.v);
@@ -2717,6 +2730,6 @@ w.append(p, bar, t); cell.append(w); td(AL.mill(r.costo), 'lc-n'); tb.append(tr)
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 25/11/2026 02:56 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 25/11/2026 03:00 PM.</p>
 </body>
 </html>
