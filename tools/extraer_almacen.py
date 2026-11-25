@@ -61,6 +61,15 @@ for r in wb['KPI Detalle'].iter_rows(min_row=7, values_only=True):
     e_ = refs[-1]; e_['estado'] = e_['estado'] if e_['estado'] in ('SIN INVENTARIO', 'SOBRECAPACIDAD') else sem(e_['pct'] or 0)
 faltan = sorted(set(str(r[0]).strip() for r in unicos) - vistos)
 if faltan: errores.append('Referencias de "Base de datos" que no están en "KPI Detalle": ' + ', '.join(faltan))
+# Clase (pedido del gerente 25-nov; el Excel no la trae): regla provisional hasta que el usuario confirme la lista.
+import re as _re
+for r in refs:
+    t = r['desc'].upper()
+    r['clase'] = 'Exportación' if _re.search(r'\bEXP\b|EXPORT|MERICA', t) else 'Obsoleto' if not r['salidas'] else 'Nacional'
+for a in alm:
+    f_ = [r for r in refs if r['alm'] == a['alm']]
+    for k_ in ('cap', 'costo'):
+        if abs(sum(r[k_] for r in f_) - a[k_]) > 0.5: errores.append(f"{a['alm']}: {k_} del resumen {a[k_]:,.2f} y del detalle {sum(r[k_] for r in f_):,.2f}")
 sincap = sorted(r['cod'] for r in refs if not r['cap'])
 if sincap: avisos.append(f'{len(sincap)} referencias sin capacidad máxima (0 o vacía): ' + ', '.join(sincap))
 for a in alm:

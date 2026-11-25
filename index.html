@@ -854,6 +854,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-main" id="almmp" role="tabpanel" hidden>
 <nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Almacén"><button class="pr-tab" type="button" role="tab" data-sub="almmp" aria-selected="false">Materia prima</button><button class="pr-tab" type="button" role="tab" data-sub="almcav" aria-selected="false">Producto terminado (CAVAS)</button></nav>
 <div class="dm-strip mo-bar">
+<div class="dm-filters"><label class="dm-field"><span class="dm-flabel">Clase</span><select class="dm-select al-cls" aria-label="Nacional, exportaciones u obsoletos"><option value="">Todas</option><option>Nacional</option><option>Exportación</option><option>Obsoleto</option></select></label></div>
 <p class="dm-note">Ocupación de bodegas de materia prima y empaques del archivo <b data-draw="al-mp-arch" data-source="almacen_estado">—</b>. Semáforo: verde hasta 85 %, amarillo de 85 a 90 %, rojo más de 90 %.<span data-draw="al-mp-rep" data-source="almacen_mp"></span></p>
 </div>
 <div class="dm-tiles">
@@ -2591,13 +2592,20 @@ return { one, SEM, semMP, semCV, pill, pct, mill, cap };
 })();
 document.querySelectorAll('.al-mp-sel').forEach((s) => s.addEventListener('change', () => dash.setParams({ al_mp_alm: s.value || null })));
 document.querySelectorAll('.al-cv-sel').forEach((s) => s.addEventListener('change', () => dash.setParams({ al_cv: s.value || null })));
-dash.onData(() => { document.querySelectorAll('.al-cv-sel').forEach((s) => { s.value = dash.params().al_cv || ''; }); });
+document.querySelectorAll('.al-cls').forEach((s) => s.addEventListener('change', () => dash.setParams({ al_cls: s.value || null })));
+dash.onData(() => { document.querySelectorAll('.al-cv-sel').forEach((s) => { s.value = dash.params().al_cv || ''; }); document.querySelectorAll('.al-cls').forEach((s) => { s.value = dash.params().al_cls || ''; }); });
 
 dash.draw('al-mp-rep', (el) => { const m = alMP(); const n = m && m.repetidos ? m.repetidos.length : 0; el.textContent = n ? ' Se quitaron ' + n + ' bolsas repetidas del archivo (estaban contadas dos veces).' : ''; });
 dash.draw('al-mp-arch', (el) => { const e = AL.one('almacen_estado'); el.textContent = e ? e.mp_archivo : '—'; });
 const alRows = (id) => { const d = dash.data(id); return d.status === 'ok' && Array.isArray(d.data) ? d.data : null; };
-const alMP = () => { const r = alRows('almacen_mp'); if (!r) return null; const i = r.find((x) => x.tipo === 'info') || {};
-return { almacenes: r.filter((x) => x.tipo === 'alm'), total: r.find((x) => x.tipo === 'total'), refs: r.filter((x) => x.tipo === 'ref'), repetidos: String(i.repetidos || '').split(',').filter(Boolean) }; };
+const alMP = () => { const r = alRows('almacen_mp'); if (!r) return null; const i = r.find((x) => x.tipo === 'info') || {}, cls = dash.params().al_cls || '';
+const refs = r.filter((x) => x.tipo === 'ref' && (!cls || x.clase === cls)); let almacenes = r.filter((x) => x.tipo === 'alm'), total = r.find((x) => x.tipo === 'total');
+if (cls) { // con filtro de clase se suma el detalle (sin filtro da lo mismo que el resumen, validado en el proceso)
+const sem = (p) => (p > 1 ? 'SOBRECAPACIDAD' : p > 0.9 ? 'ROJO' : p > 0.85 ? 'AMARILLO' : 'VERDE');
+const ag = (rs, alm) => { const cap = d3.sum(rs, (x) => x.cap), inv = d3.sum(rs, (x) => x.inv), pct = cap ? inv / cap : 0; return { alm, refs: rs.length, cap, inv, pct, disp: cap - inv, costo: d3.sum(rs, (x) => x.costo), estado: sem(pct) }; };
+almacenes = almacenes.map((a) => ag(refs.filter((x) => x.alm === a.alm), a.alm)).filter((a) => a.refs); total = ag(refs, 'TOTAL');
+}
+return { almacenes, total, refs, repetidos: String(i.repetidos || '').split(',').filter(Boolean) }; };
 dash.draw('al-mp-k-pct', (el) => { const m = alMP(); el.textContent = m && m.total ? AL.pct(m.total.pct) : '—'; });
 dash.draw('al-mp-k-sem', (el) => { el.replaceChildren(); const m = alMP(); if (m && m.total) el.append(AL.pill(m.total.estado, m.total.estado)); });
 dash.draw('al-mp-k-costo', (el) => { const m = alMP(); el.textContent = m && m.total ? AL.mill(m.total.costo) : '—'; });
@@ -2730,6 +2738,6 @@ w.append(p, bar, t); cell.append(w); td(AL.mill(r.costo), 'lc-n'); tb.append(tr)
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 25/11/2026 03:38 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 25/11/2026 03:42 PM.</p>
 </body>
 </html>
