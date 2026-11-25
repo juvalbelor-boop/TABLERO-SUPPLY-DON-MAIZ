@@ -218,12 +218,15 @@ font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: no
 .iv-col { display: flex; flex-direction: column; gap: var(--cds-gap-lg); min-width: 0; }
 .iv-fam-grid:has(.iv-col) { align-items: stretch; }
 #fam-todas { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-.iv-todas-box { margin-top: 0; flex: 1 1 0; min-height: 16rem; max-height: none; }
+.iv-todas-box { margin-top: 0; max-height: 36rem; }
 @media (max-width: 1000px) { .iv-todas-box { flex: none; max-height: 34rem; } }
 .iv-todas-box { overflow-x: hidden; } .iv-todas-box .lc-table { font-size: 12px; }
 .iv-todas-box td { white-space: normal; overflow-wrap: anywhere; padding: 7px 4px; } .iv-todas-box th { padding: 9px 4px; font-size: 11px; white-space: normal; }
 .iv-todas-box td.lc-n { white-space: nowrap; overflow-wrap: normal; } .iv-todas-box td:first-child, .iv-todas-box th:first-child { padding-left: 8px; }
-.iv-fam-grid { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.iv-fam-grid { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
+#fam-todas { grid-column: 1 / -1; }
+.iv-fam .iv-top .dm-table { font-size: 12px; } .iv-fam .iv-top .dm-table th, .iv-fam .iv-top .dm-table td { padding: 6px 3px; } .iv-fam .iv-top .dm-table th { font-size: 11px; white-space: normal; }
+.iv-fam .iv-top-s { display: block; }
 @media (max-width: 1000px) { .iv-fam-grid { grid-template-columns: 1fr; } }
 .iv-top { max-height: none; }
 .iv-top-t { margin-top: var(--cds-gap-md); }
@@ -325,18 +328,29 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </div>
 
 <div class="iv-fam-grid">
-<div class="iv-col">
 <section class="dm-card iv-fam" id="fam-arepas">
 <div class="pp-fam-head"><span class="pp-fam-name">Arepas</span><span class="pp-fam-badge" data-draw="b-AREPAS" data-source="puntos">—</span></div>
 <div class="dm-chart dm-chart-s" data-draw="l-AREPAS" data-source="puntos"></div>
 <h3 class="dm-h2 iv-top-t">Top 11 referencias críticas <span class="iv-top-s">5 tipo A · 3 tipo B · 3 tipo C · menos días primero</span></h3>
 <div class="dm-tablebox iv-top">
 <table class="dm-table" data-source="puntos">
-<thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num">Ciudades críticas</th><th class="dm-num">Días (mín.)</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
+<thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num" title="Ciudades críticas">Ciu. crít.</th><th class="dm-num" title="Días (mín.)">Días mín.</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
 <tbody data-draw="t-AREPAS"></tbody>
 </table>
 </div>
 <p class="dm-note" data-empty="AREPAS" hidden>Sin casos críticos en este corte.</p>
+</section>
+<section class="dm-card iv-fam" id="fam-salsas">
+<div class="pp-fam-head"><span class="pp-fam-name">Salsas</span><span class="pp-fam-badge" data-draw="b-SALSAS" data-source="puntos">—</span></div>
+<div class="dm-chart dm-chart-s" data-draw="l-SALSAS" data-source="puntos"></div>
+<h3 class="dm-h2 iv-top-t">Top 11 referencias críticas <span class="iv-top-s">5 tipo A · 3 tipo B · 3 tipo C · menos días primero</span></h3>
+<div class="dm-tablebox iv-top">
+<table class="dm-table" data-source="puntos">
+<thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num" title="Ciudades críticas">Ciu. crít.</th><th class="dm-num" title="Días (mín.)">Días mín.</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
+<tbody data-draw="t-SALSAS"></tbody>
+</table>
+</div>
+<p class="dm-note" data-empty="SALSAS" hidden>Sin casos críticos en este corte.</p>
 </section>
 <section class="dm-card iv-fam" id="fam-empanadas">
 <div class="pp-fam-head"><span class="pp-fam-name">Empanadas</span><span class="pp-fam-badge" data-draw="b-EMPANADAS" data-source="puntos">—</span></div>
@@ -344,25 +358,11 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <h3 class="dm-h2 iv-top-t">Top 11 referencias críticas <span class="iv-top-s">5 tipo A · 3 tipo B · 3 tipo C · menos días primero</span></h3>
 <div class="dm-tablebox iv-top">
 <table class="dm-table" data-source="puntos">
-<thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num">Ciudades críticas</th><th class="dm-num">Días (mín.)</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
+<thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num" title="Ciudades críticas">Ciu. crít.</th><th class="dm-num" title="Días (mín.)">Días mín.</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
 <tbody data-draw="t-EMPANADAS"></tbody>
 </table>
 </div>
 <p class="dm-note" data-empty="EMPANADAS" hidden>Sin casos críticos en este corte.</p>
-</section>
-</div>
-<div class="iv-col">
-<section class="dm-card iv-fam" id="fam-salsas">
-<div class="pp-fam-head"><span class="pp-fam-name">Salsas</span><span class="pp-fam-badge" data-draw="b-SALSAS" data-source="puntos">—</span></div>
-<div class="dm-chart dm-chart-s" data-draw="l-SALSAS" data-source="puntos"></div>
-<h3 class="dm-h2 iv-top-t">Top 11 referencias críticas <span class="iv-top-s">5 tipo A · 3 tipo B · 3 tipo C · menos días primero</span></h3>
-<div class="dm-tablebox iv-top">
-<table class="dm-table" data-source="puntos">
-<thead><tr><th></th><th>Ref</th><th>Producto</th><th>ABC</th><th class="dm-num">Ciudades críticas</th><th class="dm-num">Días (mín.)</th><th class="dm-num">Inv+tr</th><th class="dm-num">Dem/día</th></tr></thead>
-<tbody data-draw="t-SALSAS"></tbody>
-</table>
-</div>
-<p class="dm-note" data-empty="SALSAS" hidden>Sin casos críticos en este corte.</p>
 </section>
 <section class="dm-card dm-card-o iv-fam" id="fam-todas">
 <div class="pp-fam-head"><span class="pp-fam-name">Todas las referencias</span><span class="pp-fam-badge" data-draw="iv-todas-n" data-source="puntos">—</span></div>
@@ -371,7 +371,6 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <thead><tr><th></th><th>Ref</th><th>Producto</th><th class="lc-c">ABC</th><th class="lc-n" title="Ciudades críticas">Ciu. crít.</th><th class="lc-n">Días mín.</th><th class="lc-n">Días red</th><th class="lc-n">Inv+tr</th><th class="lc-n">Dem/día</th></tr></thead>
 <tbody data-draw="iv-todas"></tbody></table></div>
 </section>
-</div>
 </div>
 </section>
 
@@ -723,15 +722,12 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <div class="dm-ms-pop ns-cli-pop" hidden><input class="ns-cli-q" type="search" placeholder="Buscar cliente…" aria-label="Buscar cliente por palabras clave"><button class="dm-ms-all" type="button">Top 10</button><div class="dm-ms-list" data-draw="ms-nsc_clis" data-source="ns"></div></div></div>
 </div></div>
 <div class="dm-chart" data-draw="ns-cli" data-source="ns"></div>
-<div class="lc-head" style="margin-top:var(--cds-gap-lg)"><div><h2 class="dm-h2" data-draw="ns-falt-t" data-source="ns agotados ns_ref">¿Qué faltó para llegar al 100 %?</h2>
-<p class="dm-note" data-draw="ns-falt-n" data-source="ns agotados ns_ref">—</p></div></div>
-<div class="lc-box">
-<table class="lc-table">
-<colgroup><col style="width:13%"><col style="width:16%"><col style="width:7%"><col><col style="width:12%"><col style="width:17%"></colgroup>
-<thead><tr><th>Canal</th><th>Cliente</th><th>Ref</th><th>Producto</th><th class="lc-n">Faltante</th><th>% del faltante</th></tr></thead>
-<tbody data-draw="ns-falt" data-source="ns agotados ns_ref"></tbody>
-</table>
-</div></section>
+</section>
+<section class="dm-card dm-card-o" id="ns-agotados"><h2 class="dm-h2">Referencias con agotados</h2><p class="dm-note"><span data-draw="ns-ag-n" data-source="ns ns_ref agotados">Todas las referencias</span>, de mayor a menor agotado. Suma de los años y meses elegidos, con los clientes y el canal de la gráfica de arriba.</p>
+<div class="lc-box"><table class="lc-table">
+<colgroup><col style="width:5%"><col style="width:8%"><col><col style="width:12%"><col style="width:15%"><col style="width:18%"></colgroup>
+<thead><tr><th class="lc-c">#</th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Agotado ($)</th><th>% del total</th></tr></thead>
+<tbody data-draw="ns-ag" data-source="ns ns_ref agotados"></tbody></table></div></section>
 </section>
 
 <section class="dm-main" id="gasto" role="tabpanel" hidden>
@@ -2056,46 +2052,32 @@ const nsCorto = (n) => { const w = String(n).replace(/[.,\-&]/g, ' ').split(/\s+
 for (const x of w) { if (o && (o + ' ' + x).length > 24) break; o = o ? o + ' ' + x : x; } return o.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()); };
 dash.draw('ns-cli-t', (el) => { const n = NS.list(dash.params().nsc_clis).length; el.textContent = n ? 'Nivel de servicio de los clientes elegidos' : 'Nivel de servicio de los 10 clientes principales'; });
 
-const nsFalt = () => {
-if (!NS.ok()) return null;
-const s = NS.sel(), anios = s.anios.length ? s.anios.map(String) : [NS.anios().slice(-1)[0]].map(String), ch = NS.list(dash.params().nsc_canales).map(String), m = new Map();
-const pasa = (yy, mm, c) => anios.includes(yy) && (!s.meses.length || s.meses.includes(mm)) && (!s.canales.length || s.canales.includes(c)) && (!ch.length || ch.includes(c));
-const nr = dash.data('ns_ref');
-if (nr.status === 'ok' && Array.isArray(nr.data) && nr.data.length) {
-const rank = nsCliRank(), el = NS.list(dash.params().nsc_clis).map(String);
-const clis = new Set(el.length ? el : rank.slice(0, 10).map((o) => o.cli)), din = NS.din();
+const nsAgRefs = () => {
+const nr = dash.data('ns_ref'); if (!NS.ok() || nr.status !== 'ok' || !Array.isArray(nr.data)) return null;
+const s = NS.sel(), anios = s.anios.length ? s.anios.map(String) : [NS.anios().slice(-1)[0]].map(String), ch = NS.list(dash.params().nsc_canales).map(String);
+const el = NS.list(dash.params().nsc_clis).map(String), clis = new Set(el.length ? el : nsCliRank().slice(0, 10).map((o) => o.cli));
+const ag = dash.data('agotados'), seg = new Map(); if (ag.status === 'ok') ag.data.forEach((r) => { if (r.seg && !seg.has(String(r.ref))) seg.set(String(r.ref), r.seg); });
+const m = new Map();
 nr.data.forEach((r) => {
-const c = DM.canal(r.canal).toUpperCase(), cli = String(r.cli || '');
-if (!clis.has(cli) || !pasa(String(r.anio), +r.mes, c)) return;
-const v = din ? (+r.vp || 0) - (+r.vf || 0) : (+r.ped || 0) - (+r.fact || 0); if (v <= 0) return;
-const k = c + '|' + cli + '|' + r.ref, o = m.get(k) || { canal: c, cli, ref: String(r.ref), desc: r.desc, v: 0 }; o.v += v; m.set(k, o);
+const c = DM.canal(r.canal).toUpperCase();
+if (!clis.has(String(r.cli || '')) || !anios.includes(String(r.anio)) || (s.meses.length && !s.meses.includes(+r.mes)) || (s.canales.length && !s.canales.includes(c)) || (ch.length && !ch.includes(c))) return;
+const v = (+r.vp || 0) - (+r.vf || 0); if (v <= 0) return;
+const k = String(r.ref), o = m.get(k) || { ref: k, desc: r.desc || '', seg: seg.get(k) || 'SIN SEGMENTO', v: 0 }; o.v += v; m.set(k, o);
 });
-const rows = [...m.values()].filter((o) => o.v > (din ? 0.5 : 0)).sort((a, b) => b.v - a.v);
-return { anios, rows, tot: d3.sum(rows, (o) => o.v), din, cli: true };
-}
-const ag = dash.data('agotados'); if (ag.status !== 'ok') return null;
-ag.data.forEach((r) => {
-const yy = String(r.mes).slice(0, 4), mm = +String(r.mes).slice(4), c = DM.canal(r.canal).toUpperCase();
-if (!pasa(yy, mm, c)) return;
-const k = c + '|' + r.ref, o = m.get(k) || { canal: c, cli: 'Todos', ref: String(r.ref), desc: r.desc, v: 0 }; o.v += +r.v || 0; m.set(k, o);
-});
-const rows = [...m.values()].filter((o) => o.v > 0.5).sort((a, b) => b.v - a.v);
-return { anios, rows, tot: d3.sum(rows, (o) => o.v), din: true, cli: false };
+return [...m.values()].filter((o) => o.v > 0.5).sort((a, b) => b.v - a.v);
 };
-const nsMill = (v) => '$' + DM.f1.format(v / 1e6) + ' M';
-dash.draw('ns-falt-t', (el) => { const f = nsFalt(); el.textContent = '¿Qué faltó para llegar al 100 %?' + (f ? ' · ' + f.anios.join(', ') : ''); });
-dash.draw('ns-falt-n', (el) => { el.textContent = ''; el.hidden = true; });
-dash.draw('ns-falt', (tb) => {
-tb.replaceChildren(); const f = nsFalt(); if (!f) return;
-const td = (txt, cls) => { const e = document.createElement('td'); if (cls) e.className = cls; e.textContent = txt; return e; };
-f.rows.slice(0, 150).forEach((o) => {
-const tr = document.createElement('tr'); tr.className = 'lc-row'; const sh = f.tot ? o.v / f.tot : 0;
-const pc = document.createElement('td'); const w = document.createElement('div'); w.style.cssText = 'display:flex;align-items:center;gap:8px';
-const pill = document.createElement('span'); pill.className = 'lc-pill' + (sh >= 0.04 ? '' : sh >= 0.02 ? ' lc-warn' : ' lc-ok'); pill.textContent = DM.f1.format(sh * 100) + ' %';
-w.append(pill); pc.append(w);
-const d = td(o.desc); d.title = o.desc;
-const can = td(NS.nom(o.canal)); can.style.fontWeight = '700'; const fal = td(f.din ? nsMill(o.v) : DM.f0.format(o.v) + ' und', 'lc-n'); fal.style.fontWeight = '800'; const cl = td(o.cli); cl.title = o.cli;
-tr.append(can, cl, td(o.ref, 'lc-ref'), d, fal, pc); tb.append(tr);
+dash.draw('ns-ag-n', (el) => { const r = nsAgRefs(); el.textContent = r && r.length ? DM.f0.format(r.length) + ' referencias' : 'Todas las referencias'; });
+dash.draw('ns-ag', (tb) => {
+tb.replaceChildren(); const refs = nsAgRefs(); if (!refs) return;
+const tot = d3.sum(refs, (o) => o.v), mx = refs.length ? refs[0].v : 1;
+refs.forEach((o, i) => {
+const tr = document.createElement('tr'); tr.className = 'lc-row'; tr.dataset.key = o.ref;
+const c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); return td; };
+c(String(i + 1), 'lc-c lc-ref'); c(o.ref, 'lc-ref'); const d = c(o.desc); d.title = o.desc; c(o.seg.charAt(0) + o.seg.slice(1).toLowerCase()); c('$' + DM.f0.format(Math.round(o.v)), 'lc-n');
+const td = c(''); const w = document.createElement('div'); w.className = 'lc-days';
+const pl = document.createElement('span'); pl.className = 'lc-pill' + (i >= 10 ? ' lc-warn' : ''); pl.textContent = tot ? DM.f1.format(o.v / tot * 100) + ' %' : '—';
+const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, o.v / mx * 100) + '%'; f.style.background = i >= 10 ? 'var(--dm-orange-2)' : 'var(--cds-chart-status-critical)'; bar.append(f);
+w.append(pl, bar); td.append(w); tb.append(tr);
 });
 });
 dash.draw('ns-cli', (el) => {
