@@ -27,7 +27,7 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); fon
 <script>
 // Motor mínimo que replica el del tablero en Claude: datos (data/*.json), cálculos, filtros y dibujos marcados con data-draw.
 window.dash = (() => {
-  const DS = ["inventario", "produccion", "mps", "mps_estado", "agotados", "agotados_estado", "venta_mensual", "ns", "ns_estado", "gasto", "gasto_estado", "presupuesto", "presupuesto_estado", "ventas", "ventas_estado", "exportaciones", "ns_ref"], data = {}, calcs = {}, draws = {}, onDatas = [], cache = {};
+  const DS = ["inventario", "produccion", "mps", "mps_estado", "agotados", "agotados_estado", "venta_mensual", "ns", "ns_estado", "gasto", "gasto_estado", "presupuesto", "presupuesto_estado", "ventas", "ventas_estado", "exportaciones", "ns_ref", "almacen_mp", "almacen_cavas", "almacen_estado"], data = {}, calcs = {}, draws = {}, onDatas = [], cache = {};
   let params = {"bods": [], "cat": "Nacional", "ciudades": [], "corte": null, "segs": []}, loaded = false, queued = false;
   const ok = (rows) => ({ status: 'ok', data: rows, columns: rows && rows[0] ? Object.keys(rows[0]) : [], meta: [], refreshing: false });
   const api = {
@@ -287,6 +287,13 @@ font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: no
 .lc-pill { min-width: 3.1rem; text-align: center; border-radius: 999px; padding: 2px 8px; font-weight: 800; font-size: 12px; color: #FFFFFF; background: var(--cds-chart-status-critical); }
 .lc-pill.lc-warn { background: var(--dm-orange-2); }
 .lc-pill.lc-ok { background: var(--dm-ok); }
+.lc-head .dm-select { border-color: var(--dm-green); }
+.al-sem { display: inline-block; border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 11px; color: #FFFFFF; white-space: nowrap; }
+.al-cavas { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .al-cavas { grid-template-columns: 1fr; } }
+.al-kv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--cds-gap-sm); }
+.al-kv div { border: 1px solid var(--cds-border); border-radius: 10px; padding: 6px 10px; display: flex; flex-direction: column; }
+.al-kv span { font-size: 11px; color: var(--color-fg-muted); } .al-kv b { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
 .lc-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--color-border-line); overflow: hidden; }
 .lc-bar i { display: block; height: 100%; border-radius: 3px; }
 .iv-leg { align-items: center; }
@@ -339,6 +346,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <button class="dm-main-tab" type="button" role="tab" data-main="agotados" aria-selected="false">Agotados</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="produccion" aria-selected="false">Producción</button>
 <button class="dm-main-tab" type="button" role="tab" data-main="gasto" aria-selected="false">Gasto logístico</button>
+<button class="dm-main-tab" type="button" role="tab" data-main="almacen" aria-selected="false">Almacén</button>
 </nav>
 
 <header class="dm-band" id="encabezado">
@@ -828,6 +836,53 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <p class="dm-note"><span data-draw="g-prom" data-source="gasto">—</span>. <span data-draw="g-ton-nota" data-source="gasto">—</span></p>
 <div class="dm-chart" data-draw="g-ton" data-source="gasto"></div></section>
 </section>
+
+<!-- Almacén (25-nov-2026): dos subpestañas, materia prima y producto terminado (cavas). Valores tal como los calcula cada Excel. -->
+<section class="dm-main" id="almmp" role="tabpanel" hidden>
+<nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Almacén"><button class="pr-tab" type="button" role="tab" data-sub="almmp" aria-selected="false">Materia prima</button><button class="pr-tab" type="button" role="tab" data-sub="almcav" aria-selected="false">Producto terminado (CAVAS)</button></nav>
+<div class="dm-strip mo-bar">
+<p class="dm-note">Ocupación de bodegas de materia prima y empaques del archivo <b data-draw="al-mp-arch" data-source="almacen_estado">—</b>. Semáforo: verde hasta 70 %, amarillo de 70 a 90 %, rojo más de 90 %.<span data-draw="al-mp-rep" data-source="almacen_mp"></span></p>
+</div>
+<div class="dm-tiles">
+<div class="dm-tile"><span class="dm-tile-l">Ocupación total</span><span class="dm-tile-v" data-draw="al-mp-k-pct" data-source="almacen_mp">—</span><span class="dm-tile-d" data-draw="al-mp-k-sem" data-source="almacen_mp"></span></div>
+<div class="dm-tile"><span class="dm-tile-l">Costo del inventario</span><span class="dm-tile-v" data-draw="al-mp-k-costo" data-source="almacen_mp">—</span></div>
+<div class="dm-tile"><span class="dm-tile-l">Referencias en sobrecapacidad (más de 100 %)</span><span class="dm-tile-v" data-draw="al-mp-k-sobre" data-source="almacen_mp">—</span></div>
+<div class="dm-tile dm-tile-bad"><span class="dm-tile-l">Referencias en rojo (90 a 100 %)</span><span class="dm-tile-v" data-draw="al-mp-k-rojo" data-source="almacen_mp">—</span></div>
+</div>
+<div class="dm-grid2">
+<section class="dm-card"><h2 class="dm-h2">% de ocupación por almacén</h2>
+<div class="dm-chart" data-draw="al-mp-pct" data-source="almacen_mp"></div></section>
+<section class="dm-card dm-card-o"><h2 class="dm-h2">Costo del inventario por almacén</h2>
+<div class="dm-chart" data-draw="al-mp-costo" data-source="almacen_mp"></div></section>
+</div>
+<section class="dm-card dm-card-o">
+<div class="lc-head"><div><h2 class="dm-h2">Referencias en rojo y en sobrecapacidad</h2><p class="dm-note"><span data-draw="al-mp-top-n" data-source="almacen_mp">—</span>, de mayor a menor ocupación.</p></div>
+<label class="dm-field"><span class="dm-flabel">Almacén</span><select class="dm-select al-mp-sel" data-draw="al-mp-sel" data-source="almacen_mp" aria-label="Almacén"></select></label></div>
+<div class="lc-box"><table class="lc-table">
+<colgroup><col style="width:9%"><col><col style="width:12%"><col style="width:6%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:8%"><col style="width:11%"></colgroup>
+<thead><tr><th>Código</th><th>Descripción</th><th>Almacén</th><th>U.M.</th><th class="lc-n">Cap. máxima</th><th class="lc-n">Inventario</th><th class="lc-c">% ocupación</th><th class="lc-n">Días inv.</th><th class="lc-n">Costo</th></tr></thead>
+<tbody data-draw="al-mp-top" data-source="almacen_mp"></tbody></table></div>
+</section>
+</section>
+
+<section class="dm-main" id="almcav" role="tabpanel" hidden>
+<nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Almacén"><button class="pr-tab" type="button" role="tab" data-sub="almmp" aria-selected="false">Materia prima</button><button class="pr-tab" type="button" role="tab" data-sub="almcav" aria-selected="false">Producto terminado (CAVAS)</button></nav>
+<div class="dm-strip mo-bar">
+<p class="dm-note">Ocupación de las cavas en estibas equivalentes (inventario ÷ unidades por estiba), como el Excel, al <b data-draw="al-cv-fecha" data-source="almacen_cavas">—</b>. Semáforo: verde hasta 80 %, amarillo de 80 a 95 %, rojo más de 95 %.</p>
+</div>
+<div class="al-cavas" data-draw="al-cv-cards" data-source="almacen_cavas"></div>
+<section class="dm-card"><h2 class="dm-h2">Estibas equivalentes ocupadas por día</h2>
+<div class="dm-legend"><span><span class="dm-sw dm-sw-line dm-sw-g"></span>Refrigeración (DESE1)</span><span><span class="dm-sw dm-sw-line dm-sw-o"></span>Congelación (DEPT6)</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--dm-green) 0 5px, transparent 5px 8px)"></span>Capacidad refrigeración</span><span><span class="dm-sw dm-sw-line" style="background: repeating-linear-gradient(90deg, var(--dm-orange-2) 0 5px, transparent 5px 8px)"></span>Capacidad congelación</span></div>
+<div class="dm-chart" data-draw="al-cv-hist" data-source="almacen_cavas"></div></section>
+<section class="dm-card dm-card-o">
+<div class="lc-head"><div><h2 class="dm-h2">Referencias en las cavas</h2><p class="dm-note"><span data-draw="al-cv-top-n" data-source="almacen_cavas">—</span> con inventario, de más a menos estibas.</p></div>
+<label class="dm-field"><span class="dm-flabel">Cava</span><select class="dm-select al-cv-sel" aria-label="Cava"><option value="">Las dos</option><option>Refrigeración</option><option>Congelación</option></select></label></div>
+<div class="lc-box"><table class="lc-table">
+<colgroup><col style="width:8%"><col><col style="width:12%"><col style="width:10%"><col style="width:10%"><col style="width:17%"><col style="width:12%"></colgroup>
+<thead><tr><th>Ref</th><th>Producto</th><th>Cava</th><th class="lc-n">Inventario (und)</th><th class="lc-n">Und/estiba</th><th>Estibas equivalentes (% de la cava)</th><th class="lc-n">Costo</th></tr></thead>
+<tbody data-draw="al-cv-top" data-source="almacen_cavas"></tbody></table></div>
+</section>
+</section>
 </div>
 
 <script>
@@ -936,13 +991,13 @@ return { canal, LIM_CRIT, LIM_SOB, DIAS_MES, NAME, f0, f1, fc, fd, fDate, fDay, 
 </script>
 
 <script>
-const SUBS = ['general', 'resumen'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'gasto'];
+const SUBS = ['general', 'resumen'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'gasto', 'almmp', 'almcav'];
 const h0 = location.hash.slice(1);
-window.DMmain = SUBS.includes(h0) ? 'inventarios' : h0 === 'produccion' ? 'mps' : MAINS.includes(h0) ? h0 : 'supply';
+window.DMmain = SUBS.includes(h0) ? 'inventarios' : h0 === 'produccion' ? 'mps' : h0 === 'almacen' ? 'almmp' : MAINS.includes(h0) ? h0 : 'supply';
 window.DMtab = SUBS.includes(h0) ? h0 : 'general';
 const applyTab = () => {
 const inv = window.DMmain === 'inventarios';
-document.querySelectorAll('.dm-main-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.main === window.DMmain || (b.dataset.main === 'produccion' && (window.DMmain === 'mps' || window.DMmain === 'otif')))));
+document.querySelectorAll('.dm-main-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.main === window.DMmain || (b.dataset.main === 'produccion' && (window.DMmain === 'mps' || window.DMmain === 'otif')) || (b.dataset.main === 'almacen' && (window.DMmain === 'almmp' || window.DMmain === 'almcav')))));
 document.querySelectorAll('.pr-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.sub === window.DMmain)));
 document.querySelectorAll('.dm-main').forEach((p) => { p.hidden = p.id !== window.DMmain; });
 document.querySelectorAll('.dm-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === window.DMtab)));
@@ -950,10 +1005,10 @@ document.querySelectorAll('.dm-page').forEach((p) => { p.hidden = !inv || p.id !
 document.querySelectorAll('.dm-band .dm-filters, .dm-band .dm-take').forEach((el) => { el.hidden = !inv; });
 };
 document.querySelectorAll('.dm-main-tab').forEach((b) => b.addEventListener('click', () => {
-window.DMmain = b.dataset.main === 'produccion' ? (window.DMprod || 'mps') : b.dataset.main; applyTab(); dash.setLink(window.DMmain === 'inventarios' ? window.DMtab : window.DMmain);
+window.DMmain = b.dataset.main === 'produccion' ? (window.DMprod || 'mps') : b.dataset.main === 'almacen' ? (window.DMalm || 'almmp') : b.dataset.main; applyTab(); dash.setLink(window.DMmain === 'inventarios' ? window.DMtab : window.DMmain);
 }));
 document.querySelectorAll('.dm-tab').forEach((b) => b.addEventListener('click', () => { window.DMtab = b.dataset.tab; applyTab(); dash.setLink(b.dataset.tab); }));
-document.querySelectorAll('.pr-tab').forEach((b) => b.addEventListener('click', () => { window.DMmain = window.DMprod = b.dataset.sub; applyTab(); dash.setLink(b.dataset.sub); }));
+document.querySelectorAll('.pr-tab').forEach((b) => b.addEventListener('click', () => { window.DMmain = b.dataset.sub; if (b.dataset.sub.startsWith('alm')) window.DMalm = b.dataset.sub; else window.DMprod = b.dataset.sub; applyTab(); dash.setLink(b.dataset.sub); }));
 document.querySelectorAll('.dm-catsel').forEach((s) => s.addEventListener('change', () => dash.setParams({ cat: s.value })));
 dash.onData(() => {
 applyTab();
@@ -2499,7 +2554,156 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 });
 </script>
 
+<script>
+window.AL = (() => {
+const one = (id) => { const d = dash.data(id); if (d.status !== 'ok' || !d.data) return null; return Array.isArray(d.data) ? d.data[0] || null : d.data; };
+const SEM = { VERDE: 'var(--dm-ok)', AMARILLO: 'var(--dm-orange-2)', ROJO: 'var(--cds-chart-status-critical)', SOBRECAPACIDAD: '#8E1B1B' };
+const semMP = (p) => (p == null ? null : p > 1 ? 'SOBRECAPACIDAD' : p > 0.9 ? 'ROJO' : p > 0.7 ? 'AMARILLO' : 'VERDE');
+const semCV = (p) => (p == null ? null : p > 0.95 ? 'ROJO' : p > 0.8 ? 'AMARILLO' : 'VERDE');
+const pill = (txt, estado) => { const s = document.createElement('span'); s.className = 'al-sem'; s.style.background = SEM[estado] || 'var(--cds-chart-muted)'; s.textContent = txt; return s; };
+const pct = (v) => (v == null ? '—' : DM.f1.format(v * 100) + ' %');
+const mill = (v) => '$' + DM.f1.format(v / 1e6) + ' mill.';
+const cap = (s) => String(s || '').replace(/^Almacen /, 'Almacén ').replace(/Maiz$/, 'Maíz');
+return { one, SEM, semMP, semCV, pill, pct, mill, cap };
+})();
+document.querySelectorAll('.al-mp-sel').forEach((s) => s.addEventListener('change', () => dash.setParams({ al_mp_alm: s.value || null })));
+document.querySelectorAll('.al-cv-sel').forEach((s) => s.addEventListener('change', () => dash.setParams({ al_cv: s.value || null })));
+dash.onData(() => { document.querySelectorAll('.al-cv-sel').forEach((s) => { s.value = dash.params().al_cv || ''; }); });
+
+dash.draw('al-mp-rep', (el) => { const m = alMP(); const n = m && m.repetidos ? m.repetidos.length : 0; el.textContent = n ? ' Se quitaron ' + n + ' bolsas repetidas del archivo (estaban contadas dos veces).' : ''; });
+dash.draw('al-mp-arch', (el) => { const e = AL.one('almacen_estado'); el.textContent = e ? e.mp_archivo : '—'; });
+const alMP = () => AL.one('almacen_mp');
+dash.draw('al-mp-k-pct', (el) => { const m = alMP(); el.textContent = m && m.total ? AL.pct(m.total.pct) : '—'; });
+dash.draw('al-mp-k-sem', (el) => { el.replaceChildren(); const m = alMP(); if (m && m.total) el.append(AL.pill(m.total.estado, m.total.estado)); });
+dash.draw('al-mp-k-costo', (el) => { const m = alMP(); el.textContent = m && m.total ? AL.mill(m.total.costo) : '—'; });
+dash.draw('al-mp-k-sobre', (el) => { const m = alMP(); el.textContent = m ? DM.f0.format(m.refs.filter((r) => r.estado === 'SOBRECAPACIDAD').length) : '—'; });
+dash.draw('al-mp-k-rojo', (el) => { const m = alMP(); el.textContent = m ? DM.f0.format(m.refs.filter((r) => r.estado === 'ROJO').length) : '—'; });
+
+dash.draw('al-mp-pct', (el) => {
+const m = alMP(); if (!m) { DM.fail(el, dash.data('almacen_mp').status); return; }
+el.replaceChildren();
+const items = [...m.almacenes, { ...m.total, alm: 'Total' }];
+const W = el.clientWidth, H = items.length * 46 + 40;
+const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Porcentaje de ocupación por almacén');
+const ml = Math.max(...items.map((d) => DM.textW(svg, AL.cap(d.alm), 'dm-val'))) + 14, mr = DM.textW(svg, '100,0 %', 'dm-val') + 14;
+const x = d3.scaleLinear([0, Math.max(1, d3.max(items, (d) => d.pct)) * 1.02], [ml, W - mr]), y = d3.scaleBand(items.map((d) => d.alm), [8, H - 28]).padding(0.28);
+svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x).tickValues([0, 0.2, 0.4, 0.6, 0.8, 1]).tickSize(-(H - 36)).tickFormat((v) => Math.round(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)'));
+svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(8).tickFormat((k) => AL.cap(k))).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 800).style('font-size', '13px').style('fill', 'var(--color-fg)'));
+[[0.7, 'var(--dm-orange-2)'], [0.9, 'var(--cds-chart-status-critical)']].forEach(([v, c]) => svg.append('line').attr('x1', x(v)).attr('x2', x(v)).attr('y1', 8).attr('y2', H - 28).style('stroke', c).attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5));
+svg.append('g').selectAll('rect').data(items).join('rect').attr('x', ml).attr('width', (d) => Math.max(1, x(d.pct) - ml)).attr('y', (d) => y(d.alm)).attr('height', y.bandwidth()).attr('rx', 3).style('fill', (d) => AL.SEM[d.estado] || 'var(--cds-chart-muted)').style('opacity', (d) => (d.alm === 'Total' ? 0.85 : 1));
+svg.append('g').selectAll('text').data(items).join('text').attr('class', 'dm-val').attr('x', (d) => x(d.pct) + 6).attr('y', (d) => y(d.alm) + y.bandwidth() / 2 + 4).style('font-size', '13px').text((d) => AL.pct(d.pct));
+const tip = DM.tipFor(el);
+svg.append('g').selectAll('rect').data(items).join('rect').attr('x', 0).attr('width', W).attr('y', (d) => y(d.alm)).attr('height', y.bandwidth()).attr('fill', 'transparent')
+.on('mousemove', (e, d) => DM.showTip(tip, el, x(d.pct), y(d.alm), [AL.cap(d.alm) + ' · ' + d.estado, 'Ocupación: ' + AL.pct(d.pct), 'Inventario: ' + DM.f0.format(d.inv), 'Capacidad máxima: ' + DM.f0.format(d.cap), 'Capacidad disponible: ' + DM.f0.format(d.disp), 'Referencias: ' + d.refs]))
+.on('mouseleave', () => { tip.hidden = true; });
+});
+dash.draw('al-mp-costo', (el) => {
+const m = alMP(); if (!m) { DM.fail(el, dash.data('almacen_mp').status); return; }
+el.replaceChildren();
+const items = m.almacenes.slice().sort((a, b) => b.costo - a.costo), tot = m.total.costo;
+const W = el.clientWidth, H = 46 * (items.length + 1) + 40; // misma altura que la gráfica de %
+const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Costo del inventario por almacén');
+const ml = Math.max(...items.map((d) => DM.textW(svg, AL.cap(d.alm), 'dm-val'))) + 14, mr = DM.textW(svg, '$000,0 mill. (00 %)', 'dm-val') + 14;
+const x = d3.scaleLinear([0, d3.max(items, (d) => d.costo) * 1.02], [ml, W - mr]).nice(), y = d3.scaleBand(items.map((d) => d.alm), [8, H - 28]).padding(0.28);
+svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x).ticks(4).tickSize(-(H - 36)).tickFormat((v) => '$' + DM.f0.format(v / 1e6) + ' M')).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)'));
+svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(8).tickFormat((k) => AL.cap(k))).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 800).style('font-size', '13px').style('fill', 'var(--color-fg)'));
+svg.append('g').selectAll('rect').data(items).join('rect').attr('x', ml).attr('width', (d) => Math.max(1, x(d.costo) - ml)).attr('y', (d) => y(d.alm)).attr('height', y.bandwidth()).attr('rx', 3).style('fill', 'var(--dm-green)');
+svg.append('g').selectAll('text').data(items).join('text').attr('class', 'dm-val').attr('x', (d) => x(d.costo) + 6).attr('y', (d) => y(d.alm) + y.bandwidth() / 2 + 4).style('font-size', '13px').text((d) => AL.mill(d.costo) + ' (' + DM.f0.format(d.costo / tot * 100) + ' %)');
+});
+dash.draw('al-mp-sel', (el) => {
+const m = alMP(); const v = dash.params().al_mp_alm || '';
+el.replaceChildren(new Option('Todos', ''), ...(m ? m.almacenes.map((a) => new Option(AL.cap(a.alm), a.alm)) : []));
+el.value = v;
+});
+const alMPtop = () => { const m = alMP(); if (!m) return []; const a = dash.params().al_mp_alm || '';
+return m.refs.filter((r) => (r.estado === 'ROJO' || r.estado === 'SOBRECAPACIDAD') && (!a || r.alm === a)).sort((x, y) => (y.pct ?? 9) - (x.pct ?? 9)); };
+dash.draw('al-mp-top-n', (el) => { const r = alMPtop(); el.textContent = DM.f0.format(r.length) + ' referencias por encima de 90 %'; });
+dash.draw('al-mp-top', (tb) => {
+tb.replaceChildren();
+alMPtop().forEach((r) => {
+const tr = document.createElement('tr'); tr.className = 'lc-row';
+const c = (t, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = t; tr.append(td); return td; };
+c(r.cod, 'lc-ref'); const d = c(r.desc); d.title = r.desc; c(AL.cap(r.alm)); c(r.um);
+c(r.cap ? DM.f0.format(r.cap) : 'Sin capacidad', 'lc-n'); c(DM.f0.format(r.inv), 'lc-n');
+const p = c('', 'lc-c'); p.append(AL.pill(r.pct == null ? 'Sin cap.' : AL.pct(r.pct), r.estado));
+c(r.dias == null ? 'Sin salidas' : DM.f0.format(r.dias), 'lc-n'); c(AL.mill(r.costo), 'lc-n');
+tb.append(tr);
+});
+});
+
+const alCV = () => AL.one('almacen_cavas');
+dash.draw('al-cv-fecha', (el) => { const c = alCV(); el.textContent = c && c.fecha ? DM.fDate(c.fecha) : '—'; });
+dash.draw('al-cv-cards', (el) => {
+const c = alCV(); if (!c) { DM.fail(el, dash.data('almacen_cavas').status); return; }
+el.replaceChildren();
+c.cavas.forEach((v, i) => {
+const card = document.createElement('section'); card.className = 'dm-card' + (i ? ' dm-card-o' : '');
+const h = document.createElement('div'); h.className = 'pp-fam-head';
+const n = document.createElement('span'); n.className = 'pp-fam-name'; n.textContent = v.cava + ' (' + v.bod + ')';
+h.append(n, AL.pill(v.estado, v.estado)); card.append(h);
+const g = document.createElement('div'); g.className = 'dm-chart'; g.style.minHeight = '120px'; card.append(g);
+const kv = document.createElement('div'); kv.className = 'al-kv';
+[['Capacidad', DM.f0.format(v.cap) + ' estibas'], ['Estibas equivalentes', DM.f1.format(v.eq)], ['Estibas físicas', DM.f0.format(v.fis)],
+[v.disp < 0 ? 'Le faltan' : 'Disponibles', DM.f1.format(Math.abs(v.disp)) + ' estibas'], ['Peso', DM.f0.format(v.kg) + ' kg'], ['Costo', AL.mill(v.costo)]].forEach(([l, t]) => {
+const d = document.createElement('div'); const s = document.createElement('span'); s.textContent = l; const b = document.createElement('b'); b.textContent = t;
+if (l === 'Le faltan') b.style.color = 'var(--cds-chart-status-critical)'; d.append(s, b); kv.append(d); });
+card.append(kv); el.append(card);
+const W = g.clientWidth || 500, H = 110, max = Math.max(1.2, v.pct * 1.08);
+const svg = d3.select(g).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Ocupación de ' + v.cava);
+const x = d3.scaleLinear([0, max], [4, W - 8]);
+svg.append('text').attr('x', 4).attr('y', 34).style('font-family', "'Poppins', var(--font-anthropic-sans)").style('font-weight', 800).style('font-size', '2rem').style('fill', AL.SEM[v.estado]).text(AL.pct(v.pct));
+svg.append('text').attr('x', 4 + DM.textW(svg, AL.pct(v.pct), 'dm-val') * 2.6 + 12).attr('y', 32).style('font-size', '12px').style('font-weight', 700).style('fill', 'var(--color-fg-muted)').text('de ocupación');
+svg.append('rect').attr('x', x(0)).attr('y', 50).attr('width', x(max) - x(0)).attr('height', 22).attr('rx', 4).style('fill', 'var(--cds-chart-grid)');
+svg.append('rect').attr('x', x(0)).attr('y', 50).attr('width', x(v.pct) - x(0)).attr('height', 22).attr('rx', 4).style('fill', AL.SEM[v.estado]);
+[[0, '0 %'], [0.8, '80 %'], [0.95, ''], [1, '100 %']].forEach(([t, l]) => {
+svg.append('line').attr('x1', x(t)).attr('x2', x(t)).attr('y1', 46).attr('y2', 76).style('stroke', t === 1 ? 'var(--dm-green-dk)' : 'var(--color-fg-muted)').attr('stroke-width', t === 1 ? 2.5 : 1);
+svg.append('text').attr('x', x(t)).attr('y', 92).attr('text-anchor', t === 0 ? 'start' : 'middle').style('font-size', '11px').style('font-weight', 700).style('fill', 'var(--color-fg)').text(l);
+});
+});
+});
+dash.draw('al-cv-hist', (el) => {
+const c = alCV(); if (!c) { DM.fail(el, dash.data('almacen_cavas').status); return; }
+el.replaceChildren();
+const H0 = c.hist, capR = c.cavas[0].cap, capC = c.cavas[1].cap;
+const W = el.clientWidth, H = 320;
+const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Estibas equivalentes por día y cava');
+const y = d3.scaleLinear([0, Math.max(capR, capC, d3.max(H0, (d) => Math.max(d.refrig, d.congel))) * 1.1], [H - 30, 14]).nice();
+const ml = 40, mr = DM.textW(svg, 'Cap. 35', 'dm-val') + 10;
+const x = d3.scalePoint(H0.map((d) => d.fecha), [ml + 6, W - mr]);
+svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - mr))).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)'));
+const paso = Math.max(1, Math.ceil(H0.length / Math.max(1, Math.floor((W - ml - mr) / 52))));
+svg.append('g').attr('transform', `translate(0,${H - 30})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickValues(H0.map((d) => d.fecha).filter((f, i) => (i % paso === 0 && i <= H0.length - 1 - paso) || i === H0.length - 1)).tickFormat(DM.fDay)).call(DM.cleanAxis).call((g) => g.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)'));
+[[capR, 'var(--dm-green)'], [capC, 'var(--dm-orange-2)']].forEach(([v, col]) => { svg.append('line').attr('x1', ml).attr('x2', W - mr).attr('y1', y(v)).attr('y2', y(v)).style('stroke', col).attr('stroke-dasharray', '6 4').attr('stroke-width', 1.5);
+svg.append('text').attr('x', W - mr + 4).attr('y', y(v) + 4).style('font-size', '11px').style('font-weight', 800).style('fill', col).text('Cap. ' + v); });
+[['refrig', 'var(--dm-green)'], ['congel', 'var(--dm-orange-2)']].forEach(([k, col]) => {
+svg.append('path').datum(H0).attr('fill', 'none').style('stroke', col).attr('stroke-width', 2.5).attr('stroke-linejoin', 'round').attr('d', d3.line((d) => x(d.fecha), (d) => y(d[k])));
+svg.append('g').selectAll('circle').data(H0).join('circle').attr('cx', (d) => x(d.fecha)).attr('cy', (d) => y(d[k])).attr('r', 3).style('fill', col);
+const u = H0[H0.length - 1]; svg.append('text').attr('class', 'dm-val dm-halo').attr('x', x(u.fecha)).attr('y', y(u[k]) - 9).attr('text-anchor', 'end').style('fill', col).text(DM.f1.format(u[k]));
+});
+const tip = DM.tipFor(el);
+svg.append('g').selectAll('rect').data(H0).join('rect').attr('x', (d) => x(d.fecha) - x.step() / 2).attr('width', x.step()).attr('y', 0).attr('height', H - 30).attr('fill', 'transparent')
+.on('mousemove', (e, d) => DM.showTip(tip, el, x(d.fecha), 30, [DM.fDate(d.fecha), 'Refrigeración: ' + DM.f1.format(d.refrig) + ' de ' + capR + ' (' + AL.pct(d.refrig / capR) + ')', 'Congelación: ' + DM.f1.format(d.congel) + ' de ' + capC + ' (' + AL.pct(d.congel / capC) + ')']))
+.on('mouseleave', () => { tip.hidden = true; });
+});
+const alCVtop = () => { const c = alCV(); if (!c) return []; const f = dash.params().al_cv || ''; return c.det.filter((d) => d.und > 0 && (!f || d.cava === f)).sort((a, b) => b.eq - a.eq); };
+dash.draw('al-cv-top-n', (el) => { el.textContent = DM.f0.format(alCVtop().length) + ' referencias'; });
+dash.draw('al-cv-top', (tb) => {
+tb.replaceChildren(); const c = alCV(); if (!c) return;
+const capOf = Object.fromEntries(c.cavas.map((v) => [v.cava, v.cap]));
+alCVtop().forEach((r) => {
+const tr = document.createElement('tr'); tr.className = 'lc-row';
+const td = (t, cls) => { const e = document.createElement('td'); if (cls) e.className = cls; e.textContent = t; tr.append(e); return e; };
+td(r.ref, 'lc-ref'); const d = td(r.desc); d.title = r.desc; td(r.cava); td(DM.f0.format(r.und), 'lc-n'); td(DM.f0.format(r.und_estiba), 'lc-n');
+const sh = r.eq / capOf[r.cava], cell = td(''); const w = document.createElement('div'); w.className = 'lc-days';
+const p = document.createElement('b'); p.style.cssText = 'min-width:2.6rem;text-align:right'; p.textContent = DM.f1.format(r.eq);
+const bar = document.createElement('span'); bar.className = 'lc-bar'; const f = document.createElement('i'); f.style.width = Math.max(2, Math.min(100, sh * 100 / 0.5)) + '%'; f.style.background = 'var(--dm-green)'; bar.append(f);
+const t = document.createElement('span'); t.style.cssText = 'font-size:11px;font-weight:700;min-width:3.2rem;text-align:right'; t.textContent = AL.pct(sh);
+w.append(p, bar, t); cell.append(w); td(AL.mill(r.costo), 'lc-n'); tb.append(tr);
+});
+});
+</script>
+
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 25/11/2026 12:32 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 25/11/2026 01:10 PM.</p>
 </body>
 </html>
