@@ -1,8 +1,9 @@
 """Extrae los datos de la pestaña Almacén del tablero Don Maíz.
 Uso: python -I extraer_almacen.py MP.xlsx CAVAS.xlsx CARPETA_SALIDA
 Genera almacen_mp.json, almacen_cavas.json y almacen_estado.json. Toma los valores tal como los calcula el Excel."""
-import sys, os, json, datetime as dt, openpyxl
+import sys, os, re, json, datetime as dt, openpyxl
 mp_path, cv_path, out = sys.argv[1:4]
+obs_path = sys.argv[4] if len(sys.argv) > 4 else None  # Inventario_Obsoletos (lista de obsoletos de materia prima)
 os.makedirs(out, exist_ok=True)
 avisos, errores = [], []
 num = lambda v: float(v) if isinstance(v, (int, float)) else 0.0
@@ -61,11 +62,18 @@ for r in wb['KPI Detalle'].iter_rows(min_row=7, values_only=True):
     e_ = refs[-1]; e_['estado'] = e_['estado'] if e_['estado'] in ('SIN INVENTARIO', 'SOBRECAPACIDAD') else sem(e_['pct'] or 0)
 faltan = sorted(set(str(r[0]).strip() for r in unicos) - vistos)
 if faltan: errores.append('Referencias de "Base de datos" que no están en "KPI Detalle": ' + ', '.join(faltan))
-# Clase (pedido del gerente 25-nov; el Excel no la trae): regla provisional hasta que el usuario confirme la lista.
-import re as _re
-for r in refs:
-    t = r['desc'].upper()
-    r['clase'] = 'Exportación' if _re.search(r'\bEXP\b|EXPORT|MERICA', t) else 'Obsoleto' if not r['salidas'] else 'Nacional'
+# Obsoletos (25-nov, almacén): son los códigos del archivo Inventario_Obsoletos ("Detalle por Referencia", columna Código).
+# Materia prima no se clasifica en nacional/exportación; solo general u obsoleto. Los valores salen del archivo de materia prima.
+obs = {}
+if obs_path:
+    wo = openpyxl.load_workbook(obs_path, data_only=True, read_only=True)
+    for r in wo['Detalle por Referencia'].iter_rows(min_row=3, values_only=True):
+        if r[0] and str(r[0]).strip().upper() != 'TOTAL GENERAL': obs[str(r[0]).strip()] = dict(inv=num(r[6]), costo=num(r[12]))
+    no_mp = sorted(set(obs) - {r['cod'] for r in refs})
+    if no_mp: avisos.append('Obsoletos que no están en el archivo de materia prima: ' + ', '.join(no_mp))
+    dif = [f"{c} ({obs[c]['inv']:,.0f} vs {r['inv']:,.0f})" for r in refs for c in [r['cod']] if c in obs and abs(obs[c]['inv'] - r['inv']) > 0.5]
+    if dif: avisos.append('Inventario distinto entre el archivo de obsoletos y el de materia prima (obsoletos vs MP): ' + ', '.join(dif))
+for r in refs: r['clase'] = 'Obsoleto' if r['cod'] in obs else 'General'
 for a in alm:
     f_ = [r for r in refs if r['alm'] == a['alm']]
     for k_ in ('cap', 'costo'):
@@ -92,7 +100,7 @@ calc = wc['Calculo_KPI']; det = []
 for rng, nombre in [((7, 54), 'Refrigeración'), ((59, 120), 'Congelación')]:
     for r in calc.iter_rows(min_row=rng[0], max_row=rng[1], values_only=True):
         if r[1] in (None, ''): continue
-        det.append(dict(cava=nombre, ref=str(r[1]), desc=str(r[2] or '').strip(), und=num(r[3]), emb=r[4], und_estiba=num(r[7]), eq=num(r[9]), fis=num(r[10]), kg=num(r[12]), costo=num(r[14])))
+        det.append(dict(cava=nombre, ref=str(r[1]), desc=str(r[2] or '').strip(), und=num(r[3]), emb=r[4], und_estiba=num(r[7]), eq=num(r[9]), fis=num(r[10]), cajas=num(r[8]), kg=num(r[12]), costo=num(r[14]), clase='Exportación' if re.match(r'[A-Za-z]', str(r[1])) or re.search(r'\bEXP\b|EXPORT', str(r[2] or '').upper()) else 'Nacional'))
 for c in cavas:
     s = sum(d['eq'] for d in det if d['cava'] == c['cava'])
     if abs(s - (c['eq'] or 0)) > 1e-6: errores.append(f"{c['cava']}: estibas equivalentes del resumen {c['eq']} y del detalle {s}")
@@ -101,18 +109,21 @@ emb = {}
 for r in wc['Base de Datos Embalajes'].iter_rows(min_row=7, values_only=True):
     if r[1] not in (None, ''): emb[(str(r[1]), str(r[3]).lower()[:5])] = num(r[7])
 und_calc = {(d['cava'], d['ref']): d['und_estiba'] for d in det}
+clase_cv = {(d['cava'], d['ref']): d['clase'] for d in det}
 h = list(wc['Histórico Diario'].iter_rows(min_row=6, values_only=True))
 cols = [(j, v) for j, v in enumerate(h[0]) if isinstance(v, dt.datetime)]
 hist = []
 for j, d in cols:
-    tot = {'Refrigeración': 0.0, 'Congelación': 0.0}; hay = False
+    tot = {'Refrigeración': 0.0, 'Congelación': 0.0}; totx = {'Refrigeración': 0.0, 'Congelación': 0.0}; hay = False
     for r in h[1:]:
         if r[1] in (None, '') or not isinstance(r[j], (int, float)): continue
         hay = True; cv = 'Refrigeración' if str(r[3]).lower().startswith('refri') else 'Congelación'
         ue = und_calc.get((cv, str(r[1]))) or emb.get((str(r[1]), str(r[3]).lower()[:5]))
         if emb.get((str(r[1]), str(r[3]).lower()[:5])) and und_calc.get((cv, str(r[1]))) and und_calc[(cv, str(r[1]))] != emb[(str(r[1]), str(r[3]).lower()[:5])] and j == cols[-1][0]: avisos.append(f"{r[1]} ({cv}): Base de Datos Embalajes dice {emb[(str(r[1]), str(r[3]).lower()[:5])]:g} und/estiba y Calculo_KPI usa {und_calc[(cv, str(r[1]))]:g}")
-        if ue: tot[cv] += r[j] / ue
-    if hay: hist.append(dict(fecha=d.date().isoformat(), refrig=round(tot['Refrigeración'], 4), congel=round(tot['Congelación'], 4)))
+        if ue:
+            tot[cv] += r[j] / ue
+            if clase_cv.get((cv, str(r[1]))) == 'Exportación': totx[cv] += r[j] / ue
+    if hay: hist.append(dict(fecha=d.date().isoformat(), refrig=round(tot['Refrigeración'], 4), congel=round(tot['Congelación'], 4), refrig_exp=round(totx['Refrigeración'], 4), congel_exp=round(totx['Congelación'], 4)))
 if hist and fecha:
     u = hist[-1]
     if u['fecha'] == fecha.date().isoformat():

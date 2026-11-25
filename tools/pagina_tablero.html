@@ -778,7 +778,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-main" id="almmp" role="tabpanel" hidden>
 <nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Almacén"><button class="pr-tab" type="button" role="tab" data-sub="almmp" aria-selected="false">Materia prima</button><button class="pr-tab" type="button" role="tab" data-sub="almcav" aria-selected="false">Producto terminado (CAVAS)</button></nav>
 <div class="dm-strip mo-bar">
-<div class="dm-filters"><label class="dm-field"><span class="dm-flabel">Clase</span><select class="dm-select al-cls" aria-label="Nacional, exportaciones u obsoletos"><option value="">Todas</option><option>Nacional</option><option>Exportación</option><option>Obsoleto</option></select></label></div>
+<div class="dm-filters"><label class="dm-field"><span class="dm-flabel">Filtro</span><select class="dm-select al-cls" aria-label="Materia prima u obsoletos"><option value="">Toda la materia prima</option><option value="Obsoleto">Solo obsoletos</option></select></label></div>
 <p class="dm-note">Ocupación de bodegas de materia prima y empaques del archivo <b data-draw="al-mp-arch" data-source="almacen_estado">—</b>. Semáforo: verde hasta 85 %, amarillo de 85 a 90 %, rojo más de 90 %.<span data-draw="al-mp-rep" data-source="almacen_mp"></span></p>
 </div>
 <div class="dm-tiles">
@@ -806,6 +806,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-main" id="almcav" role="tabpanel" hidden>
 <nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Almacén"><button class="pr-tab" type="button" role="tab" data-sub="almmp" aria-selected="false">Materia prima</button><button class="pr-tab" type="button" role="tab" data-sub="almcav" aria-selected="false">Producto terminado (CAVAS)</button></nav>
 <div class="dm-strip mo-bar">
+<div class="dm-filters"><label class="dm-field"><span class="dm-flabel">Mercado</span><select class="dm-select al-cvm" aria-label="Nacional o exportaciones"><option value="">Todos</option><option>Nacional</option><option>Exportación</option></select></label></div>
 <p class="dm-note">Ocupación de las cavas en estibas equivalentes (inventario ÷ unidades por estiba), como el Excel, al <b data-draw="al-cv-fecha" data-source="almacen_cavas">—</b>. Semáforo: verde hasta 80 %, amarillo de 80 a 95 %, rojo más de 95 %.</p>
 </div>
 <div class="al-cavas" data-draw="al-cv-cards" data-source="almacen_cavas"></div>
@@ -2517,7 +2518,8 @@ return { one, SEM, semMP, semCV, pill, pct, mill, cap };
 document.querySelectorAll('.al-mp-sel').forEach((s) => s.addEventListener('change', () => dash.setParams({ al_mp_alm: s.value || null })));
 document.querySelectorAll('.al-cv-sel').forEach((s) => s.addEventListener('change', () => dash.setParams({ al_cv: s.value || null })));
 document.querySelectorAll('.al-cls').forEach((s) => s.addEventListener('change', () => dash.setParams({ al_cls: s.value || null })));
-dash.onData(() => { document.querySelectorAll('.al-cv-sel').forEach((s) => { s.value = dash.params().al_cv || ''; }); document.querySelectorAll('.al-cls').forEach((s) => { s.value = dash.params().al_cls || ''; }); });
+document.querySelectorAll('.al-cvm').forEach((s) => s.addEventListener('change', () => dash.setParams({ al_cvm: s.value || null })));
+dash.onData(() => { document.querySelectorAll('.al-cv-sel').forEach((s) => { s.value = dash.params().al_cv || ''; }); document.querySelectorAll('.al-cls').forEach((s) => { s.value = dash.params().al_cls || ''; }); document.querySelectorAll('.al-cvm').forEach((s) => { s.value = dash.params().al_cvm || ''; }); });
 
 dash.draw('al-mp-rep', (el) => { const m = alMP(); const n = m && m.repetidos ? m.repetidos.length : 0; el.textContent = n ? ' Se quitaron ' + n + ' bolsas repetidas del archivo (estaban contadas dos veces).' : ''; });
 dash.draw('al-mp-arch', (el) => { const e = AL.one('almacen_estado'); el.textContent = e ? e.mp_archivo : '—'; });
@@ -2588,8 +2590,15 @@ tb.append(tr);
 });
 });
 
-const alCV = () => { const r = alRows('almacen_cavas'); if (!r) return null; const i = r.find((x) => x.tipo === 'info') || {};
-return { fecha: i.fecha, cavas: r.filter((x) => x.tipo === 'cava'), det: r.filter((x) => x.tipo === 'det'), hist: r.filter((x) => x.tipo === 'hist') }; };
+const alCV = () => { const r = alRows('almacen_cavas'); if (!r) return null; const i = r.find((x) => x.tipo === 'info') || {}, m = dash.params().al_cvm || '';
+let cavas = r.filter((x) => x.tipo === 'cava'), hist = r.filter((x) => x.tipo === 'hist'); const det = r.filter((x) => x.tipo === 'det' && (!m || x.clase === m));
+if (m) { // Nacional / Exportación: se suma el detalle de Calculo_KPI (sin filtro es igual al KPI Final)
+const sem = (p) => (p > 0.95 ? 'ROJO' : p > 0.8 ? 'AMARILLO' : 'VERDE');
+cavas = cavas.map((c) => { const d = det.filter((x) => x.cava === c.cava), eq = d3.sum(d, (x) => x.eq), pct = c.cap ? eq / c.cap : 0;
+return { ...c, und: d3.sum(d, (x) => x.und), eq, fis: c.cava === 'Congelación' ? Math.round(d3.sum(d, (x) => x.cajas) / 80) : d3.sum(d, (x) => x.fis), disp: c.cap - eq, pct, kg: d3.sum(d, (x) => x.kg), costo: d3.sum(d, (x) => x.costo), estado: sem(pct) }; });
+hist = hist.map((h) => ({ ...h, refrig: m === 'Exportación' ? h.refrig_exp : h.refrig - h.refrig_exp, congel: m === 'Exportación' ? h.congel_exp : h.congel - h.congel_exp }));
+}
+return { fecha: i.fecha, cavas, det, hist }; };
 dash.draw('al-cv-fecha', (el) => { const c = alCV(); el.textContent = c && c.fecha ? DM.fDate(c.fecha) : '—'; });
 dash.draw('al-cv-cards', (el) => {
 const c = alCV(); if (!c) { DM.fail(el, dash.data('almacen_cavas').status); return; }
