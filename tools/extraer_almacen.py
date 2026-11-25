@@ -106,9 +106,19 @@ if hist and fecha:
     if u['fecha'] == fecha.date().isoformat():
         for c, kk in [(cavas[0], 'refrig'), (cavas[1], 'congel')]:
             if abs(u[kk] - c['eq']) > 0.01: avisos.append(f"Histórico del {u['fecha']}: {c['cava']} da {u[kk]:.2f} estibas y el KPI {c['eq']:.2f}")
-json.dump([dict(almacenes=alm, total=total, refs=refs, excel=dict(almacenes=xl, total=xl_total), repetidos=dup)], open(os.path.join(out, 'almacen_mp.json'), 'w'), ensure_ascii=False)
-json.dump([dict(fecha=fecha.date().isoformat() if fecha else None, cavas=cavas, det=det, hist=hist)], open(os.path.join(out, 'almacen_cavas.json'), 'w'), ensure_ascii=False)
-json.dump([dict(mp_archivo=os.path.basename(mp_path), cavas_archivo=os.path.basename(cv_path), cavas_fecha=fecha.date().isoformat() if fecha else None, avisos=avisos, errores=errores)], open(os.path.join(out, 'almacen_estado.json'), 'w'), ensure_ascii=False)
+def plano(filas):  # filas planas con las mismas columnas (el tablero lee filas, no objetos anidados)
+    cols = []
+    for f in filas:
+        for k in f:
+            if k not in cols: cols.append(k)
+    return [{k: f.get(k) for k in cols} for f in filas]
+mp_rows = [dict(tipo='alm', **a) for a in alm] + [dict(tipo='total', **total)] + [dict(tipo='ref', **r) for r in refs] \
+    + [dict(tipo='excel', **a) for a in xl + [xl_total]] + [dict(tipo='info', repetidos=','.join(dup))]
+json.dump(plano(mp_rows), open(os.path.join(out, 'almacen_mp.json'), 'w'), ensure_ascii=False)
+cv_rows = [dict(tipo='cava', **c) for c in cavas] + [dict(tipo='det', **d) for d in det] + [dict(tipo='hist', **h_) for h_ in hist] \
+    + [dict(tipo='info', fecha=fecha.date().isoformat() if fecha else None)]
+json.dump(plano(cv_rows), open(os.path.join(out, 'almacen_cavas.json'), 'w'), ensure_ascii=False)
+json.dump([dict(mp_archivo=os.path.basename(mp_path), cavas_archivo=os.path.basename(cv_path), cavas_fecha=fecha.date().isoformat() if fecha else None, avisos=' | '.join(avisos), errores=' | '.join(errores))], open(os.path.join(out, 'almacen_estado.json'), 'w'), ensure_ascii=False)
 print('ERRORES:' if errores else 'OK', *errores, sep='\n  ')
 print('Avisos:', *avisos, sep='\n  ')
 for a, b in zip(alm + [total], xl + [xl_total]): print(f"  Excel {b['pct']*100:6.1f} % ({b['refs']} refs) →", end=''); print(f"  {a['alm']:<18} {a['pct']*100:6.1f} %  inv {a['inv']:>14,.2f}  cap {a['cap']:>12,.0f}  ${a['costo']:,.0f}  {a['estado']}")

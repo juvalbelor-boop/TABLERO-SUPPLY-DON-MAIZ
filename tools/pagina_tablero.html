@@ -2495,7 +2495,9 @@ dash.onData(() => { document.querySelectorAll('.al-cv-sel').forEach((s) => { s.v
 
 dash.draw('al-mp-rep', (el) => { const m = alMP(); const n = m && m.repetidos ? m.repetidos.length : 0; el.textContent = n ? ' Se quitaron ' + n + ' bolsas repetidas del archivo (estaban contadas dos veces).' : ''; });
 dash.draw('al-mp-arch', (el) => { const e = AL.one('almacen_estado'); el.textContent = e ? e.mp_archivo : '—'; });
-const alMP = () => AL.one('almacen_mp');
+const alRows = (id) => { const d = dash.data(id); return d.status === 'ok' && Array.isArray(d.data) ? d.data : null; };
+const alMP = () => { const r = alRows('almacen_mp'); if (!r) return null; const i = r.find((x) => x.tipo === 'info') || {};
+return { almacenes: r.filter((x) => x.tipo === 'alm'), total: r.find((x) => x.tipo === 'total'), refs: r.filter((x) => x.tipo === 'ref'), repetidos: String(i.repetidos || '').split(',').filter(Boolean) }; };
 dash.draw('al-mp-k-pct', (el) => { const m = alMP(); el.textContent = m && m.total ? AL.pct(m.total.pct) : '—'; });
 dash.draw('al-mp-k-sem', (el) => { el.replaceChildren(); const m = alMP(); if (m && m.total) el.append(AL.pill(m.total.estado, m.total.estado)); });
 dash.draw('al-mp-k-costo', (el) => { const m = alMP(); el.textContent = m && m.total ? AL.mill(m.total.costo) : '—'; });
@@ -2554,7 +2556,8 @@ tb.append(tr);
 });
 });
 
-const alCV = () => AL.one('almacen_cavas');
+const alCV = () => { const r = alRows('almacen_cavas'); if (!r) return null; const i = r.find((x) => x.tipo === 'info') || {};
+return { fecha: i.fecha, cavas: r.filter((x) => x.tipo === 'cava'), det: r.filter((x) => x.tipo === 'det'), hist: r.filter((x) => x.tipo === 'hist') }; };
 dash.draw('al-cv-fecha', (el) => { const c = alCV(); el.textContent = c && c.fecha ? DM.fDate(c.fecha) : '—'; });
 dash.draw('al-cv-cards', (el) => {
 const c = alCV(); if (!c) { DM.fail(el, dash.data('almacen_cavas').status); return; }
