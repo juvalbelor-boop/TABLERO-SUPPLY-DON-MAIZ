@@ -24,10 +24,14 @@ if LOGO in page:
     page = page.replace(LOGO, 'img/logo.png'); os.makedirs(os.path.join(out, 'img'), exist_ok=True)
     shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'img', 'logo.png'), os.path.join(out, 'img', 'logo.png'))
 if '/_blob/' in page: sys.exit('La página aún referencia /_blob/: revisar')
-missing = [d for d in DATASETS if not os.path.exists(os.path.join(data_dir, d + '.json'))]
+# Los de almacén se actualizan a mano cuando llegan los archivos: si no vienen en la carpeta de datos, se deja el que ya está publicado.
+ALMACEN = ['almacen_mp', 'almacen_cavas', 'almacen_estado']
+missing = [d for d in DATASETS if not os.path.exists(os.path.join(data_dir, d + '.json')) and not (d in ALMACEN and os.path.exists(os.path.join(out, 'data', d + '.json')))]
 if missing: sys.exit('Faltan datos: ' + ', '.join(missing))
 os.makedirs(os.path.join(out, 'data'), exist_ok=True); os.makedirs(os.path.join(out, 'fonts'), exist_ok=True)
-for d in DATASETS: shutil.copy(os.path.join(data_dir, d + '.json'), os.path.join(out, 'data', d + '.json'))
+for d in DATASETS:
+    src = os.path.join(data_dir, d + '.json'); dst = os.path.join(out, 'data', d + '.json')
+    if os.path.exists(src) and os.path.abspath(src) != os.path.abspath(dst): shutil.copy(src, dst)
 os.makedirs(os.path.join(out, 'lib'), exist_ok=True)
 # d3 y las fuentes: se copian si vienen en la carpeta de datos; si no, se dejan las que ya están en el sitio.
 for src, dst in [('d3.min.js', 'lib/d3.min.js')] + [(f'poppins-{w}.woff', f'fonts/poppins-{w}.woff') for w in ('400', '500', '700')]:
