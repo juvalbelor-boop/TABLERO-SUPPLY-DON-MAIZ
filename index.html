@@ -854,7 +854,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-main" id="almmp" role="tabpanel" hidden>
 <nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Almacén"><button class="pr-tab" type="button" role="tab" data-sub="almmp" aria-selected="false">Materia prima</button><button class="pr-tab" type="button" role="tab" data-sub="almcav" aria-selected="false">Producto terminado (CAVAS)</button></nav>
 <div class="dm-strip mo-bar">
-<p class="dm-note">Ocupación de bodegas de materia prima y empaques del archivo <b data-draw="al-mp-arch" data-source="almacen_estado">—</b>. Semáforo: verde hasta 70 %, amarillo de 70 a 90 %, rojo más de 90 %.<span data-draw="al-mp-rep" data-source="almacen_mp"></span></p>
+<p class="dm-note">Ocupación de bodegas de materia prima y empaques del archivo <b data-draw="al-mp-arch" data-source="almacen_estado">—</b>. Semáforo: verde hasta 85 %, amarillo de 85 a 90 %, rojo más de 90 %.<span data-draw="al-mp-rep" data-source="almacen_mp"></span></p>
 </div>
 <div class="dm-tiles">
 <div class="dm-tile"><span class="dm-tile-l">Ocupación total</span><span class="dm-tile-v" data-draw="al-mp-k-pct" data-source="almacen_mp">—</span><span class="dm-tile-d" data-draw="al-mp-k-sem" data-source="almacen_mp"></span></div>
@@ -2581,7 +2581,7 @@ svg.append('g').selectAll('rect.hit').data(R).join('rect').attr('x', (r) => x0(r
 window.AL = (() => {
 const one = (id) => { const d = dash.data(id); if (d.status !== 'ok' || !d.data) return null; return Array.isArray(d.data) ? d.data[0] || null : d.data; };
 const SEM = { VERDE: 'var(--dm-ok)', AMARILLO: 'var(--dm-orange-2)', ROJO: 'var(--cds-chart-status-critical)', SOBRECAPACIDAD: '#8E1B1B' };
-const semMP = (p) => (p == null ? null : p > 1 ? 'SOBRECAPACIDAD' : p > 0.9 ? 'ROJO' : p > 0.7 ? 'AMARILLO' : 'VERDE');
+const semMP = (p) => (p == null ? null : p > 1 ? 'SOBRECAPACIDAD' : p > 0.9 ? 'ROJO' : p > 0.85 ? 'AMARILLO' : 'VERDE');
 const semCV = (p) => (p == null ? null : p > 0.95 ? 'ROJO' : p > 0.8 ? 'AMARILLO' : 'VERDE');
 const pill = (txt, estado) => { const s = document.createElement('span'); s.className = 'al-sem'; s.style.background = SEM[estado] || 'var(--cds-chart-muted)'; s.textContent = txt; return s; };
 const pct = (v) => (v == null ? '—' : DM.f1.format(v * 100) + ' %');
@@ -2614,7 +2614,7 @@ const ml = Math.max(...items.map((d) => DM.textW(svg, AL.cap(d.alm), 'dm-val')))
 const x = d3.scaleLinear([0, Math.max(1, d3.max(items, (d) => d.pct)) * 1.02], [ml, W - mr]), y = d3.scaleBand(items.map((d) => d.alm), [8, H - 28]).padding(0.28);
 svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x).tickValues([0, 0.2, 0.4, 0.6, 0.8, 1]).tickSize(-(H - 36)).tickFormat((v) => Math.round(v * 100) + ' %')).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)'));
 svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).tickSize(0).tickPadding(8).tickFormat((k) => AL.cap(k))).call(DM.cleanAxis).call((g) => g.select('.domain').remove()).call((g) => g.selectAll('text').style('font-weight', 800).style('font-size', '13px').style('fill', 'var(--color-fg)'));
-[[0.7, 'var(--dm-orange-2)'], [0.9, 'var(--cds-chart-status-critical)']].forEach(([v, c]) => svg.append('line').attr('x1', x(v)).attr('x2', x(v)).attr('y1', 8).attr('y2', H - 28).style('stroke', c).attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5));
+[[0.85, 'var(--dm-orange-2)'], [0.9, 'var(--cds-chart-status-critical)']].forEach(([v, c]) => svg.append('line').attr('x1', x(v)).attr('x2', x(v)).attr('y1', 8).attr('y2', H - 28).style('stroke', c).attr('stroke-dasharray', '5 4').attr('stroke-width', 1.5));
 svg.append('g').selectAll('rect').data(items).join('rect').attr('x', ml).attr('width', (d) => Math.max(1, x(d.pct) - ml)).attr('y', (d) => y(d.alm)).attr('height', y.bandwidth()).attr('rx', 3).style('fill', (d) => AL.SEM[d.estado] || 'var(--cds-chart-muted)').style('opacity', (d) => (d.alm === 'Total' ? 0.85 : 1));
 svg.append('g').selectAll('text').data(items).join('text').attr('class', 'dm-val').attr('x', (d) => x(d.pct) + 6).attr('y', (d) => y(d.alm) + y.bandwidth() / 2 + 4).style('font-size', '13px').text((d) => AL.pct(d.pct));
 const tip = DM.tipFor(el);
@@ -2730,6 +2730,6 @@ w.append(p, bar, t); cell.append(w); td(AL.mill(r.costo), 'lc-n'); tb.append(tr)
 </script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 25/11/2026 03:00 PM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 25/11/2026 03:38 PM.</p>
 </body>
 </html>

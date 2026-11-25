@@ -11,7 +11,9 @@ wb = openpyxl.load_workbook(mp_path, data_only=True, read_only=True)
 res = wb['Resumen por Almacen']
 par = {r[1]: r[2] for r in wb['Parametros'].iter_rows(min_row=6, max_row=30, values_only=True) if r[1]}
 TV = next(v for k, v in par.items() if str(k).startswith('Semaforo: tope VERDE')); TA = next(v for k, v in par.items() if str(k).startswith('Semaforo: tope AMARILLO'))
-sem = lambda f: 'SOBRECAPACIDAD' if f > 1 else 'ROJO' if f > TA else 'AMARILLO' if f > TV else 'VERDE'
+sem_xl = lambda f: 'SOBRECAPACIDAD' if f > 1 else 'ROJO' if f > TA else 'AMARILLO' if f > TV else 'VERDE'
+TV_GER = 0.85  # pedido del gerente (25-nov-2026): verde hasta 85 % (el Excel trae 70 %); rojo sigue > 90 %
+sem = lambda f: 'SOBRECAPACIDAD' if f > 1 else 'ROJO' if f > TA else 'AMARILLO' if f > TV_GER else 'VERDE'
 xl, xl_total = [], None   # tabla OCUPACION CONSOLIDADA tal como viene en el Excel
 for r in res.iter_rows(min_row=7, max_row=20, values_only=True):
     if not r[1]: continue
@@ -36,7 +38,7 @@ chk, chk_t = resumen(base)
 for a, b in zip(chk + [chk_t], xl + [xl_total]):
     for k in ('refs', 'cap', 'inv', 'costo'):
         if abs(a[k] - b[k]) > 0.5: errores.append(f"{b['alm']}: {k} recalculado {a[k]} y en el Excel {b[k]}")
-    if a['estado'] != b['estado']: errores.append(f"{b['alm']}: semáforo recalculado {a['estado']} y en el Excel {b['estado']}")
+    if sem_xl(a['pct']) != b['estado']: errores.append(f"{b['alm']}: semáforo recalculado {a['estado']} y en el Excel {b['estado']}")
 # 2) quitar filas repetidas (mismo código): se deja la primera
 from collections import Counter
 dup = sorted(k for k, v in Counter(str(r[0]).strip() for r in base).items() if v > 1)
@@ -56,6 +58,7 @@ for r in wb['KPI Detalle'].iter_rows(min_row=7, values_only=True):
     refs.append(dict(cod=cod, desc=str(r[2] or '').strip(), alm=r[3], um=str(r[4] or '').strip(), cap=num(r[5]), inv=num(r[6]),
                      pct=r[7] if isinstance(r[7], (int, float)) else None, disp=num(r[8]), costo=num(r[10]), salidas=num(r[11]),
                      dias=r[12] if isinstance(r[12], (int, float)) else None, estado=str(r[13] or '')))
+    e_ = refs[-1]; e_['estado'] = e_['estado'] if e_['estado'] in ('SIN INVENTARIO', 'SOBRECAPACIDAD') else sem(e_['pct'] or 0)
 faltan = sorted(set(str(r[0]).strip() for r in unicos) - vistos)
 if faltan: errores.append('Referencias de "Base de datos" que no están en "KPI Detalle": ' + ', '.join(faltan))
 sincap = sorted(r['cod'] for r in refs if not r['cap'])
