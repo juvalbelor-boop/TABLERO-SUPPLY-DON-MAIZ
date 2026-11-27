@@ -52,7 +52,7 @@ const btn = (set, key, txt, redraw) => { const open = set.has(key), b = document
 b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', (open ? 'Ocultar ' : 'Ver ') + txt); b.onclick = () => { if (open) set.delete(key); else set.add(key); redraw(); }; return b; };
 return { all, V, meses, sel, sum, pct, u, sg, pt, col, mesL, como, grp, bars, celdas, btn, lab, KS, norm };
 })();
-window.RTopen = window.RTopen || { cli: new Set(), ref: new Set() };
+if (!window.RTopen || !window.RTopen.cli || !window.RTopen.ref) window.RTopen = { cli: new Set(), ref: new Set() };
 // Filtros con buscador: <input type="search" list=…> en la página; aquí se dibujan las opciones (datalist) y se escucha el cambio.
 dash.draw('rt-sel-mes', (el) => { const s = RT.sel(); if (!s) { el.replaceChildren(); return; } el.replaceChildren(...RT.meses().map((k) => new Option(RT.mesL(k), k))); el.value = s.mes; el.onchange = () => dash.setParams({ rt_mes: el.value }); });
 RT.KS.forEach((k) => dash.draw('rt-l-' + k, (dl) => { const s = RT.sel(k); if (!s) { dl.replaceChildren(); return; }
