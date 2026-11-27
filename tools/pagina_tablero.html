@@ -224,7 +224,6 @@ font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: no
 :is(#ns-agotados, #agotados-top) .lc-table .lc-n { text-align: center; }
 :is(#ns-agotados, #agotados-top) .lc-pill { font-size: 12.5px; padding: 1px 8px; min-width: 3.4rem; }
 :is(#ns-agotados, #agotados-top) .lc-bar { height: 7px; }
-#rt-tabla .lc-box { max-height: 44rem; } #rt-tabla .lc-table { font-size: 14px; } #rt-tabla .lc-table td { padding: 5px 12px; } #rt-tabla td.lc-n { font-weight: 700; } #rt-tabla tfoot td { position: sticky; bottom: 0; z-index: 1; background: #E4E6F6; font-weight: 800; color: var(--dm-green-dk); border-top: 2px solid var(--dm-green); padding: 8px 12px; } .rt-tiles .dm-tile-v { font-size: 2rem; }
 :is(#ns-agotados, #agotados-top) tfoot td { position: sticky; bottom: 0; z-index: 1; background: #E4E6F6; font-weight: 800; font-size: 14.5px; color: var(--dm-green-dk); border-top: 2px solid var(--dm-green); padding: 8px 12px; }
 .al-sem { display: inline-block; border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 11px; color: #FFFFFF; white-space: nowrap; }
 .al-cavas { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -758,7 +757,10 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Nivel de servicio"><button class="pr-tab" type="button" role="tab" data-sub="ns" aria-selected="false">Nivel de servicio</button><button class="pr-tab" type="button" role="tab" data-sub="ritmo" aria-selected="false">Ritmo de venta</button></nav>
 <div class="dm-strip mo-bar"><div class="dm-filters">
 <label class="dm-field"><span class="dm-flabel">Mes</span><select class="dm-select" data-draw="rt-sel-mes" data-source="ritmo" aria-label="Mes del forecast"></select></label>
-<label class="dm-field"><span class="dm-flabel">Canal</span><select class="dm-select" data-draw="rt-sel-canal" data-source="ritmo" aria-label="Canal"></select></label>
+<label class="dm-field"><span class="dm-flabel">Canal</span><input class="dm-select rt-q" type="search" data-k="canal" list="rt-l-canal" placeholder="Todos" aria-label="Canal"><datalist id="rt-l-canal" data-draw="rt-l-canal" data-source="ritmo"></datalist></label>
+<label class="dm-field"><span class="dm-flabel">Cliente</span><input class="dm-select rt-q" type="search" data-k="cli" list="rt-l-cli" placeholder="Todos" aria-label="Cliente"><datalist id="rt-l-cli" data-draw="rt-l-cli" data-source="ritmo"></datalist></label>
+<label class="dm-field"><span class="dm-flabel">Bodega</span><input class="dm-select rt-q" type="search" data-k="bod" list="rt-l-bod" placeholder="Todas" aria-label="Bodega"><datalist id="rt-l-bod" data-draw="rt-l-bod" data-source="ritmo"></datalist></label>
+<label class="dm-field"><span class="dm-flabel">SKU</span><input class="dm-select rt-q" type="search" data-k="ref" list="rt-l-ref" placeholder="Buscar código o nombre" aria-label="SKU"><datalist id="rt-l-ref" data-draw="rt-l-ref" data-source="ritmo"></datalist></label>
 </div></div>
 <div class="dm-tiles rt-tiles" data-draw="rt-kpis" data-source="ritmo ns_estado"></div>
 <div class="ag-fila2">
@@ -767,11 +769,11 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <section class="dm-card dm-card-o" id="rt-seg"><h2 class="dm-h2">Forecast vs real por segmento</h2><div class="dm-legend"><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real facturado</span></div>
 <div class="dm-chart" data-draw="rt-seg" data-source="ritmo"></div></section>
 </div>
-<section class="dm-card" id="rt-tabla"><h2 class="dm-h2">Forecast vs real por referencia</h2>
-<div class="lc-box"><table class="lc-table">
-<colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:10%"><col style="width:11%"></colgroup>
-<thead><tr><th></th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Forecast</th><th class="lc-n">Real</th><th class="lc-n">% cumpl.</th><th class="lc-n">Desviación</th></tr></thead>
-<tbody data-draw="rt-t" data-source="ritmo"></tbody><tfoot data-draw="rt-tot" data-source="ritmo"></tfoot></table></div></section>
+<div class="ag-fila2">
+<section class="dm-card" id="rt-t1"><h2 class="dm-h2">Por canal: cómo vamos</h2><div class="lc-box"><table class="lc-table"><thead><tr><th>Canal</th><th class="lc-n">Forecast</th><th class="lc-n">Real</th><th class="lc-n">Kilos</th><th class="lc-n">Cumplimiento</th><th class="lc-n">Cómo vamos</th><th class="lc-n">Brecha</th></tr></thead><tbody data-draw="rt-t1" data-source="ritmo"></tbody><tfoot data-draw="rt-t1f" data-source="ritmo"></tfoot></table></div></section>
+<section class="dm-card" id="rt-t2"><h2 class="dm-h2">Por cliente</h2><div class="lc-box"><table class="lc-table"><thead><tr><th></th><th>Cliente</th><th class="lc-n">Forecast</th><th class="lc-n">Real</th><th class="lc-n">Kilos</th><th class="lc-n">Cumplimiento</th></tr></thead><tbody data-draw="rt-t2" data-source="ritmo"></tbody><tfoot data-draw="rt-t2f" data-source="ritmo"></tfoot></table></div></section>
+</div>
+<section class="dm-card" id="rt-tabla"><h2 class="dm-h2">Por SKU</h2><div class="lc-box"><table class="lc-table"><thead><tr><th></th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Forecast</th><th class="lc-n">Real</th><th class="lc-n">Kilos</th><th class="lc-n">% cumpl.</th><th class="lc-n">Desviación</th></tr></thead><tbody data-draw="rt-t" data-source="ritmo"></tbody><tfoot data-draw="rt-tot" data-source="ritmo"></tfoot></table></div></section>
 </section>
 
 <section class="dm-main" id="gasto" role="tabpanel" hidden>
@@ -846,27 +848,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </section>
 </div>
 
-<script>
-document.addEventListener('click', (e) => {
-const btn = e.target.closest && e.target.closest('.dm-ms-btn'); if (!btn) return;
-const box = btn.closest('.dm-ms'), list = box && box.querySelector('.dm-ms-list'), f = list && window.DMms && window.DMms[list.dataset.draw];
-if (f) { try { f(list); } catch (err) { console.error(err); } }
-}, true);
-</script>
-<script>
-const DM_LIM_CRIT = 3;
-dash.calc('puntos', {
-inputs: ['inventario'],
-title: 'Estado por bodega y referencia',
-description: 'Cada fila del archivo con inventario + tránsito, días y estado: crítico (menos de 3 días, o sea 2,9 o menos), estable (3 a 13), sobrestock (más de 13) o sin demanda.',
-fn: (inventario) => inventario.map((r) => {
-const inv = r.ex + r.tr;
-const dias = r.dem > 0 ? inv / r.dem : null;
-const estado = r.dem > 0 ? (dias < DM_LIM_CRIT ? 'CRITICO' : dias <= 13 ? 'ESTABLE' : 'SOBRESTOCK') : (inv > 0 ? 'SIN DEMANDA' : null);
-return { id: r.corte + '|' + r.bod + '-' + r.ref, corte: r.corte, cat: r.cat, bod: r.bod, ciudad: r.ciudad, ref: r.ref, desc: r.desc, seg: r.seg, fam: r.fam, abc: r.abc, ex: r.ex, tr: r.tr, inv, fcd: r.fcd, dem: r.dem, dias, estado };
-}),
-});
-</script>
+<script src="base.js"></script>
 
 <script>
 window.DM = (() => {
@@ -2688,4 +2670,5 @@ w.append(p, bar, t); cell.append(w); td(AL.mill(r.costo), 'lc-n'); tb.append(tr)
 });
 });
 </script>
+<link rel="stylesheet" href="ritmo.css">
 <script src="ritmo.js"></script>

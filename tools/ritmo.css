@@ -1,0 +1,14 @@
+/* Tablero Supply Chain Don Maíz · subpestaña Ritmo de venta (27-nov-2026) */
+#ritmo .lc-box { max-height: 44rem; }
+#ritmo .lc-table { font-size: 14px; }
+#ritmo .lc-table td { padding: 5px 12px; }
+#ritmo td.lc-n { font-weight: 700; }
+#ritmo tfoot td { position: sticky; bottom: 0; z-index: 1; background: #E4E6F6; font-weight: 800; color: var(--dm-green-dk); border-top: 2px solid var(--dm-green); padding: 8px 12px; }
+#ritmo .rt-tiles .dm-tile-v { font-size: 2rem; }
+#ritmo input.rt-q { min-width: 11rem; }
+#ritmo input.rt-q[data-k="ref"], #ritmo input.rt-q[data-k="cli"] { min-width: 16rem; }
+#ritmo .iv-child td.iv-city { white-space: normal; }
+#rt-t1 .lc-table, #rt-t2 .lc-table { font-size: 13px; table-layout: auto; }
+#rt-t1 :is(td, th), #rt-t2 :is(td, th) { white-space: normal; overflow: visible; text-overflow: clip; padding-left: 8px; padding-right: 8px; }
+#rt-t2 th:first-child { width: 5%; }
+#rt-tabla th:nth-child(1) { width: 4%; } #rt-tabla th:nth-child(2) { width: 7%; } #rt-tabla th:nth-child(4) { width: 10%; }

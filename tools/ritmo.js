@@ -1,19 +1,29 @@
-// Tablero Supply Chain Don Maíz · subpestaña Ritmo de venta (Nivel de servicio). Forecast del mes vs cantidad facturada (dataset ritmo). 27-nov-2026.
+// Tablero Supply Chain Don Maíz · subpestaña Ritmo de venta (Nivel de servicio). Forecast del mes vs cantidad facturada (dataset ritmo).
+// 27-nov-2026: filtros con buscador (canal, cliente, bodega, SKU), tablas por canal (con "Cómo vamos" = % de la cuota del canal acumulada hasta ayer),
+// por cliente (+ referencia y bodega) y por SKU (+ cliente y bodega).
 window.RT = (() => {
-const D = () => { const d = dash.data('ritmo'); return d.status === 'ok' && Array.isArray(d.data) ? d.data : null; };
-const meses = () => [...new Set((D() || []).map((r) => r.mes))].sort();
-const sel = () => { const R = D(); if (!R) return null; const ms = meses(), p = dash.params(), cr = ms.filter((m) => R.some((r) => r.mes === m && r.real > 0));
-const mes = ms.includes(p.rt_mes) ? p.rt_mes : cr[cr.length - 1] || ms[0], cs = [...new Set(R.filter((r) => r.mes === mes).map((r) => r.canal))].sort(), canal = cs.includes(p.rt_canal) ? p.rt_canal : '';
-return { mes, canal, cs, R: R.filter((r) => r.mes === mes && (!canal || r.canal === canal)) }; };
-const sum = (v) => ({ fc: d3.sum(v, (r) => r.fc), real: d3.sum(v, (r) => r.real) });
+const all = () => { const d = dash.data('ritmo'); return d.status === 'ok' && Array.isArray(d.data) ? d.data : null; };
+const V = () => { const a = all(); return a ? a.filter((r) => r.tipo !== 'c') : null; };
+const meses = () => [...new Set((V() || []).map((r) => r.mes))].sort();
+const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const lab = { canal: (r) => NS.nom(r.canal), cli: (r) => NS.nom(r.cli), bod: (r) => r.bod, ref: (r) => r.ref + ' · ' + r.desc };
+const KS = ['canal', 'cli', 'bod', 'ref'];
+const pasa = (r, p, sin) => KS.every((k) => { if (k === sin) return true; const q = norm(p['rt_' + k]); if (!q) return true; const t = norm(lab[k](r)); return t === q || t.includes(q); });
+const sel = (sin) => { const R = V(); if (!R) return null; const ms = meses(), p = dash.params(), cr = ms.filter((m) => R.some((r) => r.mes === m && r.real > 0));
+const mes = ms.includes(p.rt_mes) ? p.rt_mes : cr[cr.length - 1] || ms[0];
+return { mes, p, R: R.filter((r) => r.mes === mes && pasa(r, p, sin)) }; };
+const sum = (v) => ({ fc: d3.sum(v, (r) => r.fc), real: d3.sum(v, (r) => r.real), kg: d3.sum(v, (r) => r.kg || 0) });
 const pct = (o) => (o.fc > 0 ? o.real / o.fc : null);
 const u = (v) => DM.f0.format(Math.round(v)), sg = (v) => (Math.round(v) > 0 ? '+' : Math.round(v) < 0 ? '−' : '') + u(Math.abs(v));
 const pt = (v) => (v == null ? 'Sin forecast' : DM.f1.format(v * 100) + ' %');
 const col = (v) => (v == null ? 'var(--color-fg-muted)' : v >= 0.95 ? 'var(--dm-ok)' : v >= 0.85 ? 'var(--dm-sob)' : 'var(--dm-crit)');
 const mesL = (k) => NS.MES[+k.slice(4) - 1] + ' ' + k.slice(0, 4);
+// "Cómo vamos": % de la cuota del mes acumulada hasta ayer (hora Colombia). Mes ya cerrado = 100 %; mes futuro = 0 %; sin cuota = null.
+const ayer = () => { const d = new Date(Date.now() - 5 * 3600e3 - 864e5); return d.toISOString().slice(0, 10); };
+const como = (mes, canales) => { const a = all(); if (!a) return null; const c = a.filter((r) => r.tipo === 'c' && r.mes === mes && (!canales || canales.includes(r.canal)));
+const t = d3.sum(c, (r) => r.cv); if (!(t > 0)) return null; const y = ayer(), ym = y.slice(0, 7).replace('-', '');
+if (mes < ym) return 1; if (mes > ym) return 0; return d3.sum(c.filter((r) => r.fecha <= y), (r) => r.cv) / t; };
 const grp = (R, key) => d3.rollups(R, sum, (r) => r[key]).map(([k, o]) => ({ k, ...o })).sort((a, b) => b.fc - a.fc || b.real - a.real);
-const filas = () => { const s = sel(); if (!s) return null;
-return d3.rollups(s.R, (v) => ({ ref: v[0].ref, desc: v[0].desc, seg: v[0].seg, ...sum(v), canales: v.slice().sort((a, b) => b.fc - a.fc || b.real - a.real) }), (r) => r.ref).map(([, o]) => o).sort((a, b) => b.fc - a.fc || b.real - a.real); };
 const bars = (el, items, label) => {
 el.replaceChildren(); if (!items.length) return;
 const W = el.clientWidth, H = 330, ml = 54, svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', label);
@@ -34,29 +44,52 @@ svg.append('g').selectAll('rect').data(items).join('rect').attr('x', (d) => x0(d
 .on('mousemove', (e, d) => DM.showTip(tip, el, x0(d.k) + x0.bandwidth() / 2, 30, [NS.nom(d.k), 'Forecast: ' + u(d.fc), 'Real: ' + u(d.real), 'Cumplimiento: ' + pt(pct(d)), 'Desviación: ' + sg(d.real - d.fc)]))
 .on('mouseleave', () => { tip.hidden = true; });
 };
-const celdas = (tr, o, pre) => { const c = (t, k, st) => { const td = document.createElement('td'); if (k) td.className = k; td.textContent = t; if (st) td.style.color = st; tr.append(td); return td; };
-pre(c); const p = pct(o), dv = Math.round(o.real - o.fc); c(u(o.fc), 'lc-n'); c(u(o.real), 'lc-n'); c(pt(p), 'lc-n', col(p)); c(sg(dv), 'lc-n', dv < 0 ? 'var(--dm-crit)' : dv > 0 ? 'var(--dm-ok)' : null); };
-return { D, meses, sel, sum, pct, u, sg, pt, col, mesL, grp, filas, bars, celdas };
+// Celdas de una fila: pre() pone las primeras columnas; luego forecast, real, kilos, % y (opcional) desviación.
+const celdas = (tr, o, pre, desv) => { const c = (t, k, st) => { const td = document.createElement('td'); if (k) td.className = k; td.textContent = t; if (st) td.style.color = st; tr.append(td); return td; };
+pre(c); const p = pct(o); c(u(o.fc), 'lc-n'); c(u(o.real), 'lc-n'); c(u(o.kg), 'lc-n'); c(pt(p), 'lc-n', col(p));
+if (desv) { const dv = Math.round(o.real - o.fc); c(sg(dv), 'lc-n', dv < 0 ? 'var(--dm-crit)' : dv > 0 ? 'var(--dm-ok)' : null); } return c; };
+const btn = (set, key, txt, redraw) => { const open = set.has(key), b = document.createElement('button'); b.type = 'button'; b.className = 'iv-exp'; b.textContent = open ? '−' : '+';
+b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', (open ? 'Ocultar ' : 'Ver ') + txt); b.onclick = () => { if (open) set.delete(key); else set.add(key); redraw(); }; return b; };
+return { all, V, meses, sel, sum, pct, u, sg, pt, col, mesL, como, grp, bars, celdas, btn, lab, KS, norm };
 })();
+window.RTopen = window.RTopen || { cli: new Set(), ref: new Set() };
+// Filtros con buscador: <input type="search" list=…> en la página; aquí se dibujan las opciones (datalist) y se escucha el cambio.
 dash.draw('rt-sel-mes', (el) => { const s = RT.sel(); if (!s) { el.replaceChildren(); return; } el.replaceChildren(...RT.meses().map((k) => new Option(RT.mesL(k), k))); el.value = s.mes; el.onchange = () => dash.setParams({ rt_mes: el.value }); });
-dash.draw('rt-sel-canal', (el) => { const s = RT.sel(); if (!s) { el.replaceChildren(); return; } el.replaceChildren(new Option('Todos', ''), ...s.cs.map((c) => new Option(NS.nom(c), c))); el.value = s.canal; el.onchange = () => dash.setParams({ rt_canal: el.value || null }); });
+RT.KS.forEach((k) => dash.draw('rt-l-' + k, (dl) => { const s = RT.sel(k); if (!s) { dl.replaceChildren(); return; }
+const ops = [...new Set(s.R.map(RT.lab[k]))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true })); dl.replaceChildren(...ops.map((t) => new Option(t)));
+document.querySelectorAll(`input.rt-q[data-k="${k}"]`).forEach((i) => { if (document.activeElement !== i) i.value = s.p['rt_' + k] || ''; }); }));
+document.querySelectorAll('input.rt-q').forEach((i) => { const set = () => dash.setParams({ ['rt_' + i.dataset.k]: i.value.trim() || null }); i.addEventListener('change', set); i.addEventListener('search', set); });
 dash.draw('rt-kpis', (el) => {
 const s = RT.sel(); if (!s) { DM.fail(el, dash.data('ritmo').status); return; }
-const t = RT.sum(s.R), p = RT.pct(t), e = NS.est(), g = e && e.guardado && e.guardado.slice(0, 7).replace('-', '') === s.mes ? e.guardado : null, can = s.canal ? ' · ' + NS.nom(s.canal) : '';
+const t = RT.sum(s.R), p = RT.pct(t), e = NS.est(), g = e && e.guardado && e.guardado.slice(0, 7).replace('-', '') === s.mes ? e.guardado : null;
 const tile = (l, v, d, c) => { const w = document.createElement('div'); w.className = 'dm-tile'; [[l, 'dm-tile-l'], [v, 'dm-tile-v'], [d, 'dm-tile-d']].forEach(([x, k]) => { const sp = document.createElement('span'); sp.className = k; sp.textContent = x; if (c && k === 'dm-tile-v') sp.style.color = c; w.append(sp); }); return w; };
-el.replaceChildren(tile('Total forecast del mes', RT.u(t.fc), 'Paquetes · ' + RT.mesL(s.mes) + can), tile('Cantidad facturada', RT.u(t.real), g ? 'Paquetes facturados al ' + DM.fDate(g) : 'Paquetes facturados' + can),
+el.replaceChildren(tile('Total forecast del mes', RT.u(t.fc), 'Paquetes · ' + RT.mesL(s.mes)), tile('Cantidad facturada', RT.u(t.real), (g ? 'Paquetes facturados al ' + DM.fDate(g) : 'Paquetes facturados') + ' · ' + RT.u(t.kg) + ' kg'),
 tile('Cumplimiento del mes', RT.pt(p), 'Desviación: ' + RT.sg(t.real - t.fc) + ' paquetes', RT.col(p)));
 });
 dash.draw('rt-canal', (el) => { const s = RT.sel(); if (!s) { DM.fail(el, dash.data('ritmo').status); return; } RT.bars(el, RT.grp(s.R, 'canal'), 'Forecast vs real por canal'); });
 dash.draw('rt-seg', (el) => { const s = RT.sel(); if (!s) { DM.fail(el, dash.data('ritmo').status); return; } RT.bars(el, RT.grp(s.R, 'seg'), 'Forecast vs real por segmento'); });
-window.RTopen = window.RTopen || new Set();
-const rtT = (tb) => { tb.replaceChildren(); const F = RT.filas(); if (!F) return;
-F.forEach((r) => { const open = window.RTopen.has(r.ref), tr = document.createElement('tr'); tr.className = 'lc-row';
-RT.celdas(tr, r, (c) => { const b = c('', 'lc-c'), btn = document.createElement('button'); btn.type = 'button'; btn.className = 'iv-exp'; btn.textContent = open ? '−' : '+';
-btn.setAttribute('aria-expanded', String(open)); btn.setAttribute('aria-label', (open ? 'Ocultar' : 'Ver') + ' canales de ' + r.ref);
-btn.onclick = () => { if (open) window.RTopen.delete(r.ref); else window.RTopen.add(r.ref); rtT(tb); }; b.append(btn); c(r.ref, 'lc-ref'); c(r.desc).title = r.desc; c(NS.nom(r.seg)); });
-tb.append(tr);
-if (open) r.canales.forEach((x) => { const ch = document.createElement('tr'); ch.className = 'iv-child'; RT.celdas(ch, x, (c) => { c(''); c(NS.nom(x.canal), 'iv-city').colSpan = 3; }); tb.append(ch); });
-}); };
-dash.draw('rt-t', rtT);
-dash.draw('rt-tot', (tf) => { tf.replaceChildren(); const s = RT.sel(); if (!s) return; const tr = document.createElement('tr'); RT.celdas(tr, RT.sum(s.R), (c) => { c(''); c('Total · ' + RT.filas().length + ' referencias').colSpan = 3; }); tf.append(tr); });
+// Tabla 1 · por canal, con "Cómo vamos" y brecha (cumplimiento − cómo vamos).
+const rtCv = (tr, o, cv, c) => { const p = RT.pct(o); c(cv == null ? '—' : DM.f1.format(cv * 100) + ' %', 'lc-n');
+const b = p == null || cv == null ? null : p - cv; c(b == null ? '—' : (b >= 0 ? '+' : '−') + DM.f1.format(Math.abs(b) * 100) + ' pp', 'lc-n', b == null ? null : b >= 0 ? 'var(--dm-ok)' : 'var(--dm-crit)'); };
+dash.draw('rt-t1', (tb) => { tb.replaceChildren(); const s = RT.sel(); if (!s) return;
+RT.grp(s.R, 'canal').forEach((o) => { const tr = document.createElement('tr'); tr.className = 'lc-row'; const cv = RT.como(s.mes, [o.k]); rtCv(tr, o, cv, RT.celdas(tr, o, (c) => c(NS.nom(o.k), 'lc-ref'))); tb.append(tr); }); });
+dash.draw('rt-t1f', (tf) => { tf.replaceChildren(); const s = RT.sel(); if (!s) return; const tr = document.createElement('tr'), cs = [...new Set(s.R.map((r) => r.canal))];
+rtCv(tr, RT.sum(s.R), RT.como(s.mes, cs), RT.celdas(tr, RT.sum(s.R), (c) => c('Total'))); tf.append(tr); });
+// Tabla 2 · por cliente (en Moderno, la cadena; en los demás, el canal) con + por referencia y bodega.
+const rtT2 = (tb) => { tb.replaceChildren(); const s = RT.sel(); if (!s) return; const O = window.RTopen.cli;
+d3.rollups(s.R, (v) => v, (r) => RT.lab.cli(r)).map(([k, v]) => ({ k, v, ...RT.sum(v) })).sort((a, b) => b.fc - a.fc || b.real - a.real).forEach((o) => {
+const tr = document.createElement('tr'); tr.className = 'lc-row'; RT.celdas(tr, o, (c) => { c('', 'lc-c').append(RT.btn(O, o.k, 'referencias de ' + o.k, () => rtT2(tb))); c(o.k, 'lc-ref'); }); tb.append(tr);
+if (O.has(o.k)) o.v.slice().sort((a, b) => b.fc - a.fc || b.real - a.real).forEach((x) => { const ch = document.createElement('tr'); ch.className = 'iv-child';
+RT.celdas(ch, x, (c) => { c(''); c(x.ref + ' · ' + x.desc + ' — ' + x.bod, 'iv-city').title = x.desc; }); tb.append(ch); }); }); };
+dash.draw('rt-t2', rtT2);
+dash.draw('rt-t2f', (tf) => { tf.replaceChildren(); const s = RT.sel(); if (!s) return; const tr = document.createElement('tr'); RT.celdas(tr, RT.sum(s.R), (c) => { c(''); c('Total'); }); tf.append(tr); });
+// Tabla 3 · por SKU con + por cliente y bodega.
+const rtT3 = (tb) => { tb.replaceChildren(); const s = RT.sel(); if (!s) return; const O = window.RTopen.ref;
+d3.rollups(s.R, (v) => v, (r) => r.ref).map(([k, v]) => ({ k, v, desc: v[0].desc, seg: v[0].seg, ...RT.sum(v) })).sort((a, b) => b.fc - a.fc || b.real - a.real).forEach((o) => {
+const tr = document.createElement('tr'); tr.className = 'lc-row';
+RT.celdas(tr, o, (c) => { c('', 'lc-c').append(RT.btn(O, o.k, 'clientes y bodegas de ' + o.k, () => rtT3(tb))); c(o.k, 'lc-ref'); c(o.desc).title = o.desc; c(NS.nom(o.seg)); }, true); tb.append(tr);
+if (O.has(o.k)) o.v.slice().sort((a, b) => b.fc - a.fc || b.real - a.real).forEach((x) => { const ch = document.createElement('tr'); ch.className = 'iv-child';
+RT.celdas(ch, x, (c) => { c(''); c(RT.lab.cli(x) + ' — ' + x.bod, 'iv-city').colSpan = 3; }, true); tb.append(ch); }); }); };
+dash.draw('rt-t', rtT3);
+dash.draw('rt-tot', (tf) => { tf.replaceChildren(); const s = RT.sel(); if (!s) return; const tr = document.createElement('tr');
+RT.celdas(tr, RT.sum(s.R), (c) => { c(''); c('Total · ' + new Set(s.R.map((r) => r.ref)).size + ' referencias').colSpan = 3; }, true); tf.append(tr); });

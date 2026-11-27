@@ -25,6 +25,8 @@ if LOGO in page:
     shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'img', 'logo.png'), os.path.join(out, 'img', 'logo.png'))
 if '/_blob/' in page: sys.exit('La página aún referencia /_blob/: revisar')
 # Archivos de código aparte del tablero (files/<nombre>.js en Claude): en la web van dentro de la página, desde tools/<nombre>.js.
+for _css in re.findall(r'<link rel="stylesheet" href="([a-z_]+\.css)">', page):
+    page = page.replace(f'<link rel="stylesheet" href="{_css}">', '<style>\n' + open(os.path.join(os.path.dirname(os.path.abspath(__file__)), _css), encoding='utf-8').read() + '</style>')
 for _js in re.findall(r'<script src="([a-z_]+\.js)"></script>', page):
     page = page.replace(f'<script src="{_js}"></script>', '<script>\n' + open(os.path.join(os.path.dirname(os.path.abspath(__file__)), _js), encoding='utf-8').read() + '</script>')
 # Los de almacén se actualizan a mano cuando llegan los archivos: si no vienen en la carpeta de datos, se deja el que ya está publicado.
