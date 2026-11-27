@@ -11,4 +11,5 @@
 #rt-t1 .lc-table, #rt-t2 .lc-table { font-size: 13px; table-layout: auto; }
 #rt-t1 :is(td, th), #rt-t2 :is(td, th) { white-space: normal; overflow: visible; text-overflow: clip; padding-left: 8px; padding-right: 8px; }
 #rt-t2 th:first-child { width: 5%; }
+#rt-tabla input.rt-qt { width: 20rem; max-width: 100%; margin: 0 0 10px; }
 #rt-tabla th:nth-child(1) { width: 4%; } #rt-tabla th:nth-child(2) { width: 7%; } #rt-tabla th:nth-child(4) { width: 10%; }

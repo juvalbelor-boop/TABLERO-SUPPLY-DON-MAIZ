@@ -46,7 +46,8 @@ svg.append('g').selectAll('rect').data(items).join('rect').attr('x', (d) => x0(d
 };
 // Celdas de una fila: pre() pone las primeras columnas; luego forecast, real, kilos, % y (opcional) desviación.
 const celdas = (tr, o, pre, desv) => { const c = (t, k, st) => { const td = document.createElement('td'); if (k) td.className = k; td.textContent = t; if (st) td.style.color = st; tr.append(td); return td; };
-pre(c); const p = pct(o); c(u(o.fc), 'lc-n'); c(u(o.real), 'lc-n'); c(u(o.kg), 'lc-n'); c(pt(p), 'lc-n', col(p));
+pre(c); const p = pct(o), fa = Math.round(o.fc - o.real); c(u(o.fc), 'lc-n'); c(u(o.real), 'lc-n'); c(u(o.kg), 'lc-n'); c(pt(p), 'lc-n', col(p));
+c(o.fc > 0 ? (fa > 0 ? u(fa) : 'Cumplido') : '—', 'lc-n', o.fc > 0 ? (fa > 0 ? 'var(--dm-crit)' : 'var(--dm-ok)') : null);
 if (desv) { const dv = Math.round(o.real - o.fc); c(sg(dv), 'lc-n', dv < 0 ? 'var(--dm-crit)' : dv > 0 ? 'var(--dm-ok)' : null); } return c; };
 const btn = (set, key, txt, redraw) => { const open = set.has(key), b = document.createElement('button'); b.type = 'button'; b.className = 'iv-exp'; b.textContent = open ? '−' : '+';
 b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', (open ? 'Ocultar ' : 'Ver ') + txt); b.onclick = () => { if (open) set.delete(key); else set.add(key); redraw(); }; return b; };
@@ -84,12 +85,15 @@ RT.celdas(ch, x, (c) => { c(''); c(x.ref + ' · ' + x.desc + ' — ' + x.bod, 'i
 dash.draw('rt-t2', rtT2);
 dash.draw('rt-t2f', (tf) => { tf.replaceChildren(); const s = RT.sel(); if (!s) return; const tr = document.createElement('tr'); RT.celdas(tr, RT.sum(s.R), (c) => { c(''); c('Total'); }); tf.append(tr); });
 // Tabla 3 · por SKU con + por cliente y bodega.
+const rtTq = (s) => { const q = RT.norm(s.p.rt_tq); if (!q) return s.R; const num = /^\d+$/.test(q); return s.R.filter((r) => r.ref.toLowerCase().startsWith(q) || (!num && RT.norm(r.desc).includes(q))); };
+document.querySelectorAll('input.rt-qt').forEach((i) => i.addEventListener('input', () => dash.setParams({ rt_tq: i.value.trim() || null })));
 const rtT3 = (tb) => { tb.replaceChildren(); const s = RT.sel(); if (!s) return; const O = window.RTopen.ref;
-d3.rollups(s.R, (v) => v, (r) => r.ref).map(([k, v]) => ({ k, v, desc: v[0].desc, seg: v[0].seg, ...RT.sum(v) })).sort((a, b) => b.fc - a.fc || b.real - a.real).forEach((o) => {
+document.querySelectorAll('input.rt-qt').forEach((i) => { if (document.activeElement !== i) i.value = s.p.rt_tq || ''; });
+d3.rollups(rtTq(s), (v) => v, (r) => r.ref).map(([k, v]) => ({ k, v, desc: v[0].desc, seg: v[0].seg, ...RT.sum(v) })).sort((a, b) => b.fc - a.fc || b.real - a.real).forEach((o) => {
 const tr = document.createElement('tr'); tr.className = 'lc-row';
 RT.celdas(tr, o, (c) => { c('', 'lc-c').append(RT.btn(O, o.k, 'clientes y bodegas de ' + o.k, () => rtT3(tb))); c(o.k, 'lc-ref'); c(o.desc).title = o.desc; c(NS.nom(o.seg)); }, true); tb.append(tr);
 if (O.has(o.k)) o.v.slice().sort((a, b) => b.fc - a.fc || b.real - a.real).forEach((x) => { const ch = document.createElement('tr'); ch.className = 'iv-child';
 RT.celdas(ch, x, (c) => { c(''); c(RT.lab.cli(x) + ' — ' + x.bod, 'iv-city').colSpan = 3; }, true); tb.append(ch); }); }); };
 dash.draw('rt-t', rtT3);
 dash.draw('rt-tot', (tf) => { tf.replaceChildren(); const s = RT.sel(); if (!s) return; const tr = document.createElement('tr');
-RT.celdas(tr, RT.sum(s.R), (c) => { c(''); c('Total · ' + new Set(s.R.map((r) => r.ref)).size + ' referencias').colSpan = 3; }, true); tf.append(tr); });
+const R = rtTq(s); RT.celdas(tr, RT.sum(R), (c) => { c(''); c('Total · ' + new Set(R.map((r) => r.ref)).size + ' referencias').colSpan = 3; }, true); tf.append(tr); });
