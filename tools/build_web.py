@@ -28,7 +28,7 @@ if '/_blob/' in page: sys.exit('La página aún referencia /_blob/: revisar')
 for _js in re.findall(r'<script src="([a-z_]+\.js)"></script>', page):
     page = page.replace(f'<script src="{_js}"></script>', '<script>\n' + open(os.path.join(os.path.dirname(os.path.abspath(__file__)), _js), encoding='utf-8').read() + '</script>')
 # Los de almacén se actualizan a mano cuando llegan los archivos: si no vienen en la carpeta de datos, se deja el que ya está publicado.
-ALMACEN = ['almacen_mp', 'almacen_cavas', 'almacen_estado']
+ALMACEN = ['almacen_mp', 'almacen_cavas', 'almacen_estado', 'ritmo']  # ritmo (27-nov-2026): si no viene, se conserva el publicado
 missing = [d for d in DATASETS if not os.path.exists(os.path.join(data_dir, d + '.json')) and not (d in ALMACEN and os.path.exists(os.path.join(out, 'data', d + '.json')))]
 if missing: sys.exit('Faltan datos: ' + ', '.join(missing))
 os.makedirs(os.path.join(out, 'data'), exist_ok=True); os.makedirs(os.path.join(out, 'fonts'), exist_ok=True)
