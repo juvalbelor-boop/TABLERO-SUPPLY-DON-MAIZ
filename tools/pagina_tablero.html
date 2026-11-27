@@ -224,6 +224,7 @@ font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: no
 :is(#ns-agotados, #agotados-top) .lc-table .lc-n { text-align: center; }
 :is(#ns-agotados, #agotados-top) .lc-pill { font-size: 12.5px; padding: 1px 8px; min-width: 3.4rem; }
 :is(#ns-agotados, #agotados-top) .lc-bar { height: 7px; }
+#rt-tabla .lc-box { max-height: 44rem; } #rt-tabla .lc-table { font-size: 14px; } #rt-tabla .lc-table td { padding: 5px 12px; } #rt-tabla td.lc-n { font-weight: 700; } #rt-tabla tfoot td { position: sticky; bottom: 0; z-index: 1; background: #E4E6F6; font-weight: 800; color: var(--dm-green-dk); border-top: 2px solid var(--dm-green); padding: 8px 12px; } .rt-tiles .dm-tile-v { font-size: 2rem; }
 :is(#ns-agotados, #agotados-top) tfoot td { position: sticky; bottom: 0; z-index: 1; background: #E4E6F6; font-weight: 800; font-size: 14.5px; color: var(--dm-green-dk); border-top: 2px solid var(--dm-green); padding: 8px 12px; }
 .al-sem { display: inline-block; border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 11px; color: #FFFFFF; white-space: nowrap; }
 .al-cavas { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -707,6 +708,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </section>
 
 <section class="dm-main" id="ns" role="tabpanel" hidden>
+<nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Nivel de servicio"><button class="pr-tab" type="button" role="tab" data-sub="ns" aria-selected="false">Nivel de servicio</button><button class="pr-tab" type="button" role="tab" data-sub="ritmo" aria-selected="false">Ritmo de venta</button></nav>
 <div class="dm-strip mo-bar">
 <div class="dm-filters">
 <div class="dm-field dm-ms" data-ms="ns_anios"><span class="dm-flabel">Año</span>
@@ -750,6 +752,26 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <colgroup><col style="width:5%"><col style="width:8%"><col><col style="width:12%"><col style="width:15%"><col style="width:18%"></colgroup>
 <thead><tr><th class="lc-c">#</th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Agotado ($)</th><th>% del total</th></tr></thead>
 <tbody data-draw="ns-ag" data-source="ns ns_ref agotados"></tbody><tfoot data-draw="ns-ag-tot" data-source="ns ns_ref agotados"></tfoot></table></div></section>
+</section>
+
+<section class="dm-main" id="ritmo" role="tabpanel" hidden>
+<nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Nivel de servicio"><button class="pr-tab" type="button" role="tab" data-sub="ns" aria-selected="false">Nivel de servicio</button><button class="pr-tab" type="button" role="tab" data-sub="ritmo" aria-selected="false">Ritmo de venta</button></nav>
+<div class="dm-strip mo-bar"><div class="dm-filters">
+<label class="dm-field"><span class="dm-flabel">Mes</span><select class="dm-select" data-draw="rt-sel-mes" data-source="ritmo" aria-label="Mes del forecast"></select></label>
+<label class="dm-field"><span class="dm-flabel">Canal</span><select class="dm-select" data-draw="rt-sel-canal" data-source="ritmo" aria-label="Canal"></select></label>
+</div></div>
+<div class="dm-tiles rt-tiles" data-draw="rt-kpis" data-source="ritmo ns_estado"></div>
+<div class="ag-fila2">
+<section class="dm-card" id="rt-canal"><h2 class="dm-h2">Forecast vs real por canal</h2><div class="dm-legend"><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real facturado</span></div>
+<div class="dm-chart" data-draw="rt-canal" data-source="ritmo"></div></section>
+<section class="dm-card dm-card-o" id="rt-seg"><h2 class="dm-h2">Forecast vs real por segmento</h2><div class="dm-legend"><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real facturado</span></div>
+<div class="dm-chart" data-draw="rt-seg" data-source="ritmo"></div></section>
+</div>
+<section class="dm-card" id="rt-tabla"><h2 class="dm-h2">Forecast vs real por referencia</h2>
+<div class="lc-box"><table class="lc-table">
+<colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:10%"><col style="width:11%"></colgroup>
+<thead><tr><th></th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Forecast</th><th class="lc-n">Real</th><th class="lc-n">% cumpl.</th><th class="lc-n">Desviación</th></tr></thead>
+<tbody data-draw="rt-t" data-source="ritmo"></tbody><tfoot data-draw="rt-tot" data-source="ritmo"></tfoot></table></div></section>
 </section>
 
 <section class="dm-main" id="gasto" role="tabpanel" hidden>
@@ -930,13 +952,13 @@ return { canal, LIM_CRIT, LIM_SOB, DIAS_MES, NAME, f0, f1, fc, fd, fDate, fDay, 
 </script>
 
 <script>
-const SUBS = ['general', 'resumen'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'gasto', 'almmp', 'almcav'];
+const SUBS = ['general', 'resumen'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'ritmo', 'gasto', 'almmp', 'almcav'];
 const h0 = location.hash.slice(1);
 window.DMmain = SUBS.includes(h0) ? 'inventarios' : h0 === 'produccion' ? 'mps' : h0 === 'almacen' ? 'almmp' : MAINS.includes(h0) ? h0 : 'supply';
 window.DMtab = SUBS.includes(h0) ? h0 : 'general';
 const applyTab = () => {
 const inv = window.DMmain === 'inventarios';
-document.querySelectorAll('.dm-main-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.main === window.DMmain || (b.dataset.main === 'produccion' && (window.DMmain === 'mps' || window.DMmain === 'otif')) || (b.dataset.main === 'almacen' && (window.DMmain === 'almmp' || window.DMmain === 'almcav')))));
+document.querySelectorAll('.dm-main-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.main === window.DMmain || (b.dataset.main === 'produccion' && (window.DMmain === 'mps' || window.DMmain === 'otif')) || (b.dataset.main === 'almacen' && (window.DMmain === 'almmp' || window.DMmain === 'almcav')) || (b.dataset.main === 'ns' && window.DMmain === 'ritmo'))));
 document.querySelectorAll('.pr-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.sub === window.DMmain)));
 document.querySelectorAll('.dm-main').forEach((p) => { p.hidden = p.id !== window.DMmain; });
 document.querySelectorAll('.dm-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === window.DMtab)));
@@ -944,10 +966,10 @@ document.querySelectorAll('.dm-page').forEach((p) => { p.hidden = !inv || p.id !
 document.querySelectorAll('.dm-band .dm-filters, .dm-band .dm-take').forEach((el) => { el.hidden = !inv; });
 };
 document.querySelectorAll('.dm-main-tab').forEach((b) => b.addEventListener('click', () => {
-window.DMmain = b.dataset.main === 'produccion' ? (window.DMprod || 'mps') : b.dataset.main === 'almacen' ? (window.DMalm || 'almmp') : b.dataset.main; applyTab(); dash.setLink(window.DMmain === 'inventarios' ? window.DMtab : window.DMmain);
+window.DMmain = b.dataset.main === 'produccion' ? (window.DMprod || 'mps') : b.dataset.main === 'almacen' ? (window.DMalm || 'almmp') : b.dataset.main === 'ns' ? (window.DMnsv || 'ns') : b.dataset.main; applyTab(); dash.setLink(window.DMmain === 'inventarios' ? window.DMtab : window.DMmain);
 }));
 document.querySelectorAll('.dm-tab').forEach((b) => b.addEventListener('click', () => { window.DMtab = b.dataset.tab; applyTab(); dash.setLink(b.dataset.tab); }));
-document.querySelectorAll('.pr-tab').forEach((b) => b.addEventListener('click', () => { window.DMmain = b.dataset.sub; if (b.dataset.sub.startsWith('alm')) window.DMalm = b.dataset.sub; else window.DMprod = b.dataset.sub; applyTab(); dash.setLink(b.dataset.sub); }));
+document.querySelectorAll('.pr-tab').forEach((b) => b.addEventListener('click', () => { window.DMmain = b.dataset.sub; if (b.dataset.sub.startsWith('alm')) window.DMalm = b.dataset.sub; else if (b.dataset.sub === 'ns' || b.dataset.sub === 'ritmo') window.DMnsv = b.dataset.sub; else window.DMprod = b.dataset.sub; applyTab(); dash.setLink(b.dataset.sub); }));
 document.querySelectorAll('.dm-catsel').forEach((s) => s.addEventListener('change', () => dash.setParams({ cat: s.value })));
 dash.onData(() => {
 applyTab();
@@ -1965,11 +1987,8 @@ const YCOL = (y, ys) => { const i = ys.indexOf(y), n = ys.length; return i === n
 return { META, MES, MC, list, ok, din, cant, eje, D, est, sel, anios, canales, porCanal, porAnio, ns, parcial, meses, ultCerrado, kTxt, kCorto, pct, nom, col, YCOL };
 })();
 
-dash.draw('ns-def2', (el) => { el.textContent = NS.din() ? 'valor facturado ÷ valor pedido' : 'unidades facturadas ÷ unidades pedidas'; });
 document.querySelectorAll('.ns-uni').forEach((s) => s.addEventListener('change', () => dash.setParams({ ns_uni: s.value === 'dinero' ? 'dinero' : null })));
 dash.onData(() => { const v = dash.params().ns_uni === 'dinero' ? 'dinero' : 'cant'; document.querySelectorAll('.ns-uni').forEach((s) => { s.value = v; }); });
-dash.draw('ns-archivo', (el) => { const e = NS.est(); el.textContent = e ? e.archivo : '—'; });
-dash.draw('ns-hasta', (el) => { const e = NS.est(); el.textContent = e ? NS.kTxt(e.ultimo_mes) + (NS.parcial(e.ultimo_mes) ? ' (mes en curso, parcial)' : '') : '—'; });
 
 const nsClose = () => { document.querySelectorAll('#ns .dm-ms-pop').forEach((p) => { p.hidden = true; }); document.querySelectorAll('#ns .dm-ms-btn').forEach((b) => b.setAttribute('aria-expanded', 'false')); };
 document.querySelectorAll('#ns .dm-ms').forEach((box) => {
@@ -2669,3 +2688,4 @@ w.append(p, bar, t); cell.append(w); td(AL.mill(r.costo), 'lc-n'); tb.append(tr)
 });
 });
 </script>
+<script src="ritmo.js"></script>

@@ -9,7 +9,7 @@ que replica el del tablero (datos, cálculos, filtros y dibujos), así se ve igu
 import sys, os, re, json, shutil, datetime as dt
 page_path, data_dir, out = sys.argv[1:4]
 OPCIONALES = ['ventas']
-DATASETS = ['inventario', 'produccion', 'mps', 'mps_estado', 'agotados', 'agotados_estado', 'venta_mensual', 'ns', 'ns_estado', 'gasto', 'gasto_estado', 'presupuesto', 'presupuesto_estado', 'ventas', 'ventas_estado', 'exportaciones', 'ns_ref', 'almacen_mp', 'almacen_cavas', 'almacen_estado']
+DATASETS = ['inventario', 'produccion', 'mps', 'mps_estado', 'agotados', 'agotados_estado', 'venta_mensual', 'ns', 'ns_estado', 'gasto', 'gasto_estado', 'presupuesto', 'presupuesto_estado', 'ventas', 'ventas_estado', 'exportaciones', 'ns_ref', 'ritmo', 'almacen_mp', 'almacen_cavas', 'almacen_estado']
 PARAMS0 = {'bods': [], 'cat': 'Nacional', 'ciudades': [], 'corte': None, 'segs': []}
 page = open(page_path, encoding='utf-8').read()
 page = page.replace('<meta name="dash-one-writer">', '')
@@ -24,6 +24,9 @@ if LOGO in page:
     page = page.replace(LOGO, 'img/logo.png'); os.makedirs(os.path.join(out, 'img'), exist_ok=True)
     shutil.copy(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'img', 'logo.png'), os.path.join(out, 'img', 'logo.png'))
 if '/_blob/' in page: sys.exit('La página aún referencia /_blob/: revisar')
+# Archivos de código aparte del tablero (files/<nombre>.js en Claude): en la web van dentro de la página, desde tools/<nombre>.js.
+for _js in re.findall(r'<script src="([a-z_]+\.js)"></script>', page):
+    page = page.replace(f'<script src="{_js}"></script>', '<script>\n' + open(os.path.join(os.path.dirname(os.path.abspath(__file__)), _js), encoding='utf-8').read() + '</script>')
 # Los de almacén se actualizan a mano cuando llegan los archivos: si no vienen en la carpeta de datos, se deja el que ya está publicado.
 ALMACEN = ['almacen_mp', 'almacen_cavas', 'almacen_estado']
 missing = [d for d in DATASETS if not os.path.exists(os.path.join(data_dir, d + '.json')) and not (d in ALMACEN and os.path.exists(os.path.join(out, 'data', d + '.json')))]

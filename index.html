@@ -27,7 +27,7 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); fon
 <script>
 // Motor mínimo que replica el del tablero en Claude: datos (data/*.json), cálculos, filtros y dibujos marcados con data-draw.
 window.dash = (() => {
-  const DS = ["inventario", "produccion", "mps", "mps_estado", "agotados", "agotados_estado", "venta_mensual", "ns", "ns_estado", "gasto", "gasto_estado", "presupuesto", "presupuesto_estado", "ventas", "ventas_estado", "exportaciones", "ns_ref", "almacen_mp", "almacen_cavas", "almacen_estado"], data = {}, calcs = {}, draws = {}, onDatas = [], cache = {};
+  const DS = ["inventario", "produccion", "mps", "mps_estado", "agotados", "agotados_estado", "venta_mensual", "ns", "ns_estado", "gasto", "gasto_estado", "presupuesto", "presupuesto_estado", "ventas", "ventas_estado", "exportaciones", "ns_ref", "ritmo", "almacen_mp", "almacen_cavas", "almacen_estado"], data = {}, calcs = {}, draws = {}, onDatas = [], cache = {};
   let params = {"bods": [], "cat": "Nacional", "ciudades": [], "corte": null, "segs": []}, loaded = false, queued = false;
   const ok = (rows) => ({ status: 'ok', data: rows, columns: rows && rows[0] ? Object.keys(rows[0]) : [], meta: [], refreshing: false });
   const api = {
@@ -301,6 +301,7 @@ font-size: var(--cds-font-size-caption); color: var(--color-fg); white-space: no
 :is(#ns-agotados, #agotados-top) .lc-table .lc-n { text-align: center; }
 :is(#ns-agotados, #agotados-top) .lc-pill { font-size: 12.5px; padding: 1px 8px; min-width: 3.4rem; }
 :is(#ns-agotados, #agotados-top) .lc-bar { height: 7px; }
+#rt-tabla .lc-box { max-height: 44rem; } #rt-tabla .lc-table { font-size: 14px; } #rt-tabla .lc-table td { padding: 5px 12px; } #rt-tabla td.lc-n { font-weight: 700; } #rt-tabla tfoot td { position: sticky; bottom: 0; z-index: 1; background: #E4E6F6; font-weight: 800; color: var(--dm-green-dk); border-top: 2px solid var(--dm-green); padding: 8px 12px; } .rt-tiles .dm-tile-v { font-size: 2rem; }
 :is(#ns-agotados, #agotados-top) tfoot td { position: sticky; bottom: 0; z-index: 1; background: #E4E6F6; font-weight: 800; font-size: 14.5px; color: var(--dm-green-dk); border-top: 2px solid var(--dm-green); padding: 8px 12px; }
 .al-sem { display: inline-block; border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 11px; color: #FFFFFF; white-space: nowrap; }
 .al-cavas { display: grid; gap: var(--cds-gap-lg); grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -784,6 +785,7 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 </section>
 
 <section class="dm-main" id="ns" role="tabpanel" hidden>
+<nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Nivel de servicio"><button class="pr-tab" type="button" role="tab" data-sub="ns" aria-selected="false">Nivel de servicio</button><button class="pr-tab" type="button" role="tab" data-sub="ritmo" aria-selected="false">Ritmo de venta</button></nav>
 <div class="dm-strip mo-bar">
 <div class="dm-filters">
 <div class="dm-field dm-ms" data-ms="ns_anios"><span class="dm-flabel">Año</span>
@@ -827,6 +829,26 @@ padding: var(--cds-pad-xs) .4rem; border-bottom: 2px solid var(--dm-orange); whi
 <colgroup><col style="width:5%"><col style="width:8%"><col><col style="width:12%"><col style="width:15%"><col style="width:18%"></colgroup>
 <thead><tr><th class="lc-c">#</th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Agotado ($)</th><th>% del total</th></tr></thead>
 <tbody data-draw="ns-ag" data-source="ns ns_ref agotados"></tbody><tfoot data-draw="ns-ag-tot" data-source="ns ns_ref agotados"></tfoot></table></div></section>
+</section>
+
+<section class="dm-main" id="ritmo" role="tabpanel" hidden>
+<nav class="dm-tabs" role="tablist" aria-label="Subpestañas de Nivel de servicio"><button class="pr-tab" type="button" role="tab" data-sub="ns" aria-selected="false">Nivel de servicio</button><button class="pr-tab" type="button" role="tab" data-sub="ritmo" aria-selected="false">Ritmo de venta</button></nav>
+<div class="dm-strip mo-bar"><div class="dm-filters">
+<label class="dm-field"><span class="dm-flabel">Mes</span><select class="dm-select" data-draw="rt-sel-mes" data-source="ritmo" aria-label="Mes del forecast"></select></label>
+<label class="dm-field"><span class="dm-flabel">Canal</span><select class="dm-select" data-draw="rt-sel-canal" data-source="ritmo" aria-label="Canal"></select></label>
+</div></div>
+<div class="dm-tiles rt-tiles" data-draw="rt-kpis" data-source="ritmo ns_estado"></div>
+<div class="ag-fila2">
+<section class="dm-card" id="rt-canal"><h2 class="dm-h2">Forecast vs real por canal</h2><div class="dm-legend"><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real facturado</span></div>
+<div class="dm-chart" data-draw="rt-canal" data-source="ritmo"></div></section>
+<section class="dm-card dm-card-o" id="rt-seg"><h2 class="dm-h2">Forecast vs real por segmento</h2><div class="dm-legend"><span><span class="dm-sw dm-sw-o"></span>Forecast</span><span><span class="dm-sw dm-sw-g"></span>Real facturado</span></div>
+<div class="dm-chart" data-draw="rt-seg" data-source="ritmo"></div></section>
+</div>
+<section class="dm-card" id="rt-tabla"><h2 class="dm-h2">Forecast vs real por referencia</h2>
+<div class="lc-box"><table class="lc-table">
+<colgroup><col style="width:4%"><col style="width:7%"><col><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:10%"><col style="width:11%"></colgroup>
+<thead><tr><th></th><th>Ref</th><th>Producto</th><th>Segmento</th><th class="lc-n">Forecast</th><th class="lc-n">Real</th><th class="lc-n">% cumpl.</th><th class="lc-n">Desviación</th></tr></thead>
+<tbody data-draw="rt-t" data-source="ritmo"></tbody><tfoot data-draw="rt-tot" data-source="ritmo"></tfoot></table></div></section>
 </section>
 
 <section class="dm-main" id="gasto" role="tabpanel" hidden>
@@ -1007,13 +1029,13 @@ return { canal, LIM_CRIT, LIM_SOB, DIAS_MES, NAME, f0, f1, fc, fd, fDate, fDay, 
 </script>
 
 <script>
-const SUBS = ['general', 'resumen'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'gasto', 'almmp', 'almcav'];
+const SUBS = ['general', 'resumen'], MAINS = ['supply', 'inventarios', 'agotados', 'mps', 'otif', 'ns', 'ritmo', 'gasto', 'almmp', 'almcav'];
 const h0 = location.hash.slice(1);
 window.DMmain = SUBS.includes(h0) ? 'inventarios' : h0 === 'produccion' ? 'mps' : h0 === 'almacen' ? 'almmp' : MAINS.includes(h0) ? h0 : 'supply';
 window.DMtab = SUBS.includes(h0) ? h0 : 'general';
 const applyTab = () => {
 const inv = window.DMmain === 'inventarios';
-document.querySelectorAll('.dm-main-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.main === window.DMmain || (b.dataset.main === 'produccion' && (window.DMmain === 'mps' || window.DMmain === 'otif')) || (b.dataset.main === 'almacen' && (window.DMmain === 'almmp' || window.DMmain === 'almcav')))));
+document.querySelectorAll('.dm-main-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.main === window.DMmain || (b.dataset.main === 'produccion' && (window.DMmain === 'mps' || window.DMmain === 'otif')) || (b.dataset.main === 'almacen' && (window.DMmain === 'almmp' || window.DMmain === 'almcav')) || (b.dataset.main === 'ns' && window.DMmain === 'ritmo'))));
 document.querySelectorAll('.pr-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.sub === window.DMmain)));
 document.querySelectorAll('.dm-main').forEach((p) => { p.hidden = p.id !== window.DMmain; });
 document.querySelectorAll('.dm-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === window.DMtab)));
@@ -1021,10 +1043,10 @@ document.querySelectorAll('.dm-page').forEach((p) => { p.hidden = !inv || p.id !
 document.querySelectorAll('.dm-band .dm-filters, .dm-band .dm-take').forEach((el) => { el.hidden = !inv; });
 };
 document.querySelectorAll('.dm-main-tab').forEach((b) => b.addEventListener('click', () => {
-window.DMmain = b.dataset.main === 'produccion' ? (window.DMprod || 'mps') : b.dataset.main === 'almacen' ? (window.DMalm || 'almmp') : b.dataset.main; applyTab(); dash.setLink(window.DMmain === 'inventarios' ? window.DMtab : window.DMmain);
+window.DMmain = b.dataset.main === 'produccion' ? (window.DMprod || 'mps') : b.dataset.main === 'almacen' ? (window.DMalm || 'almmp') : b.dataset.main === 'ns' ? (window.DMnsv || 'ns') : b.dataset.main; applyTab(); dash.setLink(window.DMmain === 'inventarios' ? window.DMtab : window.DMmain);
 }));
 document.querySelectorAll('.dm-tab').forEach((b) => b.addEventListener('click', () => { window.DMtab = b.dataset.tab; applyTab(); dash.setLink(b.dataset.tab); }));
-document.querySelectorAll('.pr-tab').forEach((b) => b.addEventListener('click', () => { window.DMmain = b.dataset.sub; if (b.dataset.sub.startsWith('alm')) window.DMalm = b.dataset.sub; else window.DMprod = b.dataset.sub; applyTab(); dash.setLink(b.dataset.sub); }));
+document.querySelectorAll('.pr-tab').forEach((b) => b.addEventListener('click', () => { window.DMmain = b.dataset.sub; if (b.dataset.sub.startsWith('alm')) window.DMalm = b.dataset.sub; else if (b.dataset.sub === 'ns' || b.dataset.sub === 'ritmo') window.DMnsv = b.dataset.sub; else window.DMprod = b.dataset.sub; applyTab(); dash.setLink(b.dataset.sub); }));
 document.querySelectorAll('.dm-catsel').forEach((s) => s.addEventListener('change', () => dash.setParams({ cat: s.value })));
 dash.onData(() => {
 applyTab();
@@ -2042,11 +2064,8 @@ const YCOL = (y, ys) => { const i = ys.indexOf(y), n = ys.length; return i === n
 return { META, MES, MC, list, ok, din, cant, eje, D, est, sel, anios, canales, porCanal, porAnio, ns, parcial, meses, ultCerrado, kTxt, kCorto, pct, nom, col, YCOL };
 })();
 
-dash.draw('ns-def2', (el) => { el.textContent = NS.din() ? 'valor facturado ÷ valor pedido' : 'unidades facturadas ÷ unidades pedidas'; });
 document.querySelectorAll('.ns-uni').forEach((s) => s.addEventListener('change', () => dash.setParams({ ns_uni: s.value === 'dinero' ? 'dinero' : null })));
 dash.onData(() => { const v = dash.params().ns_uni === 'dinero' ? 'dinero' : 'cant'; document.querySelectorAll('.ns-uni').forEach((s) => { s.value = v; }); });
-dash.draw('ns-archivo', (el) => { const e = NS.est(); el.textContent = e ? e.archivo : '—'; });
-dash.draw('ns-hasta', (el) => { const e = NS.est(); el.textContent = e ? NS.kTxt(e.ultimo_mes) + (NS.parcial(e.ultimo_mes) ? ' (mes en curso, parcial)' : '') : '—'; });
 
 const nsClose = () => { document.querySelectorAll('#ns .dm-ms-pop').forEach((p) => { p.hidden = true; }); document.querySelectorAll('#ns .dm-ms-btn').forEach((b) => b.setAttribute('aria-expanded', 'false')); };
 document.querySelectorAll('#ns .dm-ms').forEach((box) => {
@@ -2746,8 +2765,72 @@ w.append(p, bar, t); cell.append(w); td(AL.mill(r.costo), 'lc-n'); tb.append(tr)
 });
 });
 </script>
+<script>
+// Tablero Supply Chain Don Maíz · subpestaña Ritmo de venta (Nivel de servicio). Forecast del mes vs cantidad facturada (dataset ritmo). 27-nov-2026.
+window.RT = (() => {
+const D = () => { const d = dash.data('ritmo'); return d.status === 'ok' && Array.isArray(d.data) ? d.data : null; };
+const meses = () => [...new Set((D() || []).map((r) => r.mes))].sort();
+const sel = () => { const R = D(); if (!R) return null; const ms = meses(), p = dash.params(), cr = ms.filter((m) => R.some((r) => r.mes === m && r.real > 0));
+const mes = ms.includes(p.rt_mes) ? p.rt_mes : cr[cr.length - 1] || ms[0], cs = [...new Set(R.filter((r) => r.mes === mes).map((r) => r.canal))].sort(), canal = cs.includes(p.rt_canal) ? p.rt_canal : '';
+return { mes, canal, cs, R: R.filter((r) => r.mes === mes && (!canal || r.canal === canal)) }; };
+const sum = (v) => ({ fc: d3.sum(v, (r) => r.fc), real: d3.sum(v, (r) => r.real) });
+const pct = (o) => (o.fc > 0 ? o.real / o.fc : null);
+const u = (v) => DM.f0.format(Math.round(v)), sg = (v) => (Math.round(v) > 0 ? '+' : Math.round(v) < 0 ? '−' : '') + u(Math.abs(v));
+const pt = (v) => (v == null ? 'Sin forecast' : DM.f1.format(v * 100) + ' %');
+const col = (v) => (v == null ? 'var(--color-fg-muted)' : v >= 0.95 ? 'var(--dm-ok)' : v >= 0.85 ? 'var(--dm-sob)' : 'var(--dm-crit)');
+const mesL = (k) => NS.MES[+k.slice(4) - 1] + ' ' + k.slice(0, 4);
+const grp = (R, key) => d3.rollups(R, sum, (r) => r[key]).map(([k, o]) => ({ k, ...o })).sort((a, b) => b.fc - a.fc || b.real - a.real);
+const filas = () => { const s = sel(); if (!s) return null;
+return d3.rollups(s.R, (v) => ({ ref: v[0].ref, desc: v[0].desc, seg: v[0].seg, ...sum(v), canales: v.slice().sort((a, b) => b.fc - a.fc || b.real - a.real) }), (r) => r.ref).map(([, o]) => o).sort((a, b) => b.fc - a.fc || b.real - a.real); };
+const bars = (el, items, label) => {
+el.replaceChildren(); if (!items.length) return;
+const W = el.clientWidth, H = 330, ml = 54, svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', label);
+const x0 = d3.scaleBand(items.map((d) => d.k), [ml, W - 8]).padding(0.22), x1 = d3.scaleBand(['fc', 'real'], [0, x0.bandwidth()]).padding(0.06);
+const rot = Math.max(...items.map((d) => DM.textW(svg, NS.nom(d.k), 'dm-axis-t'))) + 6 > x0.step(), MB = rot ? 78 : 40;
+const y = d3.scaleLinear([0, (d3.max(items, (d) => Math.max(d.fc, d.real)) || 1) * 1.12], [H - MB, 22]).nice();
+svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - ml - 8)).tickFormat((v) => DM.fc.format(v))).call(DM.cleanAxis).call((g) => g.select('.domain').remove())
+.selectAll('text').style('font-weight', 700).style('fill', 'var(--color-fg)');
+const g = svg.append('g').attr('transform', `translate(0,${H - MB})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat((k) => NS.nom(k))).call(DM.cleanAxis);
+g.selectAll('text').style('font-weight', 800).style('font-size', '12px').style('fill', 'var(--color-fg)');
+if (rot) g.selectAll('text').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.5em').attr('transform', 'rotate(-30)');
+items.forEach((d) => { const gg = svg.append('g').attr('transform', `translate(${x0(d.k)},0)`), p = pct(d);
+[['fc', 'var(--dm-orange-2)'], ['real', 'var(--dm-green)']].forEach(([s, c]) => gg.append('rect').attr('x', x1(s)).attr('width', x1.bandwidth()).attr('y', y(d[s])).attr('height', y(0) - y(d[s])).attr('rx', 2).style('fill', c));
+gg.append('text').attr('class', 'dm-val dm-halo').attr('text-anchor', 'middle').attr('x', x0.bandwidth() / 2).attr('y', y(Math.max(d.fc, d.real)) - 6).style('font-weight', 800).style('fill', col(p))
+.text(p == null ? 'Sin fcst' : DM.f0.format(p * 100) + ' %'); });
+const tip = DM.tipFor(el);
+svg.append('g').selectAll('rect').data(items).join('rect').attr('x', (d) => x0(d.k)).attr('width', x0.bandwidth()).attr('y', 0).attr('height', H - MB).attr('fill', 'transparent')
+.on('mousemove', (e, d) => DM.showTip(tip, el, x0(d.k) + x0.bandwidth() / 2, 30, [NS.nom(d.k), 'Forecast: ' + u(d.fc), 'Real: ' + u(d.real), 'Cumplimiento: ' + pt(pct(d)), 'Desviación: ' + sg(d.real - d.fc)]))
+.on('mouseleave', () => { tip.hidden = true; });
+};
+const celdas = (tr, o, pre) => { const c = (t, k, st) => { const td = document.createElement('td'); if (k) td.className = k; td.textContent = t; if (st) td.style.color = st; tr.append(td); return td; };
+pre(c); const p = pct(o), dv = Math.round(o.real - o.fc); c(u(o.fc), 'lc-n'); c(u(o.real), 'lc-n'); c(pt(p), 'lc-n', col(p)); c(sg(dv), 'lc-n', dv < 0 ? 'var(--dm-crit)' : dv > 0 ? 'var(--dm-ok)' : null); };
+return { D, meses, sel, sum, pct, u, sg, pt, col, mesL, grp, filas, bars, celdas };
+})();
+dash.draw('rt-sel-mes', (el) => { const s = RT.sel(); if (!s) { el.replaceChildren(); return; } el.replaceChildren(...RT.meses().map((k) => new Option(RT.mesL(k), k))); el.value = s.mes; el.onchange = () => dash.setParams({ rt_mes: el.value }); });
+dash.draw('rt-sel-canal', (el) => { const s = RT.sel(); if (!s) { el.replaceChildren(); return; } el.replaceChildren(new Option('Todos', ''), ...s.cs.map((c) => new Option(NS.nom(c), c))); el.value = s.canal; el.onchange = () => dash.setParams({ rt_canal: el.value || null }); });
+dash.draw('rt-kpis', (el) => {
+const s = RT.sel(); if (!s) { DM.fail(el, dash.data('ritmo').status); return; }
+const t = RT.sum(s.R), p = RT.pct(t), e = NS.est(), g = e && e.guardado && e.guardado.slice(0, 7).replace('-', '') === s.mes ? e.guardado : null, can = s.canal ? ' · ' + NS.nom(s.canal) : '';
+const tile = (l, v, d, c) => { const w = document.createElement('div'); w.className = 'dm-tile'; [[l, 'dm-tile-l'], [v, 'dm-tile-v'], [d, 'dm-tile-d']].forEach(([x, k]) => { const sp = document.createElement('span'); sp.className = k; sp.textContent = x; if (c && k === 'dm-tile-v') sp.style.color = c; w.append(sp); }); return w; };
+el.replaceChildren(tile('Total forecast del mes', RT.u(t.fc), 'Paquetes · ' + RT.mesL(s.mes) + can), tile('Cantidad facturada', RT.u(t.real), g ? 'Paquetes facturados al ' + DM.fDate(g) : 'Paquetes facturados' + can),
+tile('Cumplimiento del mes', RT.pt(p), 'Desviación: ' + RT.sg(t.real - t.fc) + ' paquetes', RT.col(p)));
+});
+dash.draw('rt-canal', (el) => { const s = RT.sel(); if (!s) { DM.fail(el, dash.data('ritmo').status); return; } RT.bars(el, RT.grp(s.R, 'canal'), 'Forecast vs real por canal'); });
+dash.draw('rt-seg', (el) => { const s = RT.sel(); if (!s) { DM.fail(el, dash.data('ritmo').status); return; } RT.bars(el, RT.grp(s.R, 'seg'), 'Forecast vs real por segmento'); });
+window.RTopen = window.RTopen || new Set();
+const rtT = (tb) => { tb.replaceChildren(); const F = RT.filas(); if (!F) return;
+F.forEach((r) => { const open = window.RTopen.has(r.ref), tr = document.createElement('tr'); tr.className = 'lc-row';
+RT.celdas(tr, r, (c) => { const b = c('', 'lc-c'), btn = document.createElement('button'); btn.type = 'button'; btn.className = 'iv-exp'; btn.textContent = open ? '−' : '+';
+btn.setAttribute('aria-expanded', String(open)); btn.setAttribute('aria-label', (open ? 'Ocultar' : 'Ver') + ' canales de ' + r.ref);
+btn.onclick = () => { if (open) window.RTopen.delete(r.ref); else window.RTopen.add(r.ref); rtT(tb); }; b.append(btn); c(r.ref, 'lc-ref'); c(r.desc).title = r.desc; c(NS.nom(r.seg)); });
+tb.append(tr);
+if (open) r.canales.forEach((x) => { const ch = document.createElement('tr'); ch.className = 'iv-child'; RT.celdas(ch, x, (c) => { c(''); c(NS.nom(x.canal), 'iv-city').colSpan = 3; }); tb.append(ch); });
+}); };
+dash.draw('rt-t', rtT);
+dash.draw('rt-tot', (tf) => { tf.replaceChildren(); const s = RT.sel(); if (!s) return; const tr = document.createElement('tr'); RT.celdas(tr, RT.sum(s.R), (c) => { c(''); c('Total · ' + RT.filas().length + ' referencias').colSpan = 3; }); tf.append(tr); });
+</script>
 
 </div>
-<p class="web-foot">Versión web del tablero. Datos actualizados: 27/11/2026 08:38 AM.</p>
+<p class="web-foot">Versión web del tablero. Datos actualizados: 27/11/2026 09:07 AM.</p>
 </body>
 </html>
