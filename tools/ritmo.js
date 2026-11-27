@@ -12,7 +12,8 @@ const pasa = (r, p, sin) => KS.every((k) => { if (k === sin) return true; const 
 const sel = (sin) => { const R = V(); if (!R) return null; const ms = meses(), p = dash.params(), cr = ms.filter((m) => R.some((r) => r.mes === m && r.real > 0));
 const mes = ms.includes(p.rt_mes) ? p.rt_mes : cr[cr.length - 1] || ms[0];
 return { mes, p, R: R.filter((r) => r.mes === mes && pasa(r, p, sin)) }; };
-const sum = (v) => ({ fc: d3.sum(v, (r) => r.fc), real: d3.sum(v, (r) => r.real), kg: d3.sum(v, (r) => r.kg || 0) });
+// Real = solo lo facturado en las líneas del forecast del mes (fl = 1), como el comparativo del gerente; lo demás es 'fuera del forecast'.
+const sum = (v) => ({ fc: d3.sum(v, (r) => r.fc), real: d3.sum(v, (r) => (r.fl === 0 ? 0 : r.real)), kg: d3.sum(v, (r) => (r.fl === 0 ? 0 : r.kg || 0)), fuera: d3.sum(v, (r) => (r.fl === 0 ? r.real : 0)) });
 const pct = (o) => (o.fc > 0 ? o.real / o.fc : null);
 const u = (v) => DM.f0.format(Math.round(v)), sg = (v) => (Math.round(v) > 0 ? '+' : Math.round(v) < 0 ? '−' : '') + u(Math.abs(v));
 const pt = (v) => (v == null ? 'Sin forecast' : DM.f1.format(v * 100) + ' %');
@@ -47,7 +48,7 @@ svg.append('g').selectAll('rect').data(items).join('rect').attr('x', (d) => x0(d
 // Celdas de una fila: pre() pone las primeras columnas; luego forecast, real, kilos, % y (opcional) desviación.
 const celdas = (tr, o, pre, desv) => { const c = (t, k, st) => { const td = document.createElement('td'); if (k) td.className = k; td.textContent = t; if (st) td.style.color = st; tr.append(td); return td; };
 pre(c); const p = pct(o), fa = Math.round(o.fc - o.real); c(u(o.fc), 'lc-n'); c(u(o.real), 'lc-n'); c(u(o.kg), 'lc-n'); c(pt(p), 'lc-n', col(p));
-c(o.fc > 0 ? (fa > 0 ? u(fa) : 'Cumplido') : '—', 'lc-n', o.fc > 0 ? (fa > 0 ? 'var(--dm-crit)' : 'var(--dm-ok)') : null);
+c(o.fc > 0 ? (fa > 0 ? u(fa) : 'Cumplido') : '—', 'lc-n', o.fc > 0 ? (fa > 0 ? 'var(--dm-crit)' : 'var(--dm-ok)') : null); c(o.fuera ? u(o.fuera) : '—', 'lc-n');
 if (desv) { const dv = Math.round(o.real - o.fc); c(sg(dv), 'lc-n', dv < 0 ? 'var(--dm-crit)' : dv > 0 ? 'var(--dm-ok)' : null); } return c; };
 const btn = (set, key, txt, redraw) => { const open = set.has(key), b = document.createElement('button'); b.type = 'button'; b.className = 'iv-exp'; b.textContent = open ? '−' : '+';
 b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', (open ? 'Ocultar ' : 'Ver ') + txt); b.onclick = () => { if (open) set.delete(key); else set.add(key); redraw(); }; return b; };
@@ -64,7 +65,7 @@ dash.draw('rt-kpis', (el) => {
 const s = RT.sel(); if (!s) { DM.fail(el, dash.data('ritmo').status); return; }
 const t = RT.sum(s.R), p = RT.pct(t), e = NS.est(), g = e && e.guardado && e.guardado.slice(0, 7).replace('-', '') === s.mes ? e.guardado : null;
 const tile = (l, v, d, c) => { const w = document.createElement('div'); w.className = 'dm-tile'; [[l, 'dm-tile-l'], [v, 'dm-tile-v'], [d, 'dm-tile-d']].forEach(([x, k]) => { const sp = document.createElement('span'); sp.className = k; sp.textContent = x; if (c && k === 'dm-tile-v') sp.style.color = c; w.append(sp); }); return w; };
-el.replaceChildren(tile('Total forecast del mes', RT.u(t.fc), 'Paquetes · ' + RT.mesL(s.mes)), tile('Cantidad facturada', RT.u(t.real), (g ? 'Paquetes facturados al ' + DM.fDate(g) : 'Paquetes facturados') + ' · ' + RT.u(t.kg) + ' kg'),
+el.replaceChildren(tile('Total forecast del mes', RT.u(t.fc), 'Paquetes · ' + RT.mesL(s.mes)), tile('Cantidad facturada', RT.u(t.real), (g ? 'Al ' + DM.fDate(g) + ' · ' : '') + RT.u(t.kg) + ' kg · fuera del forecast: ' + RT.u(t.fuera)),
 tile('Cumplimiento del mes', RT.pt(p), 'Desviación: ' + RT.sg(t.real - t.fc) + ' paquetes', RT.col(p)));
 });
 dash.draw('rt-canal', (el) => { const s = RT.sel(); if (!s) { DM.fail(el, dash.data('ritmo').status); return; } RT.bars(el, RT.grp(s.R, 'canal'), 'Forecast vs real por canal'); });

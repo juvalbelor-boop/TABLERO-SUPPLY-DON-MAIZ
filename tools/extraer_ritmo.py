@@ -2,7 +2,9 @@
 Uso: python -I extraer_ritmo.py Forecast.xlsx "Nivel de servicio por canal.xlsx" Maestros.xlsx CARPETA_SALIDA
         [--cuota "Cuota Ventas por día MES.xlsx"] [--pesos pesos.json] [--reparto reparto_AAAAMM.json ...]
 Genera ritmo.json con filas planas:
-  tipo 'v': mes (AAAAMM), canal, cli, bod, ref, desc, seg, fc (forecast, paquetes), real (Suma de Cant_Facturada), kg (real × peso).
+  tipo 'v': mes (AAAAMM), canal, cli, bod, ref, desc, seg, fc (forecast, paquetes), real (Suma de Cant_Facturada), kg (real × peso),
+            fl = 1 si la línea cliente-bodega-referencia está en el forecast del mes (aunque sea 0); el cumplimiento usa solo el real con fl = 1
+            (regla del comparativo del gerente, 27-nov-2026); lo demás es 'fuera del forecast'. --lineas trae la lista del mes (noviembre: hoja BASE).
   tipo 'c': mes, canal, fecha (AAAA-MM-DD), cv (cuota del canal ese día, hoja FORMATO TI del archivo de cuota, columnas B:F).
 Reglas (27-nov-2026, aprobadas por el usuario):
   - cli = cliente (razón social) en MODERNO; en los demás canales cli = canal (igual que el comparativo del gerente).
@@ -16,7 +18,7 @@ Reglas (27-nov-2026, aprobadas por el usuario):
 Valida por mes: forecast = columna del Excel, real = Cant_Facturada del archivo, cuota del canal = total del archivo. Si no: NO PUBLICAR."""
 import sys, os, json, argparse, datetime as dt, pandas as pd, openpyxl
 ap = argparse.ArgumentParser(); ap.add_argument('fx'); ap.add_argument('nx'); ap.add_argument('mx'); ap.add_argument('out')
-ap.add_argument('--cuota'); ap.add_argument('--pesos'); ap.add_argument('--reparto', nargs='*', default=[])
+ap.add_argument('--cuota'); ap.add_argument('--pesos'); ap.add_argument('--reparto', nargs='*', default=[]); ap.add_argument('--lineas', nargs='*', default=[])
 A = ap.parse_args()
 M = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
 CANAL_FC = {'ALMACENES EXITO S.A.': 'MODERNO', 'CENCOSUD COLOMBIA S.A.': 'MODERNO', 'JERONIMO MARTINS COLOMBIA S.A.S': 'MODERNO',
@@ -39,6 +41,9 @@ if nuevos: err.append('Canales del forecast sin regla: ' + ', '.join(nuevos))
 f['cli'] = [c0 if cn == 'MODERNO' and c0 != 'MODERNO' else cn for c0, cn in zip(f.c0, f.canal)]
 f['ref'] = f.Cod.map(ref); f['bod'] = [str(b).strip() if pd.notna(b) and str(b).strip() else ' '.join(str(d).split()).upper() for b, d in zip(f.Bodega, f.DescripcionBodega)]
 rep = {}
+lin = {}   # líneas del forecast del mes (cliente, bodega, referencia), incluidas las que tienen 0: el real solo cuenta en ellas (regla del comparativo del gerente)
+for p in A.lineas:
+    for r in json.load(open(p)): lin.setdefault(r['mes'], set()).add((r['cli'], str(r['bod']).strip(), ref(r['ref'])))
 for p in A.reparto:
     for r in json.load(open(p)): rep.setdefault(r['mes'], []).append(r)
 # ---------- Real (nivel de servicio)
@@ -99,12 +104,15 @@ for col in cols:
     if abs(a.sum() - f[col].sum()) > 0.5: err.append(f'{mes}: forecast {a.sum():,.0f} ≠ Excel {f[col].sum():,.0f}')
     t0 = float(n0.loc[n0.mes == mes, 'real'].sum())
     if abs(b.sum() - t0) > 0.5: err.append(f'{mes}: real con bodega {b.sum():,.0f} ≠ hoja de nivel de servicio {t0:,.0f}')
-    for k in sorted(set(a.index) | set(b.index)):
-        re_ = float(b.get(k, 0)); pz = peso.get(k[3])
+    L = lin.get(mes) or {(k[1], k[2], k[3]) for k in a.index}   # sin lista: las líneas con forecast del mes
+    ceros = {('MODERNO' if c not in BASE else c, c, bo, r) for (c, bo, r) in L} - set(a.index) - set(b.index)
+    for k in sorted(set(a.index) | set(b.index) | ceros):
+        re_ = float(b.get(k, 0)); pz = peso.get(k[3]); fl = 1 if (k[1], k[2], k[3]) in L else 0
         if re_ and pz is None: sin_peso[k[3]] = sin_peso.get(k[3], 0) + re_
         rows.append(dict(tipo='v', mes=mes, canal=k[0], cli=k[1], bod=bnom.get(k[2], k[2].title()), ref=k[3], desc=desc.get(k[3], ''), seg=segm.get(k[3], 'SIN CLASIFICAR'),
-                         fc=round(float(a.get(k, 0)), 2), real=re_, kg=round(re_ * (pz or 0), 2)))
-    resumen[mes] = dict(fc=round(float(a.sum()), 2), real=float(b.sum()))
+                         fc=round(float(a.get(k, 0)), 2), real=re_, kg=round(re_ * (pz or 0), 2), fl=fl))
+    resumen[mes] = dict(fc=round(float(a.sum()), 2), real=float(b.sum()), real_lineas=sum(r['real'] for r in rows if r['mes'] == mes and r['fl']),
+                        fuera=sum(r['real'] for r in rows if r['mes'] == mes and not r['fl']), lineas=len(L))
 mod = openpyxl.load_workbook(A.nx, read_only=True).properties.modified
 os.makedirs(A.out, exist_ok=True)
 json.dump(rows + cuota, open(os.path.join(A.out, 'ritmo.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
